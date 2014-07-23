@@ -28,14 +28,13 @@ var ContextMixin = {
     transaction.getReactMountReady().enqueue(this, this.componentDidMount);
 
     return (
-        this._createOpenTagMarkupAndPutListeners(transaction) +
-        this._tagClose
-      );
+      this._createOpenTagMarkupAndPutListeners(transaction) +
+      this._tagClose
+    );
   },
 
   componentDidMount: function() {
     this.node = Engine.createContext(this.getDOMNode());
-
     var transaction = ReactComponent.ReactReconcileTransaction.getPooled();
     transaction.perform(
       this.mountAndInjectChildren,

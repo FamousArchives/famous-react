@@ -1,7 +1,10 @@
 'use strict';
 
 var ReactDOMComponent = require('react/lib/ReactDOMComponent');
+var ReactComponent = require('react/lib/ReactComponent');
+var ReactBrowserComponentMixin = require('react/lib/ReactBrowserComponentMixin');
 var createComponent = require('../../createComponent');
+var ReactSurface = require('./ReactSurface');
 
 // This is a mixin for components with multiple children
 // This is internal, you don't need to use this
@@ -11,9 +14,10 @@ var createComponent = require('../../createComponent');
 var BaseMixin = {
   getDOMNode: function() {
     var famousEl = this.getFamous();
-    // unmounted
+
+    // unmounted or root el
     if (!famousEl) {
-      return;
+      return ReactBrowserComponentMixin.getDOMNode.call(this, arguments);
     }
 
     // context
@@ -25,11 +29,6 @@ var BaseMixin = {
   },
 
   getFamous: function() {
-    // context
-    if (this._node) {
-      return this;
-    }
-    // surface
     return this.node;
   },
 
@@ -54,6 +53,10 @@ var BaseMixin = {
    */
   createChild: function(child, childNode) {
     child._mountImage = childNode;
+    if (ReactComponent.isValidComponent(childNode)) {
+      childNode = new ReactSurface(childNode);
+    }
+
     this.node.add(childNode);
   },
 
@@ -82,22 +85,15 @@ var BaseMixin = {
   },
 
   // Shorthands
-
   mountAndInjectChildren: function(children, transaction) {
     var mountedImages = this.mountChildren(
       children,
       transaction
     );
     // Each mount image corresponds to one of the flattened children
-    var i = 0;
-    for (var key in this._renderedChildren) {
-      if (this._renderedChildren.hasOwnProperty(key)) {
-        var child = this._renderedChildren[key];
-        child._mountImage = mountedImages[i];
-        this.node.add(mountedImages[i]);
-        i++;
-      }
-    }
+    Object.keys(this._renderedChildren).forEach(function(k, idx){
+      this.createChild(this._renderedChildren[k], mountedImages[idx]);
+    }, this);
   }
 };
 

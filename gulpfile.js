@@ -31,7 +31,9 @@ gulp.task('watch', function(){
   });
 });
 
-gulp.task('js', function(){
+gulp.task('js', function(cb){
+  return cb();
+
   var browserifyStream = bundler.bundle({
     standalone: 'famous-react',
     debug: true,
@@ -45,8 +47,7 @@ gulp.task('js', function(){
 
     // resume our actual work
     .pipe(gulp.dest('dist'))
-    .pipe(lr());
-    /*
+    .pipe(lr())
     .pipe(rename({suffix: '.min'}))
     .pipe(uglify({
       compress: {
@@ -56,7 +57,7 @@ gulp.task('js', function(){
     }))
     .pipe(gulp.dest('dist'))
     .pipe(lr());
-    */
+
   var lintStream = gulp.src(paths.js)
     .pipe(jshint())
     .pipe(jshint.reporter('jshint-stylish'));
