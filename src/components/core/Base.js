@@ -1,10 +1,10 @@
 'use strict';
 
 var ReactDOMComponent = require('react/lib/ReactDOMComponent');
-var ReactComponent = require('react/lib/ReactComponent');
 var ReactBrowserComponentMixin = require('react/lib/ReactBrowserComponentMixin');
 var createComponent = require('../../createComponent');
 var ReactSurface = require('./ReactSurface');
+var Surface = require('famous/core/Surface');
 
 // This is a mixin for components with multiple children
 // This is internal, you don't need to use this
@@ -52,12 +52,13 @@ var BaseMixin = {
    * @protected
    */
   createChild: function(child, childNode) {
-    child._mountImage = childNode;
-    if (ReactComponent.isValidComponent(childNode)) {
-      childNode = new ReactSurface(childNode);
+    // react
+    if (typeof childNode === 'string') {
+      childNode = new Surface({content: childNode});
     }
 
-    this.node.add(childNode);
+    child._mountImage = childNode;
+    this.getFamous().add(childNode);
   },
 
   /**
@@ -86,10 +87,7 @@ var BaseMixin = {
 
   // Shorthands
   mountAndInjectChildren: function(children, transaction) {
-    var mountedImages = this.mountChildren(
-      children,
-      transaction
-    );
+    var mountedImages = this.mountChildren(children, transaction);
     // Each mount image corresponds to one of the flattened children
     Object.keys(this._renderedChildren).forEach(function(k, idx){
       this.createChild(this._renderedChildren[k], mountedImages[idx]);

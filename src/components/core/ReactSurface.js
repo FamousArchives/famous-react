@@ -10,9 +10,9 @@ function ReactSurface() {
 ReactSurface.prototype = Object.create(Surface.prototype);
 ReactSurface.prototype.constructor = ReactSurface;
 
-ReactSurface.prototype.deploy = function deploy (target) {
-  var content = cloneWithProps(this.getContent(), {_surface: this});
-  renderComponent(content, target);
+ReactSurface.prototype.deploy = function(target) {
+  var comp = cloneWithProps(this.getContent(), {_surface: this});
+  renderComponent(comp, target);
 };
 
 module.exports = ReactSurface;
