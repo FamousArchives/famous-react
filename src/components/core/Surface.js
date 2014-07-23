@@ -32,6 +32,10 @@ var SurfaceMixin = {
     ReactComponent.Mixin.mountComponent.apply(this, arguments);
     // TODO: add this._rootNodeID to node
     this.node = this.createFamousNode();
+    this.node.on('deploy', function(){
+      // write id
+      this._currentTarget.setAttribute('data-reactid', rootID);
+    });
     this.applyNodeProps(BLANK_PROPS, this.props, transaction);
     return this.node;
   },
