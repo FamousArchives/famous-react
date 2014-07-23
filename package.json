@@ -1,0 +1,48 @@
+{
+  "name": "react-famous",
+  "description": "Integration between React and Famous",
+  "version": "0.0.1",
+  "homepage": "http://github.com/FamousInternal/famous-react",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/FamousInternal/famous-react.git"
+  },
+  "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
+  "main": "./index.js",
+  "dependencies": {
+    "famous": "http://code.famo.us/famous/common/famous0.3.0a.tar.gz",
+    "react": "^0.10.0",
+    "watchify": "^0.10.2"
+  },
+  "devDependencies": {
+    "browserify": "^4.2.3",
+    "gulp": "^3.8.6",
+    "gulp-autowatch": "0.0.1",
+    "gulp-if": "^1.2.4",
+    "gulp-jshint": "^1.7.1",
+    "gulp-livereload": "^2.1.0",
+    "gulp-rename": "^1.2.0",
+    "gulp-sourcemaps": "^1.1.0",
+    "gulp-uglify": "^0.3.1",
+    "jshint": "^2.4.1",
+    "jshint-stylish": "^0.2.0",
+    "merge-stream": "^0.1.5",
+    "mocha": "^1.20.1",
+    "should": "^4.0.4",
+    "vinyl-buffer": "0.0.0",
+    "vinyl-source-stream": "^0.1.1"
+  },
+  "scripts": {
+    "lint": "jshint . --reporter node_modules/jshint-stylish/stylish.js --exclude node_modules",
+    "test": "npm run-script lint"
+  },
+  "engines": {
+    "node": ">= 0.10"
+  },
+  "licenses": [
+    {
+      "type": "MPL",
+      "url": "http://github.com/FamousInternal/famous-react/raw/master/LICENSE"
+    }
+  ]
+}
