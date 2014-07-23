@@ -2,6 +2,7 @@
 
 var ReactComponent = require('react/lib/ReactComponent');
 var ReactEventEmitter = require('react/lib/ReactEventEmitter');
+var ReactMount = require('react/lib/ReactMount');
 
 var createComponent = require('../../createComponent');
 var BaseMixin = require('./Base');
@@ -10,21 +11,38 @@ var registrationNameModules = ReactEventEmitter.registrationNameModules;
 // Used for comparison during mounting to avoid a lot of null checks
 var BLANK_PROPS = {};
 
+var ELEMENT_NODE_TYPE = 1;
+function putListener(id, registrationName, listener, transaction) {
+  var container = ReactMount.findReactContainerForID(id);
+  if (container) {
+    var doc = container.nodeType === ELEMENT_NODE_TYPE ?
+      container.ownerDocument :
+      container;
+    ReactEventEmitter.listenTo(registrationName, doc);
+  }
+  transaction.getPutListenerQueue().enqueuePutListener(
+    id,
+    registrationName,
+    listener
+  );
+}
+
 var SurfaceMixin = {
-  mountComponent: function() {
+  mountComponent: function(rootID, transaction, mountDepth) {
     ReactComponent.Mixin.mountComponent.apply(this, arguments);
+    // TODO: add this._rootNodeID to node
     this.node = this.createFamousNode();
-    this.applyNodeProps(BLANK_PROPS, this.props);
+    this.applyNodeProps(BLANK_PROPS, this.props, transaction);
     return this.node;
   },
 
   receiveComponent: function(nextComponent, transaction) {
     var props = nextComponent.props;
-    this.applyNodeProps(this.props, props);
+    this.applyNodeProps(this.props, props, transaction);
     this.props = props;
   },
 
-  applyNodeProps: function(oldProps, props) {
+  applyNodeProps: function(oldProps, props, transaction) {
     var formattedProps = {};
     if (typeof props.height !== 'undefined' || typeof props.width !== 'undefined') {
       formattedProps.size = [props.height, props.width];
@@ -57,7 +75,8 @@ var SurfaceMixin = {
         continue;
       }
       if (registrationNameModules[propKey]) {
-        this.getFamous().on(propKey.split('on')[1].toLowerCase(), propValue);
+        putListener(this._rootNodeID, propKey, propValue, transaction);
+        //this.getFamous().on(propKey.split('on')[1].toLowerCase(), propValue);
       }
     }
 

@@ -3,7 +3,6 @@
 var ReactDOMComponent = require('react/lib/ReactDOMComponent');
 var ReactBrowserComponentMixin = require('react/lib/ReactBrowserComponentMixin');
 var createComponent = require('../../createComponent');
-var ReactSurface = require('./ReactSurface');
 var Surface = require('famous/core/Surface');
 
 // This is a mixin for components with multiple children
