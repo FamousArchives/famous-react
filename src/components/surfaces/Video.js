@@ -1,12 +1,12 @@
 'use strict';
 
-var ImageSurface = require('famous/surfaces/ImageSurface');
+var VideoSurface = require('famous/surfaces/VideoSurface');
 var createComponent = require('../../createComponent');
 var Renderable = require('../core/Renderable');
 
-var ImageMixin = {
+var VideoMixin = {
   createFamousNode: function() {
-    return new ImageSurface();
+    return new VideoSurface();
   },
   formatProps: function(props, origProps) {
     props.content = origProps.src;
@@ -17,4 +17,4 @@ var ImageMixin = {
   }
 };
 
-module.exports = createComponent('Image', Renderable, ImageMixin);
+module.exports = createComponent('Image', Renderable, VideoMixin);

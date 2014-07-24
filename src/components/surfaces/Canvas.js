@@ -2,7 +2,7 @@
 
 var CanvasSurface = require('famous/surfaces/CanvasSurface');
 var createComponent = require('../../createComponent');
-var Surface = require('../core/Surface');
+var Renderable = require('../core/Renderable');
 
 var CanvasMixin = {
   createFamousNode: function() {
@@ -13,9 +13,14 @@ var CanvasMixin = {
     if (!props.canvasSize && props.size) {
       props.canvasSize = props.size;
     }
-    this.getFamous().setSize(props.size, props.canvasSize);
     return props;
+  },
+  setOptions: function(props) {
+    if (props.canvasSize || props.size) {
+      this.getFamous().setSize(props.size, props.canvasSize);
+    }
+    this.getFamous().setOptions(props);
   }
 };
 
-module.exports = createComponent('Canvas', Surface, CanvasMixin);
+module.exports = createComponent('Canvas', Renderable, CanvasMixin);

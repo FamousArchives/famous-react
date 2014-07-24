@@ -27,13 +27,13 @@ function putListener(id, registrationName, listener, transaction) {
   );
 }
 
-var SurfaceMixin = {
+var RenderableMixin = {
   mountComponent: function(rootID, transaction, mountDepth) {
     ReactComponent.Mixin.mountComponent.apply(this, arguments);
     // TODO: add this._rootNodeID to node
     this.node = this.createFamousNode();
     this.node.on('deploy', function(){
-      // write id
+      // write id so react events work
       this._currentTarget.setAttribute('data-reactid', rootID);
     });
     this.applyNodeProps(BLANK_PROPS, this.props, transaction);
@@ -70,22 +70,20 @@ var SurfaceMixin = {
     // wire up event listeners
     // TODO: remove old ones from oldProps
     // TODO: move this to a different fn?
-    for (var propKey in props) {
-      if (!props.hasOwnProperty(propKey)) {
-        continue;
+    Object.keys(props).forEach(function(k){
+      var v = props[k];
+      if (v == null) {
+        return;
       }
-      var propValue = props[propKey];
-      if (propValue == null) {
-        continue;
+      if (registrationNameModules[k]) {
+        putListener(this._rootNodeID, k, v, transaction);
       }
-      if (registrationNameModules[propKey]) {
-        putListener(this._rootNodeID, propKey, propValue, transaction);
-        //this.getFamous().on(propKey.split('on')[1].toLowerCase(), propValue);
-      }
-    }
+    }, this);
 
-    this.getFamous().setOptions(formattedProps);
+    if (this.setOptions) {
+      this.setOptions(formattedProps);
+    }
   }
 };
 
-module.exports = createComponent('Surface', BaseMixin, SurfaceMixin);
+module.exports = createComponent('Renderable', BaseMixin, RenderableMixin);
