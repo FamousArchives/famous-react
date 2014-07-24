@@ -32,8 +32,6 @@ gulp.task('watch', function(){
 });
 
 gulp.task('js', function(cb){
-  return cb();
-
   var browserifyStream = bundler.bundle({
     standalone: 'famous-react',
     debug: true,
