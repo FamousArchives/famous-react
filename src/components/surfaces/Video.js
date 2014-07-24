@@ -2,19 +2,23 @@
 
 var VideoSurface = require('famous/surfaces/VideoSurface');
 var createComponent = require('../../createComponent');
-var Renderable = require('../core/Renderable');
+var Surface = require('../core/Surface');
 
 var VideoMixin = {
   createFamousNode: function() {
     return new VideoSurface();
   },
-  formatProps: function(props, origProps) {
-    props.content = origProps.src;
+  formatProps: function(props, oldProps) {
+    if (typeof props.autoPlay === 'boolean') {
+      props.autoplay = props.autoPlay;
+      delete props.autoPlay;
+    }
+    if (typeof props.src === 'string') {
+      props.children = props.src;
+      delete props.src;
+    }
     return props;
-  },
-  setOptions: function(props) {
-    this.getFamous().setOptions(props);
   }
 };
 
-module.exports = createComponent('Image', Renderable, VideoMixin);
+module.exports = createComponent('Image', Surface, VideoMixin);

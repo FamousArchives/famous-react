@@ -94,4 +94,7 @@ var BaseMixin = {
   }
 };
 
-module.exports = createComponent('Base', ReactDOMComponent, BaseMixin);
+var Base = createComponent('Base', ReactDOMComponent, BaseMixin);
+Base.Mixin = BaseMixin;
+
+module.exports = Base;

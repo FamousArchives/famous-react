@@ -1,11 +1,12 @@
 'use strict';
 
+var omit = require('lodash.omit');
 var ReactComponent = require('react/lib/ReactComponent');
 var ReactEventEmitter = require('react/lib/ReactEventEmitter');
 var ReactMount = require('react/lib/ReactMount');
 
 var createComponent = require('../../createComponent');
-var BaseMixin = require('./Base');
+var Base = require('./Base');
 var registrationNameModules = ReactEventEmitter.registrationNameModules;
 
 // Used for comparison during mounting to avoid a lot of null checks
@@ -30,7 +31,6 @@ function putListener(id, registrationName, listener, transaction) {
 var RenderableMixin = {
   mountComponent: function(rootID, transaction, mountDepth) {
     ReactComponent.Mixin.mountComponent.apply(this, arguments);
-    // TODO: add this._rootNodeID to node
     this.node = this.createFamousNode();
     this.node.on('deploy', function(){
       // write id so react events work
@@ -41,49 +41,58 @@ var RenderableMixin = {
   },
 
   receiveComponent: function(nextComponent, transaction) {
+    if (nextComponent === this) {
+      // Since props and context are immutable after the component is
+      // mounted, we can do a cheap identity compare here to determine
+      // if this is a superfluous reconcile.
+      return;
+    }
+
+    ReactComponent.Mixin.receiveComponent.apply(this, arguments);
+
     var props = nextComponent.props;
     this.applyNodeProps(this.props, props, transaction);
     this.props = props;
   },
 
   applyNodeProps: function(oldProps, props, transaction) {
-    var formattedProps = {};
-    if (typeof props.height !== 'undefined' || typeof props.width !== 'undefined') {
-      formattedProps.size = [props.height, props.width];
+    var propKeys = Object.keys(props);
+    if (propKeys.length === 0) {
+      return;
     }
-    if (typeof props.className === 'string') {
-      formattedProps.classes = props.className.split(' ');
+    var noChangeProps = propKeys.filter(function(k){
+      return props[k] === oldProps[k];
+    });
+
+    props = omit(props, noChangeProps);
+    propKeys = Object.keys(props);
+    if (propKeys.length === 0) {
+      return;
     }
 
-    if (typeof props.style === 'object') {
-      formattedProps.properties = props.style;
-    }
-
-    if (props.children) {
-      formattedProps.content = props.children;
-    }
-    
     if (this.formatProps) {
-      formattedProps = this.formatProps(formattedProps, props, oldProps);
+      props = this.formatProps(props, oldProps);
     }
+
+    console.log('applying props', this, props);
 
     // wire up event listeners
     // TODO: remove old ones from oldProps
     // TODO: move this to a different fn?
-    Object.keys(props).forEach(function(k){
-      var v = props[k];
-      if (v == null) {
-        return;
-      }
-      if (registrationNameModules[k]) {
-        putListener(this._rootNodeID, k, v, transaction);
-      }
+    propKeys.filter(function(k){
+      return !!registrationNameModules[k] && props[k] != null;
+    })
+    .forEach(function(k){
+      putListener(this._rootNodeID, k, props[k], transaction);
     }, this);
 
     if (this.setOptions) {
-      this.setOptions(formattedProps);
+      this.setOptions(props);
     }
   }
 };
 
-module.exports = createComponent('Renderable', BaseMixin, RenderableMixin);
+var Renderable = createComponent('Renderable', Base, RenderableMixin);
+Renderable.Mixin = RenderableMixin;
+
+module.exports = Renderable;

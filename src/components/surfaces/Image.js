@@ -2,19 +2,19 @@
 
 var ImageSurface = require('famous/surfaces/ImageSurface');
 var createComponent = require('../../createComponent');
-var Renderable = require('../core/Renderable');
+var Surface = require('../core/Surface');
 
 var ImageMixin = {
   createFamousNode: function() {
     return new ImageSurface();
   },
-  formatProps: function(props, origProps) {
-    props.content = origProps.src;
+  formatProps: function(props, oldProps) {
+    if (typeof props.src === 'string') {
+      props.children = props.src;
+      delete props.src;
+    }
     return props;
-  },
-  setOptions: function(props) {
-    this.getFamous().setOptions(props);
   }
 };
 
-module.exports = createComponent('Image', Renderable, ImageMixin);
+module.exports = createComponent('Image', Surface, ImageMixin);

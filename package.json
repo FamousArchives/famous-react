@@ -11,6 +11,7 @@
   "main": "./index.js",
   "dependencies": {
     "famous": "http://code.famo.us/famous/common/famous0.3.0a.tar.gz",
+    "lodash.omit": "^2.4.1",
     "react": "^0.10.0",
     "watchify": "^0.10.2"
   },

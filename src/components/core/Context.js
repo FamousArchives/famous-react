@@ -8,7 +8,7 @@ var ReactEventEmitter = require('react/lib/ReactEventEmitter');
 var Engine = require('famous/core/Engine');
 
 var createComponent = require('../../createComponent');
-var BaseMixin = require('./Base');
+var Base = require('./Base');
 
 // Root node for an application
 // Equivalent of engine.createContext()
@@ -19,12 +19,7 @@ var ContextMixin = {
     this._tagClose = '</div>';
     this.tagName = 'DIV';
 
-    ReactComponent.Mixin.mountComponent.call(
-      this,
-      rootID,
-      transaction,
-      mountDepth
-    );
+    ReactComponent.Mixin.mountComponent.apply(this, arguments);
     transaction.getReactMountReady().enqueue(this, this.componentDidMount);
 
     return (
@@ -46,4 +41,7 @@ var ContextMixin = {
   }
 };
 
-module.exports = createComponent('Context', BaseMixin, ContextMixin);
+var Context = createComponent('Context', Base, ContextMixin);
+Context.Mixin = ContextMixin;
+
+module.exports = Context;
