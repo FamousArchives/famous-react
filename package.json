@@ -12,11 +12,10 @@
   "dependencies": {
     "famous": "http://code.famo.us/famous/common/famous0.3.0a.tar.gz",
     "lodash.omit": "^2.4.1",
-    "react": "^0.10.0",
-    "watchify": "^0.10.2"
+    "react": "^0.10.0"
   },
   "devDependencies": {
-    "browserify": "^4.2.3",
+    "browserify": "^5.8.0",
     "gulp": "^3.8.6",
     "gulp-autowatch": "0.0.1",
     "gulp-if": "^1.2.4",
@@ -31,7 +30,8 @@
     "mocha": "^1.20.1",
     "should": "^4.0.4",
     "vinyl-buffer": "0.0.0",
-    "vinyl-source-stream": "^0.1.1"
+    "vinyl-source-stream": "^0.1.1",
+    "watchify": "^1.0.0"
   },
   "scripts": {
     "lint": "jshint . --reporter node_modules/jshint-stylish/stylish.js --exclude node_modules",

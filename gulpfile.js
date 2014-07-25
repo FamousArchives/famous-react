@@ -12,6 +12,7 @@ var merge = require('merge-stream');
 var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
 var watchify = require('watchify');
+var browserify = require('browserify');
 
 var paths = {
   js: 'src/**/*.js',
@@ -19,8 +20,25 @@ var paths = {
 };
 
 var bundleCache = {};
-var bundler = watchify('./src/index.js', {cache: bundleCache});
-var sampleBundler = watchify('./samples/sandbox/src/index.js', {cache: bundleCache});
+var pkgCache = {};
+
+var bundler = watchify(browserify('./src/index.js', {
+  cache: bundleCache,
+  packageCache: pkgCache,
+  fullPaths: true,
+  standalone: 'famous-react',
+  debug: true,
+  insertGlobals: true
+}));
+
+var sampleBundler = watchify(browserify('./samples/sandbox/src/index.js', {
+  cache: bundleCache,
+  packageCache: pkgCache,
+  fullPaths: true,
+  standalone: 'sample',
+  debug: true,
+  insertGlobals: true
+}));
 
 gulp.task('watch', function(){
   bundler.on('update', function(){
@@ -32,12 +50,7 @@ gulp.task('watch', function(){
 });
 
 gulp.task('js', function(cb){
-  return cb();
-  var browserifyStream = bundler.bundle({
-    standalone: 'famous-react',
-    debug: true,
-    insertGlobals: true
-  })
+  var browserifyStream = bundler.bundle()
     // browserify -> gulp transfer
     .pipe(source('famous-react.js'))
     .pipe(buffer())
@@ -65,11 +78,7 @@ gulp.task('js', function(cb){
 });
 
 gulp.task('samples', function(){
-  var browserifyStream = sampleBundler.bundle({
-    standalone: 'sample',
-    debug: true,
-    insertGlobals: true
-  })
+  var browserifyStream = sampleBundler.bundle()
     // browserify -> gulp transfer
     .pipe(source('sample.js'))
     .pipe(buffer())

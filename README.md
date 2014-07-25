@@ -3,4 +3,4 @@ __This project is still under active development, and should not be considered p
 famous-react
 ============
 
-Famo.us-React is an ReactJS-driven framework for building Famo.us apps.
+Famous-React provides a bridge between Famous and React. The API is extremely unstable currently as things are still being fleshed out.
