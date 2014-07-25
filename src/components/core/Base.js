@@ -1,5 +1,6 @@
 'use strict';
 
+var ReactComponent = require('react/lib/ReactComponent');
 var ReactDOMComponent = require('react/lib/ReactDOMComponent');
 var ReactBrowserComponentMixin = require('react/lib/ReactBrowserComponentMixin');
 var createComponent = require('../../createComponent');
@@ -29,6 +30,25 @@ var BaseMixin = {
 
   getFamous: function() {
     return this.node;
+  },
+
+  mountComponent: function(rootID, transaction, mountDepth) {
+    ReactComponent.Mixin.mountComponent.apply(this, arguments);
+    transaction.getReactMountReady().enqueue(this, this.componentDidMount);
+  },
+
+  componentDidMount: function() {
+    if (!this.props.children) {
+      return;
+    }
+    var transaction = ReactComponent.ReactReconcileTransaction.getPooled();
+    transaction.perform(
+      this.mountAndInjectChildren,
+      this,
+      this.props.children,
+      transaction
+    );
+    ReactComponent.ReactReconcileTransaction.release(transaction);
   },
 
   /**

@@ -19,9 +19,8 @@ var ContextMixin = {
     this._tagClose = '</div>';
     this.tagName = 'DIV';
 
-    ReactComponent.Mixin.mountComponent.apply(this, arguments);
-    transaction.getReactMountReady().enqueue(this, this.componentDidMount);
-
+    Base.Mixin.mountComponent.apply(this, arguments);
+    
     return (
       this._createOpenTagMarkupAndPutListeners(transaction) +
       this._tagClose
@@ -30,14 +29,7 @@ var ContextMixin = {
 
   componentDidMount: function() {
     this.node = Engine.createContext(this.getDOMNode());
-    var transaction = ReactComponent.ReactReconcileTransaction.getPooled();
-    transaction.perform(
-      this.mountAndInjectChildren,
-      this,
-      this.props.children,
-      transaction
-    );
-    ReactComponent.ReactReconcileTransaction.release(transaction);
+    Base.Mixin.componentDidMount.apply(this, arguments);
   }
 };
 

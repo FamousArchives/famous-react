@@ -30,14 +30,15 @@ function putListener(id, registrationName, listener, transaction) {
 
 var RenderableMixin = {
   mountComponent: function(rootID, transaction, mountDepth) {
-    ReactComponent.Mixin.mountComponent.apply(this, arguments);
+    Base.Mixin.mountComponent.apply(this, arguments);
+
     this.node = this.createFamousNode();
     this.node.on('deploy', function(){
       // write id so react events work
       this._currentTarget.setAttribute('data-reactid', rootID);
     });
     this.applyNodeProps(BLANK_PROPS, this.props, transaction);
-    return this.node;
+    return this.getFamous();
   },
 
   receiveComponent: function(nextComponent, transaction) {
