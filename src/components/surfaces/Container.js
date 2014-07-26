@@ -1,8 +1,8 @@
 'use strict';
 
-var ContainerSurface = require('famous/surfaces/ContainerSurface');
+var ContainerSurface = require('famous/Surfaces/ContainerSurface');
 var createComponent = require('../../createComponent');
-var Surface = require('../core/Surface');
+var Renderable = require('../core/Renderable');
 
 var ContainerMixin = {
   createFamousNode: function() {
@@ -10,4 +10,4 @@ var ContainerMixin = {
   }
 };
 
-module.exports = createComponent('Container', Surface, ContainerMixin);
+module.exports = createComponent('Container', Renderable, ContainerMixin);

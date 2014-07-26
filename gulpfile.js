@@ -7,6 +7,7 @@ var rename = require('gulp-rename');
 var sourcemaps = require('gulp-sourcemaps');
 var gif = require('gulp-if');
 var lr = require('gulp-livereload');
+var cached = require('gulp-cached');
 
 var merge = require('merge-stream');
 var source = require('vinyl-source-stream');
@@ -54,19 +55,9 @@ gulp.task('js', function(cb){
     // browserify -> gulp transfer
     .pipe(source('famous-react.js'))
     .pipe(buffer())
-    .pipe(sourcemaps.init())
-    .pipe(sourcemaps.write())
-
-    // resume our actual work
-    .pipe(gulp.dest('dist'))
-    .pipe(lr())
-    .pipe(rename({suffix: '.min'}))
-    .pipe(uglify({
-      compress: {
-        drop_console: true,
-        unsafe: true
-      }
-    }))
+    .pipe(cached('js'))
+    .pipe(sourcemaps.init({loadMaps: true}))
+    .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('dist'))
     .pipe(lr());
 
@@ -82,12 +73,14 @@ gulp.task('samples', function(){
     // browserify -> gulp transfer
     .pipe(source('sample.js'))
     .pipe(buffer())
-    .pipe(sourcemaps.init())
-    .pipe(sourcemaps.write())
+    .pipe(cached('samples'))
+    .pipe(sourcemaps.init({loadMaps: true}))
+    .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('samples/sandbox/dist'))
     .pipe(lr());
 
   var staticStream = gulp.src(['samples/sandbox/src/**/*', '!samples/sandbox/src/**/*.js'])
+    .pipe(cached('static-samples'))
     .pipe(gulp.dest('samples/sandbox/dist'))
     .pipe(lr());
 

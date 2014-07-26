@@ -37,7 +37,6 @@ var ContextMixin = {
   },
 
   setOptions: function(props) {
-    console.log('setting props', props);
     var famousNode = this.getFamous();
     var hasSize = (typeof props.width !== 'undefined' || typeof props.height !== 'undefined');
     if (famousNode.setSize && hasSize) {

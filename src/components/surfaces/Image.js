@@ -1,8 +1,8 @@
 'use strict';
 
-var ImageSurface = require('famous/surfaces/ImageSurface');
+var ImageSurface = require('famous/Surfaces/ImageSurface');
 var createComponent = require('../../createComponent');
-var Surface = require('../core/Surface');
+var Renderable = require('../core/Renderable');
 
 var ImageMixin = {
   createFamousNode: function() {
@@ -17,4 +17,4 @@ var ImageMixin = {
   }
 };
 
-module.exports = createComponent('Image', Surface, ImageMixin);
+module.exports = createComponent('Image', Renderable, ImageMixin);

@@ -1,8 +1,8 @@
 'use strict';
 
-var VideoSurface = require('famous/surfaces/VideoSurface');
+var VideoSurface = require('famous/Surfaces/VideoSurface');
 var createComponent = require('../../createComponent');
-var Surface = require('../core/Surface');
+var Renderable = require('../core/Renderable');
 
 var VideoMixin = {
   createFamousNode: function() {
@@ -21,4 +21,4 @@ var VideoMixin = {
   }
 };
 
-module.exports = createComponent('Image', Surface, VideoMixin);
+module.exports = createComponent('Image', Renderable, VideoMixin);

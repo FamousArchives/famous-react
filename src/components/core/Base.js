@@ -122,7 +122,7 @@ var BaseMixin = {
 
     // call custom component logic
     if (this.setOptions) {
-      this.setOptions(props);
+      this.setOptions(props, transaction);
     }
   },
 
@@ -134,7 +134,7 @@ var BaseMixin = {
    * @protected
    */
   moveChild: function(child, toIndex) {
-    // Famous doesn't let you move shit around.
+    // Famous doesn't let you move nodes around
     return;
   },
 
@@ -151,8 +151,25 @@ var BaseMixin = {
       childNode = new Surface({content: childNode});
     }
 
+    // childNode is a famous node now
     child._mountImage = childNode;
-    this.getFamous().add(childNode);
+    var famousNode = this.getFamous();
+
+    // modifier, copy their children to us
+    if (childNode._modifier) {
+      var chain = famousNode.add(childNode);
+      var children = child.props.children;
+      if (children && !Array.isArray(children)) {
+        children = [children];
+      }
+      children.forEach(function(child){
+        console.log('adding child', child.getFamous());
+        chain.add(child.getFamous());
+      });
+    } else {
+      // surface
+      famousNode.add(childNode);
+    }
   },
 
   /**
