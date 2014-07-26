@@ -81,8 +81,7 @@ gulp.task('samples', function(){
 
   var staticStream = gulp.src(['samples/sandbox/src/**/*', '!samples/sandbox/src/**/*.js'])
     .pipe(cached('static-samples'))
-    .pipe(gulp.dest('samples/sandbox/dist'))
-    .pipe(lr());
+    .pipe(gulp.dest('samples/sandbox/dist'));
 
   return merge(staticStream, browserifyStream);
 });
