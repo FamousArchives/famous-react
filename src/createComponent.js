@@ -12,7 +12,6 @@ module.exports = function (name) {
     }
     */
   };
-  Component.displayName = name;
 
   // mix in all arguments after 1
   for (var i = 1, l = arguments.length; i < l; i++) {
@@ -28,7 +27,7 @@ module.exports = function (name) {
     }
   }
 
-  // this allows people to 
+  // this allows people to call as a fn
   var ConvenienceConstructor = function() {
     // TODO: apply arguments to the constructor
     var inst = new Component();
@@ -41,7 +40,18 @@ module.exports = function (name) {
   };
 
   // some meta info
-  ConvenienceConstructor.type = Component;
+
+  // displayName
+  Component.displayName = name;
+  Component.prototype.displayName = name;
+  ConvenienceConstructor.displayName = name;
+  ConvenienceConstructor.prototype.displayName = name;
+  
+  // type
+  Component.type = Component;
   Component.prototype.type = Component;
+  ConvenienceConstructor.type = Component;
+  ConvenienceConstructor.prototype.type = Component;
+
   return ConvenienceConstructor;
 };

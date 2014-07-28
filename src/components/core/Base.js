@@ -15,8 +15,6 @@ var registrationNameModules = ReactEventEmitter.registrationNameModules;
 // This is a mixin for components with multiple children
 // This is internal, you don't need to use this
 
-// TODO: move famous prop parsing from surface to here
-
 var ELEMENT_NODE_TYPE = 1;
 function putListener(id, registrationName, listener, transaction) {
   var container = ReactMount.findReactContainerForID(id);
@@ -31,6 +29,22 @@ function putListener(id, registrationName, listener, transaction) {
     registrationName,
     listener
   );
+}
+
+function addChain(chain, node){
+  if (!node.props || !node.props.children) {
+    return;
+  }
+
+  var children = node.props.children;
+  if (children && !Array.isArray(children)) {
+    children = [children];
+  }
+  children.forEach(function(child){
+    console.log('adding', child, child.getFamous());
+    var nextChain = chain.add(child.getFamous());
+    addChain(nextChain, child);
+  });
 }
 
 var BaseMixin = {
@@ -146,9 +160,12 @@ var BaseMixin = {
    * @protected
    */
   createChild: function(child, childNode) {
-    // react
+    // react string
     if (typeof childNode === 'string') {
-      childNode = new Surface({content: childNode});
+      childNode = new Surface({
+        size: [true, true],
+        content: childNode
+      });
     }
 
     // childNode is a famous node now
@@ -158,14 +175,7 @@ var BaseMixin = {
     // modifier, copy their children to us
     if (childNode._modifier) {
       var chain = famousNode.add(childNode);
-      var children = child.props.children;
-      if (children && !Array.isArray(children)) {
-        children = [children];
-      }
-      children.forEach(function(child){
-        console.log('adding child', child.getFamous());
-        chain.add(child.getFamous());
-      });
+      addChain(chain, child);
     } else {
       // surface
       famousNode.add(childNode);

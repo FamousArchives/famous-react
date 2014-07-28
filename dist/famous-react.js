@@ -15529,8 +15529,6 @@ var registrationNameModules = ReactEventEmitter.registrationNameModules;
 // This is a mixin for components with multiple children
 // This is internal, you don't need to use this
 
-// TODO: move famous prop parsing from surface to here
-
 var ELEMENT_NODE_TYPE = 1;
 function putListener(id, registrationName, listener, transaction) {
   var container = ReactMount.findReactContainerForID(id);
@@ -15545,6 +15543,22 @@ function putListener(id, registrationName, listener, transaction) {
     registrationName,
     listener
   );
+}
+
+function addChain(chain, node){
+  if (!node.props || !node.props.children) {
+    return;
+  }
+
+  var children = node.props.children;
+  if (children && !Array.isArray(children)) {
+    children = [children];
+  }
+  children.forEach(function(child){
+    console.log('adding', child, child.getFamous());
+    var nextChain = chain.add(child.getFamous());
+    addChain(nextChain, child);
+  });
 }
 
 var BaseMixin = {
@@ -15660,9 +15674,12 @@ var BaseMixin = {
    * @protected
    */
   createChild: function(child, childNode) {
-    // react
+    // react string
     if (typeof childNode === 'string') {
-      childNode = new Surface({content: childNode});
+      childNode = new Surface({
+        size: [true, true],
+        content: childNode
+      });
     }
 
     // childNode is a famous node now
@@ -15672,14 +15689,7 @@ var BaseMixin = {
     // modifier, copy their children to us
     if (childNode._modifier) {
       var chain = famousNode.add(childNode);
-      var children = child.props.children;
-      if (children && !Array.isArray(children)) {
-        children = [children];
-      }
-      children.forEach(function(child){
-        console.log('adding child', child.getFamous());
-        chain.add(child.getFamous());
-      });
+      addChain(chain, child);
     } else {
       // surface
       famousNode.add(childNode);
@@ -15854,16 +15864,19 @@ module.exports = Renderable;
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
+var ReactDOMComponent = require('react/lib/ReactDOMComponent');
 var StateModifier = require('famous/modifiers/StateModifier');
 var createComponent = require('../../createComponent');
 var Base = require('../core/Base');
 
-
 var StateModifierMixin = {
+  construct: function(){
+    ReactDOMComponent.prototype.construct.apply(this, arguments);
+    this.node = this.createFamousNode();
+  },
   mountComponent: function(rootID, transaction, mountDepth) {
     Base.Mixin.mountComponent.apply(this, arguments);
 
-    this.node = this.createFamousNode();
     this.applyNodeProps({}, this.props, transaction);
     return this.getFamous();
   },
@@ -15919,7 +15932,7 @@ var StateModifierMixin = {
 module.exports = createComponent('StateModifier', Base, StateModifierMixin);
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/modifiers/State.js","/src/components/modifiers")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","../core/Base":"/Users/contra/Projects/famous/famous-react/src/components/core/Base.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Canvas.js":[function(require,module,exports){
+},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","../core/Base":"/Users/contra/Projects/famous/famous-react/src/components/core/Base.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/ReactDOMComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Canvas.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
@@ -16028,7 +16041,6 @@ module.exports = function (name) {
     }
     */
   };
-  Component.displayName = name;
 
   // mix in all arguments after 1
   for (var i = 1, l = arguments.length; i < l; i++) {
@@ -16044,7 +16056,7 @@ module.exports = function (name) {
     }
   }
 
-  // this allows people to 
+  // this allows people to call as a fn
   var ConvenienceConstructor = function() {
     // TODO: apply arguments to the constructor
     var inst = new Component();
@@ -16057,8 +16069,19 @@ module.exports = function (name) {
   };
 
   // some meta info
-  ConvenienceConstructor.type = Component;
+
+  // displayName
+  Component.displayName = name;
+  Component.prototype.displayName = name;
+  ConvenienceConstructor.displayName = name;
+  ConvenienceConstructor.prototype.displayName = name;
+  
+  // type
+  Component.type = Component;
   Component.prototype.type = Component;
+  ConvenienceConstructor.type = Component;
+  ConvenienceConstructor.prototype.type = Component;
+
   return ConvenienceConstructor;
 };
 

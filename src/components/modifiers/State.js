@@ -1,15 +1,18 @@
 'use strict';
 
+var ReactDOMComponent = require('react/lib/ReactDOMComponent');
 var StateModifier = require('famous/modifiers/StateModifier');
 var createComponent = require('../../createComponent');
 var Base = require('../core/Base');
 
-
 var StateModifierMixin = {
+  construct: function(){
+    ReactDOMComponent.prototype.construct.apply(this, arguments);
+    this.node = this.createFamousNode();
+  },
   mountComponent: function(rootID, transaction, mountDepth) {
     Base.Mixin.mountComponent.apply(this, arguments);
 
-    this.node = this.createFamousNode();
     this.applyNodeProps({}, this.props, transaction);
     return this.getFamous();
   },
