@@ -10268,7 +10268,130 @@ var ExecutionEnvironment = {
 module.exports = ExecutionEnvironment;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ExecutionEnvironment.js","/node_modules/react/lib")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule PooledClass
+ */
+
+"use strict";
+
+var invariant = require("./invariant");
+
+/**
+ * Static poolers. Several custom versions for each potential number of
+ * arguments. A completely generic pooler is easy to implement, but would
+ * require accessing the `arguments` object. In each of these, `this` refers to
+ * the Class itself, not an instance. If any others are needed, simply add them
+ * here, or in their own files.
+ */
+var oneArgumentPooler = function(copyFieldsFrom) {
+  var Klass = this;
+  if (Klass.instancePool.length) {
+    var instance = Klass.instancePool.pop();
+    Klass.call(instance, copyFieldsFrom);
+    return instance;
+  } else {
+    return new Klass(copyFieldsFrom);
+  }
+};
+
+var twoArgumentPooler = function(a1, a2) {
+  var Klass = this;
+  if (Klass.instancePool.length) {
+    var instance = Klass.instancePool.pop();
+    Klass.call(instance, a1, a2);
+    return instance;
+  } else {
+    return new Klass(a1, a2);
+  }
+};
+
+var threeArgumentPooler = function(a1, a2, a3) {
+  var Klass = this;
+  if (Klass.instancePool.length) {
+    var instance = Klass.instancePool.pop();
+    Klass.call(instance, a1, a2, a3);
+    return instance;
+  } else {
+    return new Klass(a1, a2, a3);
+  }
+};
+
+var fiveArgumentPooler = function(a1, a2, a3, a4, a5) {
+  var Klass = this;
+  if (Klass.instancePool.length) {
+    var instance = Klass.instancePool.pop();
+    Klass.call(instance, a1, a2, a3, a4, a5);
+    return instance;
+  } else {
+    return new Klass(a1, a2, a3, a4, a5);
+  }
+};
+
+var standardReleaser = function(instance) {
+  var Klass = this;
+  ("production" !== process.env.NODE_ENV ? invariant(
+    instance instanceof Klass,
+    'Trying to release an instance into a pool of a different type.'
+  ) : invariant(instance instanceof Klass));
+  if (instance.destructor) {
+    instance.destructor();
+  }
+  if (Klass.instancePool.length < Klass.poolSize) {
+    Klass.instancePool.push(instance);
+  }
+};
+
+var DEFAULT_POOL_SIZE = 10;
+var DEFAULT_POOLER = oneArgumentPooler;
+
+/**
+ * Augments `CopyConstructor` to be a poolable class, augmenting only the class
+ * itself (statically) not adding any prototypical fields. Any CopyConstructor
+ * you give this may have a `poolSize` property, and will look for a
+ * prototypical `destructor` on instances (optional).
+ *
+ * @param {Function} CopyConstructor Constructor that can be used to reset.
+ * @param {Function} pooler Customizable pooler.
+ */
+var addPoolingTo = function(CopyConstructor, pooler) {
+  var NewKlass = CopyConstructor;
+  NewKlass.instancePool = [];
+  NewKlass.getPooled = pooler || DEFAULT_POOLER;
+  if (!NewKlass.poolSize) {
+    NewKlass.poolSize = DEFAULT_POOL_SIZE;
+  }
+  NewKlass.release = standardReleaser;
+  return NewKlass;
+};
+
+var PooledClass = {
+  addPoolingTo: addPoolingTo,
+  oneArgumentPooler: oneArgumentPooler,
+  twoArgumentPooler: twoArgumentPooler,
+  threeArgumentPooler: threeArgumentPooler,
+  fiveArgumentPooler: fiveArgumentPooler
+};
+
+module.exports = PooledClass;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/PooledClass.js","/node_modules/react/lib")
+},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -12122,7 +12245,64 @@ var ReactInstanceHandles = {
 module.exports = ReactInstanceHandles;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactInstanceHandles.js","/node_modules/react/lib")
-},{"./ReactRootIndex":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactRootIndex.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js":[function(require,module,exports){
+},{"./ReactRootIndex":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactRootIndex.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMarkupChecksum.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactMarkupChecksum
+ */
+
+"use strict";
+
+var adler32 = require("./adler32");
+
+var ReactMarkupChecksum = {
+  CHECKSUM_ATTR_NAME: 'data-react-checksum',
+
+  /**
+   * @param {string} markup Markup string
+   * @return {string} Markup string with checksum attribute attached
+   */
+  addChecksumToMarkup: function(markup) {
+    var checksum = adler32(markup);
+    return markup.replace(
+      '>',
+      ' ' + ReactMarkupChecksum.CHECKSUM_ATTR_NAME + '="' + checksum + '">'
+    );
+  },
+
+  /**
+   * @param {string} markup to use
+   * @param {DOMElement} element root React element
+   * @returns {boolean} whether or not the markup is the same
+   */
+  canReuseMarkup: function(markup, element) {
+    var existingChecksum = element.getAttribute(
+      ReactMarkupChecksum.CHECKSUM_ATTR_NAME
+    );
+    existingChecksum = existingChecksum && parseInt(existingChecksum, 10);
+    var markupChecksum = adler32(markup);
+    return markupChecksum === existingChecksum;
+  }
+};
+
+module.exports = ReactMarkupChecksum;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactMarkupChecksum.js","/node_modules/react/lib")
+},{"./adler32":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/adler32.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -12775,7 +12955,106 @@ var ReactMount = {
 module.exports = ReactMount;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactMount.js","/node_modules/react/lib")
-},{"./DOMProperty":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMProperty.js","./ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","./ReactInstanceHandles":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactInstanceHandles.js","./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./containsNode":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js","./getReactRootElementInContainer":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/getReactRootElementInContainer.js","./instantiateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/instantiateReactComponent.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./shouldUpdateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/shouldUpdateReactComponent.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMultiChild.js":[function(require,module,exports){
+},{"./DOMProperty":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMProperty.js","./ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","./ReactInstanceHandles":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactInstanceHandles.js","./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./containsNode":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js","./getReactRootElementInContainer":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/getReactRootElementInContainer.js","./instantiateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/instantiateReactComponent.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./shouldUpdateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/shouldUpdateReactComponent.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMountReady.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactMountReady
+ */
+
+"use strict";
+
+var PooledClass = require("./PooledClass");
+
+var mixInto = require("./mixInto");
+
+/**
+ * A specialized pseudo-event module to help keep track of components waiting to
+ * be notified when their DOM representations are available for use.
+ *
+ * This implements `PooledClass`, so you should never need to instantiate this.
+ * Instead, use `ReactMountReady.getPooled()`.
+ *
+ * @param {?array<function>} initialCollection
+ * @class ReactMountReady
+ * @implements PooledClass
+ * @internal
+ */
+function ReactMountReady(initialCollection) {
+  this._queue = initialCollection || null;
+}
+
+mixInto(ReactMountReady, {
+
+  /**
+   * Enqueues a callback to be invoked when `notifyAll` is invoked. This is used
+   * to enqueue calls to `componentDidMount` and `componentDidUpdate`.
+   *
+   * @param {ReactComponent} component Component being rendered.
+   * @param {function(DOMElement)} callback Invoked when `notifyAll` is invoked.
+   * @internal
+   */
+  enqueue: function(component, callback) {
+    this._queue = this._queue || [];
+    this._queue.push({component: component, callback: callback});
+  },
+
+  /**
+   * Invokes all enqueued callbacks and clears the queue. This is invoked after
+   * the DOM representation of a component has been created or updated.
+   *
+   * @internal
+   */
+  notifyAll: function() {
+    var queue = this._queue;
+    if (queue) {
+      this._queue = null;
+      for (var i = 0, l = queue.length; i < l; i++) {
+        var component = queue[i].component;
+        var callback = queue[i].callback;
+        callback.call(component);
+      }
+      queue.length = 0;
+    }
+  },
+
+  /**
+   * Resets the internal queue.
+   *
+   * @internal
+   */
+  reset: function() {
+    this._queue = null;
+  },
+
+  /**
+   * `PooledClass` looks for this.
+   */
+  destructor: function() {
+    this.reset();
+  }
+
+});
+
+PooledClass.addPoolingTo(ReactMountReady);
+
+module.exports = ReactMountReady;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactMountReady.js","/node_modules/react/lib")
+},{"./PooledClass":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMultiChild.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -13505,7 +13784,72 @@ function _noMeasure(objName, fnName, func) {
 module.exports = ReactPerf;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactPerf.js","/node_modules/react/lib")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactRootIndex.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPutListenerQueue.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactPutListenerQueue
+ */
+
+"use strict";
+
+var PooledClass = require("./PooledClass");
+var ReactEventEmitter = require("./ReactEventEmitter");
+
+var mixInto = require("./mixInto");
+
+function ReactPutListenerQueue() {
+  this.listenersToPut = [];
+}
+
+mixInto(ReactPutListenerQueue, {
+  enqueuePutListener: function(rootNodeID, propKey, propValue) {
+    this.listenersToPut.push({
+      rootNodeID: rootNodeID,
+      propKey: propKey,
+      propValue: propValue
+    });
+  },
+
+  putListeners: function() {
+    for (var i = 0; i < this.listenersToPut.length; i++) {
+      var listenerToPut = this.listenersToPut[i];
+      ReactEventEmitter.putListener(
+        listenerToPut.rootNodeID,
+        listenerToPut.propKey,
+        listenerToPut.propValue
+      );
+    }
+  },
+
+  reset: function() {
+    this.listenersToPut.length = 0;
+  },
+
+  destructor: function() {
+    this.reset();
+  }
+});
+
+PooledClass.addPoolingTo(ReactPutListenerQueue);
+
+module.exports = ReactPutListenerQueue;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactPutListenerQueue.js","/node_modules/react/lib")
+},{"./PooledClass":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js","./ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactRootIndex.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -13545,7 +13889,220 @@ var ReactRootIndex = {
 module.exports = ReactRootIndex;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactRootIndex.js","/node_modules/react/lib")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactTextComponent.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactServerRendering.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @typechecks static-only
+ * @providesModule ReactServerRendering
+ */
+"use strict";
+
+var ReactComponent = require("./ReactComponent");
+var ReactInstanceHandles = require("./ReactInstanceHandles");
+var ReactMarkupChecksum = require("./ReactMarkupChecksum");
+var ReactServerRenderingTransaction =
+  require("./ReactServerRenderingTransaction");
+
+var instantiateReactComponent = require("./instantiateReactComponent");
+var invariant = require("./invariant");
+
+/**
+ * @param {ReactComponent} component
+ * @return {string} the HTML markup
+ */
+function renderComponentToString(component) {
+  ("production" !== process.env.NODE_ENV ? invariant(
+    ReactComponent.isValidComponent(component),
+    'renderComponentToString(): You must pass a valid ReactComponent.'
+  ) : invariant(ReactComponent.isValidComponent(component)));
+
+  ("production" !== process.env.NODE_ENV ? invariant(
+    !(arguments.length === 2 && typeof arguments[1] === 'function'),
+    'renderComponentToString(): This function became synchronous and now ' +
+    'returns the generated markup. Please remove the second parameter.'
+  ) : invariant(!(arguments.length === 2 && typeof arguments[1] === 'function')));
+
+  var transaction;
+  try {
+    var id = ReactInstanceHandles.createReactRootID();
+    transaction = ReactServerRenderingTransaction.getPooled(false);
+
+    return transaction.perform(function() {
+      var componentInstance = instantiateReactComponent(component);
+      var markup = componentInstance.mountComponent(id, transaction, 0);
+      return ReactMarkupChecksum.addChecksumToMarkup(markup);
+    }, null);
+  } finally {
+    ReactServerRenderingTransaction.release(transaction);
+  }
+}
+
+/**
+ * @param {ReactComponent} component
+ * @return {string} the HTML markup, without the extra React ID and checksum
+* (for generating static pages)
+ */
+function renderComponentToStaticMarkup(component) {
+  ("production" !== process.env.NODE_ENV ? invariant(
+    ReactComponent.isValidComponent(component),
+    'renderComponentToStaticMarkup(): You must pass a valid ReactComponent.'
+  ) : invariant(ReactComponent.isValidComponent(component)));
+
+  var transaction;
+  try {
+    var id = ReactInstanceHandles.createReactRootID();
+    transaction = ReactServerRenderingTransaction.getPooled(true);
+
+    return transaction.perform(function() {
+      var componentInstance = instantiateReactComponent(component);
+      return componentInstance.mountComponent(id, transaction, 0);
+    }, null);
+  } finally {
+    ReactServerRenderingTransaction.release(transaction);
+  }
+}
+
+module.exports = {
+  renderComponentToString: renderComponentToString,
+  renderComponentToStaticMarkup: renderComponentToStaticMarkup
+};
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactServerRendering.js","/node_modules/react/lib")
+},{"./ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","./ReactInstanceHandles":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactInstanceHandles.js","./ReactMarkupChecksum":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMarkupChecksum.js","./ReactServerRenderingTransaction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactServerRenderingTransaction.js","./instantiateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/instantiateReactComponent.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactServerRenderingTransaction.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactServerRenderingTransaction
+ * @typechecks
+ */
+
+"use strict";
+
+var PooledClass = require("./PooledClass");
+var ReactMountReady = require("./ReactMountReady");
+var ReactPutListenerQueue = require("./ReactPutListenerQueue");
+var Transaction = require("./Transaction");
+
+var emptyFunction = require("./emptyFunction");
+var mixInto = require("./mixInto");
+
+/**
+ * Provides a `ReactMountReady` queue for collecting `onDOMReady` callbacks
+ * during the performing of the transaction.
+ */
+var ON_DOM_READY_QUEUEING = {
+  /**
+   * Initializes the internal `onDOMReady` queue.
+   */
+  initialize: function() {
+    this.reactMountReady.reset();
+  },
+
+  close: emptyFunction
+};
+
+var PUT_LISTENER_QUEUEING = {
+  initialize: function() {
+    this.putListenerQueue.reset();
+  },
+
+  close: emptyFunction
+};
+
+/**
+ * Executed within the scope of the `Transaction` instance. Consider these as
+ * being member methods, but with an implied ordering while being isolated from
+ * each other.
+ */
+var TRANSACTION_WRAPPERS = [
+  PUT_LISTENER_QUEUEING,
+  ON_DOM_READY_QUEUEING
+];
+
+/**
+ * @class ReactServerRenderingTransaction
+ * @param {boolean} renderToStaticMarkup
+ */
+function ReactServerRenderingTransaction(renderToStaticMarkup) {
+  this.reinitializeTransaction();
+  this.renderToStaticMarkup = renderToStaticMarkup;
+  this.reactMountReady = ReactMountReady.getPooled(null);
+  this.putListenerQueue = ReactPutListenerQueue.getPooled();
+}
+
+var Mixin = {
+  /**
+   * @see Transaction
+   * @abstract
+   * @final
+   * @return {array} Empty list of operation wrap proceedures.
+   */
+  getTransactionWrappers: function() {
+    return TRANSACTION_WRAPPERS;
+  },
+
+  /**
+   * @return {object} The queue to collect `onDOMReady` callbacks with.
+   *   TODO: convert to ReactMountReady
+   */
+  getReactMountReady: function() {
+    return this.reactMountReady;
+  },
+
+  getPutListenerQueue: function() {
+    return this.putListenerQueue;
+  },
+
+  /**
+   * `PooledClass` looks for this, and will invoke this before allowing this
+   * instance to be resused.
+   */
+  destructor: function() {
+    ReactMountReady.release(this.reactMountReady);
+    this.reactMountReady = null;
+
+    ReactPutListenerQueue.release(this.putListenerQueue);
+    this.putListenerQueue = null;
+  }
+};
+
+
+mixInto(ReactServerRenderingTransaction, Transaction.Mixin);
+mixInto(ReactServerRenderingTransaction, Mixin);
+
+PooledClass.addPoolingTo(ReactServerRenderingTransaction);
+
+module.exports = ReactServerRenderingTransaction;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactServerRenderingTransaction.js","/node_modules/react/lib")
+},{"./PooledClass":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js","./ReactMountReady":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMountReady.js","./ReactPutListenerQueue":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPutListenerQueue.js","./Transaction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/Transaction.js","./emptyFunction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/emptyFunction.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactTextComponent.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -13822,7 +14379,287 @@ var ReactUpdates = {
 module.exports = ReactUpdates;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactUpdates.js","/node_modules/react/lib")
-},{"./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ViewportMetrics.js":[function(require,module,exports){
+},{"./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/Transaction.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule Transaction
+ */
+
+"use strict";
+
+var invariant = require("./invariant");
+
+/**
+ * `Transaction` creates a black box that is able to wrap any method such that
+ * certain invariants are maintained before and after the method is invoked
+ * (Even if an exception is thrown while invoking the wrapped method). Whoever
+ * instantiates a transaction can provide enforcers of the invariants at
+ * creation time. The `Transaction` class itself will supply one additional
+ * automatic invariant for you - the invariant that any transaction instance
+ * should not be run while it is already being run. You would typically create a
+ * single instance of a `Transaction` for reuse multiple times, that potentially
+ * is used to wrap several different methods. Wrappers are extremely simple -
+ * they only require implementing two methods.
+ *
+ * <pre>
+ *                       wrappers (injected at creation time)
+ *                                      +        +
+ *                                      |        |
+ *                    +-----------------|--------|--------------+
+ *                    |                 v        |              |
+ *                    |      +---------------+   |              |
+ *                    |   +--|    wrapper1   |---|----+         |
+ *                    |   |  +---------------+   v    |         |
+ *                    |   |          +-------------+  |         |
+ *                    |   |     +----|   wrapper2  |--------+   |
+ *                    |   |     |    +-------------+  |     |   |
+ *                    |   |     |                     |     |   |
+ *                    |   v     v                     v     v   | wrapper
+ *                    | +---+ +---+   +---------+   +---+ +---+ | invariants
+ * perform(anyMethod) | |   | |   |   |         |   |   | |   | | maintained
+ * +----------------->|-|---|-|---|-->|anyMethod|---|---|-|---|-|-------->
+ *                    | |   | |   |   |         |   |   | |   | |
+ *                    | |   | |   |   |         |   |   | |   | |
+ *                    | |   | |   |   |         |   |   | |   | |
+ *                    | +---+ +---+   +---------+   +---+ +---+ |
+ *                    |  initialize                    close    |
+ *                    +-----------------------------------------+
+ * </pre>
+ *
+ * Bonus:
+ * - Reports timing metrics by method name and wrapper index.
+ *
+ * Use cases:
+ * - Preserving the input selection ranges before/after reconciliation.
+ *   Restoring selection even in the event of an unexpected error.
+ * - Deactivating events while rearranging the DOM, preventing blurs/focuses,
+ *   while guaranteeing that afterwards, the event system is reactivated.
+ * - Flushing a queue of collected DOM mutations to the main UI thread after a
+ *   reconciliation takes place in a worker thread.
+ * - Invoking any collected `componentDidUpdate` callbacks after rendering new
+ *   content.
+ * - (Future use case): Wrapping particular flushes of the `ReactWorker` queue
+ *   to preserve the `scrollTop` (an automatic scroll aware DOM).
+ * - (Future use case): Layout calculations before and after DOM upates.
+ *
+ * Transactional plugin API:
+ * - A module that has an `initialize` method that returns any precomputation.
+ * - and a `close` method that accepts the precomputation. `close` is invoked
+ *   when the wrapped process is completed, or has failed.
+ *
+ * @param {Array<TransactionalWrapper>} transactionWrapper Wrapper modules
+ * that implement `initialize` and `close`.
+ * @return {Transaction} Single transaction for reuse in thread.
+ *
+ * @class Transaction
+ */
+var Mixin = {
+  /**
+   * Sets up this instance so that it is prepared for collecting metrics. Does
+   * so such that this setup method may be used on an instance that is already
+   * initialized, in a way that does not consume additional memory upon reuse.
+   * That can be useful if you decide to make your subclass of this mixin a
+   * "PooledClass".
+   */
+  reinitializeTransaction: function() {
+    this.transactionWrappers = this.getTransactionWrappers();
+    if (!this.wrapperInitData) {
+      this.wrapperInitData = [];
+    } else {
+      this.wrapperInitData.length = 0;
+    }
+    if (!this.timingMetrics) {
+      this.timingMetrics = {};
+    }
+    this.timingMetrics.methodInvocationTime = 0;
+    if (!this.timingMetrics.wrapperInitTimes) {
+      this.timingMetrics.wrapperInitTimes = [];
+    } else {
+      this.timingMetrics.wrapperInitTimes.length = 0;
+    }
+    if (!this.timingMetrics.wrapperCloseTimes) {
+      this.timingMetrics.wrapperCloseTimes = [];
+    } else {
+      this.timingMetrics.wrapperCloseTimes.length = 0;
+    }
+    this._isInTransaction = false;
+  },
+
+  _isInTransaction: false,
+
+  /**
+   * @abstract
+   * @return {Array<TransactionWrapper>} Array of transaction wrappers.
+   */
+  getTransactionWrappers: null,
+
+  isInTransaction: function() {
+    return !!this._isInTransaction;
+  },
+
+  /**
+   * Executes the function within a safety window. Use this for the top level
+   * methods that result in large amounts of computation/mutations that would
+   * need to be safety checked.
+   *
+   * @param {function} method Member of scope to call.
+   * @param {Object} scope Scope to invoke from.
+   * @param {Object?=} args... Arguments to pass to the method (optional).
+   *                           Helps prevent need to bind in many cases.
+   * @return Return value from `method`.
+   */
+  perform: function(method, scope, a, b, c, d, e, f) {
+    ("production" !== process.env.NODE_ENV ? invariant(
+      !this.isInTransaction(),
+      'Transaction.perform(...): Cannot initialize a transaction when there ' +
+      'is already an outstanding transaction.'
+    ) : invariant(!this.isInTransaction()));
+    var memberStart = Date.now();
+    var errorThrown;
+    var ret;
+    try {
+      this._isInTransaction = true;
+      // Catching errors makes debugging more difficult, so we start with
+      // errorThrown set to true before setting it to false after calling
+      // close -- if it's still set to true in the finally block, it means
+      // one of these calls threw.
+      errorThrown = true;
+      this.initializeAll(0);
+      ret = method.call(scope, a, b, c, d, e, f);
+      errorThrown = false;
+    } finally {
+      var memberEnd = Date.now();
+      this.methodInvocationTime += (memberEnd - memberStart);
+      try {
+        if (errorThrown) {
+          // If `method` throws, prefer to show that stack trace over any thrown
+          // by invoking `closeAll`.
+          try {
+            this.closeAll(0);
+          } catch (err) {
+          }
+        } else {
+          // Since `method` didn't throw, we don't want to silence the exception
+          // here.
+          this.closeAll(0);
+        }
+      } finally {
+        this._isInTransaction = false;
+      }
+    }
+    return ret;
+  },
+
+  initializeAll: function(startIndex) {
+    var transactionWrappers = this.transactionWrappers;
+    var wrapperInitTimes = this.timingMetrics.wrapperInitTimes;
+    for (var i = startIndex; i < transactionWrappers.length; i++) {
+      var initStart = Date.now();
+      var wrapper = transactionWrappers[i];
+      try {
+        // Catching errors makes debugging more difficult, so we start with the
+        // OBSERVED_ERROR state before overwriting it with the real return value
+        // of initialize -- if it's still set to OBSERVED_ERROR in the finally
+        // block, it means wrapper.initialize threw.
+        this.wrapperInitData[i] = Transaction.OBSERVED_ERROR;
+        this.wrapperInitData[i] = wrapper.initialize ?
+          wrapper.initialize.call(this) :
+          null;
+      } finally {
+        var curInitTime = wrapperInitTimes[i];
+        var initEnd = Date.now();
+        wrapperInitTimes[i] = (curInitTime || 0) + (initEnd - initStart);
+
+        if (this.wrapperInitData[i] === Transaction.OBSERVED_ERROR) {
+          // The initializer for wrapper i threw an error; initialize the
+          // remaining wrappers but silence any exceptions from them to ensure
+          // that the first error is the one to bubble up.
+          try {
+            this.initializeAll(i + 1);
+          } catch (err) {
+          }
+        }
+      }
+    }
+  },
+
+  /**
+   * Invokes each of `this.transactionWrappers.close[i]` functions, passing into
+   * them the respective return values of `this.transactionWrappers.init[i]`
+   * (`close`rs that correspond to initializers that failed will not be
+   * invoked).
+   */
+  closeAll: function(startIndex) {
+    ("production" !== process.env.NODE_ENV ? invariant(
+      this.isInTransaction(),
+      'Transaction.closeAll(): Cannot close transaction when none are open.'
+    ) : invariant(this.isInTransaction()));
+    var transactionWrappers = this.transactionWrappers;
+    var wrapperCloseTimes = this.timingMetrics.wrapperCloseTimes;
+    for (var i = startIndex; i < transactionWrappers.length; i++) {
+      var wrapper = transactionWrappers[i];
+      var closeStart = Date.now();
+      var initData = this.wrapperInitData[i];
+      var errorThrown;
+      try {
+        // Catching errors makes debugging more difficult, so we start with
+        // errorThrown set to true before setting it to false after calling
+        // close -- if it's still set to true in the finally block, it means
+        // wrapper.close threw.
+        errorThrown = true;
+        if (initData !== Transaction.OBSERVED_ERROR) {
+          wrapper.close && wrapper.close.call(this, initData);
+        }
+        errorThrown = false;
+      } finally {
+        var closeEnd = Date.now();
+        var curCloseTime = wrapperCloseTimes[i];
+        wrapperCloseTimes[i] = (curCloseTime || 0) + (closeEnd - closeStart);
+
+        if (errorThrown) {
+          // The closer for wrapper i threw an error; close the remaining
+          // wrappers but silence any exceptions from them to ensure that the
+          // first error is the one to bubble up.
+          try {
+            this.closeAll(i + 1);
+          } catch (e) {
+          }
+        }
+      }
+    }
+    this.wrapperInitData.length = 0;
+  }
+};
+
+var Transaction = {
+
+  Mixin: Mixin,
+
+  /**
+   * Token to look for to determine if an error occured.
+   */
+  OBSERVED_ERROR: {}
+
+};
+
+module.exports = Transaction;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/Transaction.js","/node_modules/react/lib")
+},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ViewportMetrics.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -13921,7 +14758,50 @@ function accumulate(current, next) {
 module.exports = accumulate;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/accumulate.js","/node_modules/react/lib")
-},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js":[function(require,module,exports){
+},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/adler32.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule adler32
+ */
+
+/* jslint bitwise:true */
+
+"use strict";
+
+var MOD = 65521;
+
+// This is a clean-room implementation of adler32 designed for detecting
+// if markup is not what we expect it to be. It does not need to be
+// cryptographically strong, only reasonable good at detecting if markup
+// generated on the server is different than that on the client.
+function adler32(data) {
+  var a = 1;
+  var b = 0;
+  for (var i = 0; i < data.length; i++) {
+    a = (a + data.charCodeAt(i)) % MOD;
+    b = (b + a) % MOD;
+  }
+  return a | (b << 16);
+}
+
+module.exports = adler32;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/adler32.js","/node_modules/react/lib")
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -15520,11 +16400,13 @@ var ReactDOMComponent = require('react/lib/ReactDOMComponent');
 var ReactBrowserComponentMixin = require('react/lib/ReactBrowserComponentMixin');
 var ReactEventEmitter = require('react/lib/ReactEventEmitter');
 var ReactMount = require('react/lib/ReactMount');
+var ReactServerRendering = require('react/lib/ReactServerRendering');
 
 var createComponent = require('../../createComponent');
 var Surface = require('famous/core/Surface');
 
 var registrationNameModules = ReactEventEmitter.registrationNameModules;
+var renderComponentToString = ReactServerRendering.renderComponentToString;
 
 // This is a mixin for components with multiple children
 // This is internal, you don't need to use this
@@ -15547,7 +16429,7 @@ function putListener(id, registrationName, listener, transaction) {
 
 function addChain(chain, node){
   if (!node.props || !node.props.children) {
-    return;
+    return chain;
   }
 
   var children = node.props.children;
@@ -15555,13 +16437,42 @@ function addChain(chain, node){
     children = [children];
   }
   children.forEach(function(child){
-    console.log('adding', child, child.getFamous());
-    var nextChain = chain.add(child.getFamous());
+    var childNode = ensureFamousNode(child);
+    var nextChain = chain.add(childNode);
     addChain(nextChain, child);
   });
+
+  return chain;
+}
+
+// grab or create a famous node from
+// any famous or react renderable
+function ensureFamousNode(childNode) {
+  if (childNode.getFamous) {
+    return childNode.getFamous();
+  }
+
+  if (childNode._owner && !childNode._isFamous) {
+    // TODO: do this as needed
+    // this throws an error on the second time
+    // for maintaining a ref
+    childNode = renderComponentToString(childNode);
+  }
+
+  // react string
+  if (typeof childNode === 'string') {
+    return new Surface({
+      size: [true, true],
+      content: childNode
+    });
+  }
+
+  return childNode;
 }
 
 var BaseMixin = {
+  _isFamous: true,
+
   getDOMNode: function() {
     var famousEl = this.getFamous();
 
@@ -15674,13 +16585,7 @@ var BaseMixin = {
    * @protected
    */
   createChild: function(child, childNode) {
-    // react string
-    if (typeof childNode === 'string') {
-      childNode = new Surface({
-        size: [true, true],
-        content: childNode
-      });
-    }
+    childNode = ensureFamousNode(childNode);
 
     // childNode is a famous node now
     child._mountImage = childNode;
@@ -15735,7 +16640,7 @@ Base.Mixin = BaseMixin;
 
 module.exports = Base;
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/core/Base.js","/src/components/core")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/Surface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Surface.js","lodash.omit":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js","react/lib/ReactBrowserComponentMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js","react/lib/ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","react/lib/ReactDOMComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js","react/lib/ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","react/lib/ReactMount":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js"}],"/Users/contra/Projects/famous/famous-react/src/components/core/Context.js":[function(require,module,exports){
+},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/Surface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Surface.js","lodash.omit":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js","react/lib/ReactBrowserComponentMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js","react/lib/ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","react/lib/ReactDOMComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js","react/lib/ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","react/lib/ReactMount":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js","react/lib/ReactServerRendering":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactServerRendering.js"}],"/Users/contra/Projects/famous/famous-react/src/components/core/Context.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 

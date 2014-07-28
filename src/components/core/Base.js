@@ -6,11 +6,13 @@ var ReactDOMComponent = require('react/lib/ReactDOMComponent');
 var ReactBrowserComponentMixin = require('react/lib/ReactBrowserComponentMixin');
 var ReactEventEmitter = require('react/lib/ReactEventEmitter');
 var ReactMount = require('react/lib/ReactMount');
+var ReactServerRendering = require('react/lib/ReactServerRendering');
 
 var createComponent = require('../../createComponent');
 var Surface = require('famous/core/Surface');
 
 var registrationNameModules = ReactEventEmitter.registrationNameModules;
+var renderComponentToString = ReactServerRendering.renderComponentToString;
 
 // This is a mixin for components with multiple children
 // This is internal, you don't need to use this
@@ -33,7 +35,7 @@ function putListener(id, registrationName, listener, transaction) {
 
 function addChain(chain, node){
   if (!node.props || !node.props.children) {
-    return;
+    return chain;
   }
 
   var children = node.props.children;
@@ -41,13 +43,42 @@ function addChain(chain, node){
     children = [children];
   }
   children.forEach(function(child){
-    console.log('adding', child, child.getFamous());
-    var nextChain = chain.add(child.getFamous());
+    var childNode = ensureFamousNode(child);
+    var nextChain = chain.add(childNode);
     addChain(nextChain, child);
   });
+
+  return chain;
+}
+
+// grab or create a famous node from
+// any famous or react renderable
+function ensureFamousNode(childNode) {
+  if (childNode.getFamous) {
+    return childNode.getFamous();
+  }
+
+  if (childNode._owner && !childNode._isFamous) {
+    // TODO: do this as needed
+    // this throws an error on the second time
+    // for maintaining a ref
+    childNode = renderComponentToString(childNode);
+  }
+
+  // react string
+  if (typeof childNode === 'string') {
+    return new Surface({
+      size: [true, true],
+      content: childNode
+    });
+  }
+
+  return childNode;
 }
 
 var BaseMixin = {
+  _isFamous: true,
+
   getDOMNode: function() {
     var famousEl = this.getFamous();
 
@@ -160,13 +191,7 @@ var BaseMixin = {
    * @protected
    */
   createChild: function(child, childNode) {
-    // react string
-    if (typeof childNode === 'string') {
-      childNode = new Surface({
-        size: [true, true],
-        content: childNode
-      });
-    }
+    childNode = ensureFamousNode(childNode);
 
     // childNode is a famous node now
     child._mountImage = childNode;
