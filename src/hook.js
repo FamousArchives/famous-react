@@ -4,6 +4,7 @@ var Engine = require('famous/core/Engine');
 var ReactUpdates = require('react/lib/ReactUpdates');
 
 // Put React on famo.us's tick
+/*
 var FamousBatchingStrategy = {
   isBatchingUpdates: true,
   batchedUpdates: function(cb, a, b) {
@@ -13,5 +14,6 @@ var FamousBatchingStrategy = {
 
 ReactUpdates.injection.injectBatchingStrategy(FamousBatchingStrategy);
 Engine.on('prerender', ReactUpdates.flushBatchedUpdates.bind(ReactUpdates));
+*/
 
 module.exports = Engine;

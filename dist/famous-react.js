@@ -3,27 +3,20 @@
 'use strict';
 
 var hook = require('./hook');
-var Context = require('./components/core/Context');
 var ImageSurface = require('./components/surfaces/Image');
 var VideoSurface = require('./components/surfaces/Video');
 var CanvasSurface = require('./components/surfaces/Canvas');
-var ContainerSurface = require('./components/surfaces/Container');
-var StateModifier = require('./components/modifiers/State');
 
+// TODO: require-dir this
 module.exports = {
-  Context: Context,
   surfaces: {
     Image: ImageSurface,
     Video: VideoSurface,
-    Canvas: CanvasSurface,
-    Container: ContainerSurface,
-  },
-  modifiers: {
-    State: StateModifier
+    Canvas: CanvasSurface
   }
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/index.js","/src")
-},{"./components/core/Context":"/Users/contra/Projects/famous/famous-react/src/components/core/Context.js","./components/modifiers/State":"/Users/contra/Projects/famous/famous-react/src/components/modifiers/State.js","./components/surfaces/Canvas":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Canvas.js","./components/surfaces/Container":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Container.js","./components/surfaces/Image":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Image.js","./components/surfaces/Video":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Video.js","./hook":"/Users/contra/Projects/famous/famous-react/src/hook.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js":[function(require,module,exports){
+},{"./components/surfaces/Canvas":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Canvas.js","./components/surfaces/Image":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Image.js","./components/surfaces/Video":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Video.js","./hook":"/Users/contra/Projects/famous/famous-react/src/hook.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js":[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -1471,462 +1464,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/Surfaces/CanvasSurface.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: mark@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var Surface = require('../core/Surface');
-
-/**
- * A surface containing an HTML5 Canvas element.
- *   This extends the Surface class.
- *
- * @class CanvasSurface
- * @extends Surface
- * @constructor
- * @param {Object} [options] overrides of default options
- * @param {Array.Number} [options.canvasSize] [width, height] for document element
- */
-function CanvasSurface(options) {
-    if (options && options.canvasSize) this._canvasSize = options.canvasSize;
-    Surface.apply(this, arguments);
-    if (!this._canvasSize) this._canvasSize = this.getSize();
-    this._backBuffer = document.createElement('canvas');
-    if (this._canvasSize) {
-        this._backBuffer.width = this._canvasSize[0];
-        this._backBuffer.height = this._canvasSize[1];
-    }
-    this._contextId = undefined;
-}
-
-CanvasSurface.prototype = Object.create(Surface.prototype);
-CanvasSurface.prototype.constructor = CanvasSurface;
-CanvasSurface.prototype.elementType = 'canvas';
-CanvasSurface.prototype.elementClass = 'famous-surface';
-
-/**
- * Set inner document content.  Note that this is a noop for CanvasSurface.
- *
- * @method setContent
- *
- */
-CanvasSurface.prototype.setContent = function setContent() {};
-
-/**
- * Place the document element this component manages into the document.
- *    This will draw the content to the document.
- *
- * @private
- * @method deploy
- * @param {Node} target document parent of this container
- */
-CanvasSurface.prototype.deploy = function deploy(target) {
-    if (this._canvasSize) {
-        target.width = this._canvasSize[0];
-        target.height = this._canvasSize[1];
-    }
-    if (this._contextId === '2d') {
-        target.getContext(this._contextId).drawImage(this._backBuffer, 0, 0);
-        this._backBuffer.width = 0;
-        this._backBuffer.height = 0;
-    }
-};
-
-/**
- * Remove this component and contained content from the document
- *
- * @private
- * @method recall
- *
- * @param {Node} target node to which the component was deployed
- */
-CanvasSurface.prototype.recall = function recall(target) {
-    var size = this.getSize();
-
-    this._backBuffer.width = target.width;
-    this._backBuffer.height = target.height;
-
-    if (this._contextId === '2d') {
-        this._backBuffer.getContext(this._contextId).drawImage(target, 0, 0);
-        target.width = 0;
-        target.height = 0;
-    }
-};
-
-/**
- * Returns the canvas element's context
- *
- * @method getContext
- * @param {string} contextId context identifier
- */
-CanvasSurface.prototype.getContext = function getContext(contextId) {
-    this._contextId = contextId;
-    return this._currTarget ? this._currTarget.getContext(contextId) : this._backBuffer.getContext(contextId);
-};
-
-/**
- *  Set the size of the surface and canvas element.
- *
- *  @method setSize
- *  @param {Array.number} size [width, height] of surface
- *  @param {Array.number} canvasSize [width, height] of canvas surface
- */
-CanvasSurface.prototype.setSize = function setSize(size, canvasSize) {
-    Surface.prototype.setSize.apply(this, arguments);
-    if (canvasSize) this._canvasSize = [canvasSize[0], canvasSize[1]];
-    if (this._currTarget) {
-        this._currTarget.width = this._canvasSize[0];
-        this._currTarget.height = this._canvasSize[1];
-    }
-};
-
-module.exports = CanvasSurface;
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/Surfaces/CanvasSurface.js","/node_modules/famous/Surfaces")
-},{"../core/Surface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Surface.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/Surfaces/ContainerSurface.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: mark@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var Surface = require('../core/Surface');
-var Context = require('../core/Context');
-
-/**
- * ContainerSurface is an object designed to contain surfaces and
- *   set properties to be applied to all of them at once.
- *   This extends the Surface class.
- *   A container surface will enforce these properties on the
- *   surfaces it contains:
- *
- *   size (clips contained surfaces to its own width and height);
- *
- *   origin;
- *
- *   its own opacity and transform, which will be automatically
- *   applied to  all Surfaces contained directly and indirectly.
- *
- * @class ContainerSurface
- * @extends Surface
- * @constructor
- * @param {Array.Number} [options.size] [width, height] in pixels
- * @param {Array.string} [options.classes] CSS classes to set on all inner content
- * @param {Array} [options.properties] string dictionary of HTML attributes to set on target div
- * @param {string} [options.content] inner (HTML) content of surface (should not be used)
- */
-function ContainerSurface(options) {
-    Surface.call(this, options);
-    this._container = document.createElement('div');
-    this._container.classList.add('famous-group');
-    this._container.classList.add('famous-container-group');
-    this._shouldRecalculateSize = false;
-    this.context = new Context(this._container);
-    this.setContent(this._container);
-}
-
-ContainerSurface.prototype = Object.create(Surface.prototype);
-ContainerSurface.prototype.constructor = ContainerSurface;
-ContainerSurface.prototype.elementType = 'div';
-ContainerSurface.prototype.elementClass = 'famous-surface';
-
-/**
- * Add renderables to this object's render tree
- *
- * @method add
- *
- * @param {Object} obj renderable object
- * @return {RenderNode} RenderNode wrapping this object, if not already a RenderNode
- */
-ContainerSurface.prototype.add = function add() {
-    return this.context.add.apply(this.context, arguments);
-};
-
-/**
- * Return spec for this surface.  Note: Can result in a size recalculation.
- *
- * @private
- * @method render
- *
- * @return {Object} render spec for this surface (spec id)
- */
-ContainerSurface.prototype.render = function render() {
-    if (this._sizeDirty) this._shouldRecalculateSize = true;
-    return Surface.prototype.render.apply(this, arguments);
-};
-
-/**
- * Place the document element this component manages into the document.
- *
- * @private
- * @method deploy
- * @param {Node} target document parent of this container
- */
-ContainerSurface.prototype.deploy = function deploy() {
-    this._shouldRecalculateSize = true;
-    return Surface.prototype.deploy.apply(this, arguments);
-};
-
-/**
- * Apply changes from this component to the corresponding document element.
- * This includes changes to classes, styles, size, content, opacity, origin,
- * and matrix transforms.
- *
- * @private
- * @method commit
- * @param {Context} context commit context
- * @param {Transform} transform unused TODO
- * @param {Number} opacity  unused TODO
- * @param {Array.Number} origin unused TODO
- * @param {Array.Number} size unused TODO
- * @return {undefined} TODO returns an undefined value
- */
-ContainerSurface.prototype.commit = function commit(context, transform, opacity, origin, size) {
-    var previousSize = this._size ? [this._size[0], this._size[1]] : null;
-    var result = Surface.prototype.commit.apply(this, arguments);
-    if (this._shouldRecalculateSize || (previousSize && (this._size[0] !== previousSize[0] || this._size[1] !== previousSize[1]))) {
-        this.context.setSize();
-        this._shouldRecalculateSize = false;
-    }
-    this.context.update();
-    return result;
-};
-
-module.exports = ContainerSurface;
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/Surfaces/ContainerSurface.js","/node_modules/famous/Surfaces")
-},{"../core/Context":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Context.js","../core/Surface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Surface.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/Surfaces/ImageSurface.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: mark@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var Surface = require('../core/Surface');
-
-/**
- * A surface containing image content.
- *   This extends the Surface class.
- *
- * @class ImageSurface
- *
- * @extends Surface
- * @constructor
- * @param {Object} [options] overrides of default options
- */
-function ImageSurface(options) {
-    this._imageUrl = undefined;
-    Surface.apply(this, arguments);
-}
-
-var urlCache = [];
-var countCache = [];
-var nodeCache = [];
-var cacheEnabled = true;
-
-ImageSurface.enableCache = function enableCache() {
-    cacheEnabled = true;
-};
-
-ImageSurface.disableCache = function disableCache() {
-    cacheEnabled = false;
-};
-
-ImageSurface.clearCache = function clearCache() {
-    urlCache = [];
-    countCache = [];
-    nodeCache = [];
-};
-
-ImageSurface.getCache = function getCache() {
-    return {
-        urlCache: urlCache,
-        countCache: countCache,
-        nodeCache: countCache
-    };
-};
-
-ImageSurface.prototype = Object.create(Surface.prototype);
-ImageSurface.prototype.constructor = ImageSurface;
-ImageSurface.prototype.elementType = 'img';
-ImageSurface.prototype.elementClass = 'famous-surface';
-
-/**
- * Set content URL.  This will cause a re-rendering.
- * @method setContent
- * @param {string} imageUrl
- */
-ImageSurface.prototype.setContent = function setContent(imageUrl) {
-    var urlIndex = urlCache.indexOf(this._imageUrl);
-    if (urlIndex !== -1) {
-        if (countCache[urlIndex] === 1) {
-            urlCache.splice(urlIndex, 1);
-            countCache.splice(urlIndex, 1);
-            nodeCache.splice(urlIndex, 1);
-        } else {
-            countCache[urlIndex]--;
-        }
-    }
-
-    urlIndex = urlCache.indexOf(imageUrl);
-    if (urlIndex === -1) {
-        urlCache.push(imageUrl);
-        countCache.push(1);
-    }
-    else {
-        countCache[urlIndex]++;
-    }
-
-    this._imageUrl = imageUrl;
-    this._contentDirty = true;
-};
-
-/**
- * Place the document element that this component manages into the document.
- *
- * @private
- * @method deploy
- * @param {Node} target document parent of this container
- */
-ImageSurface.prototype.deploy = function deploy(target) {
-    var urlIndex = urlCache.indexOf(this._imageUrl);
-    if (nodeCache[urlIndex] === undefined && cacheEnabled) {
-        var img = new Image();
-        img.src = this._imageUrl || '';
-        nodeCache[urlIndex] = img;
-    }
-
-    target.src = this._imageUrl || '';
-};
-
-/**
- * Remove this component and contained content from the document
- *
- * @private
- * @method recall
- *
- * @param {Node} target node to which the component was deployed
- */
-ImageSurface.prototype.recall = function recall(target) {
-    target.src = '';
-};
-
-module.exports = ImageSurface;
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/Surfaces/ImageSurface.js","/node_modules/famous/Surfaces")
-},{"../core/Surface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Surface.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/Surfaces/VideoSurface.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: mark@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var Surface = require('../core/Surface');
-
-/**
- * Creates a famous surface containing video content. Currently adding
- *   controls and manipulating the video are not supported through the
- *   surface interface, but can be accomplished via standard JavaScript
- *   manipulation of the video DOM element.
- *   This extends the Surface class.
- *
- * @class VideoSurface
- * @extends Surface
- * @constructor
- * @param {Object} [options] default option overrides
- * @param {Array.Number} [options.size] [width, height] in pixels
- * @param {Array.string} [options.classes] CSS classes to set on inner content
- * @param {Array} [options.properties] string dictionary of HTML attributes to set on target div
- * @param {string} [options.content] inner (HTML) content of surface
- * @param {boolean} [options.autoplay] autoplay
- */
-function VideoSurface(options) {
-    this._videoUrl = undefined;
-    this.options = Object.create(VideoSurface.DEFAULT_OPTIONS);
-    if (options) this.setOptions(options);
-
-    Surface.apply(this, arguments);
-}
-VideoSurface.prototype = Object.create(Surface.prototype);
-VideoSurface.prototype.constructor = VideoSurface;
-
-VideoSurface.DEFAULT_OPTIONS = {
-    autoplay: false
-};
-
-VideoSurface.prototype.elementType = 'video';
-VideoSurface.prototype.elementClass = 'famous-surface';
-
-/**
- * Set internal options, overriding any default options
- *
- * @method setOptions
- *
- * @param {Object} [options] overrides of default options
- * @param {Boolean} [options.autoplay] HTML autoplay
- */
-VideoSurface.prototype.setOptions = function setOptions(options) {
-    for (var key in VideoSurface.DEFAULT_OPTIONS) {
-        if (options[key] !== undefined) this.options[key] = options[key];
-    }
-};
-
-/**
- * Set url of the video.
- *
- * @method setContent
- * @param {string} videoUrl URL
- */
-VideoSurface.prototype.setContent = function setContent(videoUrl) {
-    this._videoUrl = videoUrl;
-    this._contentDirty = true;
-};
-
-/**
- * Place the document element this component manages into the document.
- *   Note: In the case of VideoSurface, simply changes the options on the target.
- *
- * @private
- * @method deploy
- * @param {Node} target document parent of this container
- */
-VideoSurface.prototype.deploy = function deploy(target) {
-    target.src = this._videoUrl;
-    target.autoplay = this.options.autoplay;
-};
-
-/**
- * Remove this component and contained content from the document.
- *   Note: This doesn't actually remove the <video> element from the
- *   document.
- * @private
- * @method recall
- *
- * @param {Node} target node to which the component was deployed
- */
-VideoSurface.prototype.recall = function recall(target) {
-    target.src = '';
-};
-
-module.exports = VideoSurface;
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/Surfaces/VideoSurface.js","/node_modules/famous/Surfaces")
-},{"../core/Surface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Surface.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Context.js":[function(require,module,exports){
+},{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Context.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -4288,384 +3826,7 @@ SpecParser.prototype._parseSpec = function _parseSpec(spec, parentContext, sizeC
 
 module.exports = SpecParser;
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/core/SpecParser.js","/node_modules/famous/core")
-},{"./Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Surface.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: mark@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var ElementOutput = require('./ElementOutput');
-
-/**
- * A base class for viewable content and event
- *   targets inside a Famo.us application, containing a renderable document
- *   fragment. Like an HTML div, it can accept internal markup,
- *   properties, classes, and handle events.
- *
- * @class Surface
- * @constructor
- *
- * @param {Object} [options] default option overrides
- * @param {Array.Number} [options.size] [width, height] in pixels
- * @param {Array.string} [options.classes] CSS classes to set on inner content
- * @param {Array} [options.properties] string dictionary of HTML attributes to set on target div
- * @param {string} [options.content] inner (HTML) content of surface
- */
-function Surface(options) {
-    ElementOutput.call(this);
-
-    this.options = {};
-
-    this.properties = {};
-    this.content = '';
-    this.classList = [];
-    this.size = null;
-
-    this._classesDirty = true;
-    this._stylesDirty = true;
-    this._sizeDirty = true;
-    this._contentDirty = true;
-
-    this._dirtyClasses = [];
-
-    if (options) this.setOptions(options);
-
-    this._currentTarget = null;
-}
-Surface.prototype = Object.create(ElementOutput.prototype);
-Surface.prototype.constructor = Surface;
-Surface.prototype.elementType = 'div';
-Surface.prototype.elementClass = 'famous-surface';
-
-/**
- * Set CSS-style properties on this Surface. Note that this will cause
- *    dirtying and thus re-rendering, even if values do not change.
- *
- * @method setProperties
- * @param {Object} properties property dictionary of "key" => "value"
- */
-Surface.prototype.setProperties = function setProperties(properties) {
-    for (var n in properties) {
-        this.properties[n] = properties[n];
-    }
-    this._stylesDirty = true;
-};
-
-/**
- * Get CSS-style properties on this Surface.
- *
- * @method getProperties
- *
- * @return {Object} Dictionary of this Surface's properties.
- */
-Surface.prototype.getProperties = function getProperties() {
-    return this.properties;
-};
-
-/**
- * Add CSS-style class to the list of classes on this Surface. Note
- *   this will map directly to the HTML property of the actual
- *   corresponding rendered <div>.
- *
- * @method addClass
- * @param {string} className name of class to add
- */
-Surface.prototype.addClass = function addClass(className) {
-    if (this.classList.indexOf(className) < 0) {
-        this.classList.push(className);
-        this._classesDirty = true;
-    }
-};
-
-/**
- * Remove CSS-style class from the list of classes on this Surface.
- *   Note this will map directly to the HTML property of the actual
- *   corresponding rendered <div>.
- *
- * @method removeClass
- * @param {string} className name of class to remove
- */
-Surface.prototype.removeClass = function removeClass(className) {
-    var i = this.classList.indexOf(className);
-    if (i >= 0) {
-        this._dirtyClasses.push(this.classList.splice(i, 1)[0]);
-        this._classesDirty = true;
-    }
-};
-
-/**
- * Reset class list to provided dictionary.
- * @method setClasses
- * @param {Array.string} classList
- */
-Surface.prototype.setClasses = function setClasses(classList) {
-    var i = 0;
-    var removal = [];
-    for (i = 0; i < this.classList.length; i++) {
-        if (classList.indexOf(this.classList[i]) < 0) removal.push(this.classList[i]);
-    }
-    for (i = 0; i < removal.length; i++) this.removeClass(removal[i]);
-    // duplicates are already checked by addClass()
-    for (i = 0; i < classList.length; i++) this.addClass(classList[i]);
-};
-
-/**
- * Get array of CSS-style classes attached to this div.
- *
- * @method getClasslist
- * @return {Array.string} array of class names
- */
-Surface.prototype.getClassList = function getClassList() {
-    return this.classList;
-};
-
-/**
- * Set or overwrite inner (HTML) content of this surface. Note that this
- *    causes a re-rendering if the content has changed.
- *
- * @method setContent
- * @param {string|Document Fragment} content HTML content
- */
-Surface.prototype.setContent = function setContent(content) {
-    if (this.content !== content) {
-        this.content = content;
-        this._contentDirty = true;
-    }
-};
-
-/**
- * Return inner (HTML) content of this surface.
- *
- * @method getContent
- *
- * @return {string} inner (HTML) content
- */
-Surface.prototype.getContent = function getContent() {
-    return this.content;
-};
-
-/**
- * Set options for this surface
- *
- * @method setOptions
- * @param {Object} [options] overrides for default options.  See constructor.
- */
-Surface.prototype.setOptions = function setOptions(options) {
-    if (options.size) this.setSize(options.size);
-    if (options.classes) this.setClasses(options.classes);
-    if (options.properties) this.setProperties(options.properties);
-    if (options.content) this.setContent(options.content);
-};
-
-//  Apply to document all changes from removeClass() since last setup().
-function _cleanupClasses(target) {
-    for (var i = 0; i < this._dirtyClasses.length; i++) target.classList.remove(this._dirtyClasses[i]);
-    this._dirtyClasses = [];
-}
-
-// Apply values of all Famous-managed styles to the document element.
-//  These will be deployed to the document on call to #setup().
-function _applyStyles(target) {
-    for (var n in this.properties) {
-        target.style[n] = this.properties[n];
-    }
-}
-
-// Clear all Famous-managed styles from the document element.
-// These will be deployed to the document on call to #setup().
-function _cleanupStyles(target) {
-    for (var n in this.properties) {
-        target.style[n] = '';
-    }
-}
-
-function _xyNotEquals(a, b) {
-    return (a && b) ? (a[0] !== b[0] || a[1] !== b[1]) : a !== b;
-}
-
-/**
- * One-time setup for an element to be ready for commits to document.
- *
- * @private
- * @method setup
- *
- * @param {ElementAllocator} allocator document element pool for this context
- */
-Surface.prototype.setup = function setup(allocator) {
-    var target = allocator.allocate(this.elementType);
-    if (this.elementClass) {
-        if (this.elementClass instanceof Array) {
-            for (var i = 0; i < this.elementClass.length; i++) {
-                target.classList.add(this.elementClass[i]);
-            }
-        }
-        else {
-            target.classList.add(this.elementClass);
-        }
-    }
-    target.style.display = '';
-    this.attach(target);
-    this._currentTarget = target;
-    this._stylesDirty = true;
-    this._classesDirty = true;
-    this._sizeDirty = true;
-    this._contentDirty = true;
-};
-
-/**
- * Apply changes from this component to the corresponding document element.
- * This includes changes to classes, styles, size, content, opacity, origin,
- * and matrix transforms.
- *
- * @private
- * @method commit
- * @param {Context} context commit context
- */
-Surface.prototype.commit = function commit(context) {
-    if (!this._currentTarget) this.setup(context.allocator);
-    var target = this._currentTarget;
-    var size = context.size;
-
-    if (this._classesDirty) {
-        _cleanupClasses.call(this, target);
-        var classList = this.getClassList();
-        for (var i = 0; i < classList.length; i++) target.classList.add(classList[i]);
-        this._classesDirty = false;
-    }
-
-    if (this._stylesDirty) {
-        _applyStyles.call(this, target);
-        this._stylesDirty = false;
-    }
-
-    if (this.size) {
-        var origSize = context.size;
-        size = [this.size[0], this.size[1]];
-        if (size[0] === undefined) size[0] = origSize[0];
-        else if (size[0] === true) size[0] = target.clientWidth;
-        if (size[1] === undefined) size[1] = origSize[1];
-        else if (size[1] === true) size[1] = target.clientHeight;
-    }
-
-    if (_xyNotEquals(this._size, size)) {
-        if (!this._size) this._size = [0, 0];
-        this._size[0] = size[0];
-        this._size[1] = size[1];
-        this._sizeDirty = true;
-    }
-
-    if (this._sizeDirty) {
-        if (this._size) {
-            target.style.width = (this.size && this.size[0] === true) ? '' : this._size[0] + 'px';
-            target.style.height = (this.size && this.size[1] === true) ?  '' : this._size[1] + 'px';
-        }
-        this._sizeDirty = false;
-    }
-
-    if (this._contentDirty) {
-        this.deploy(target);
-        this._eventOutput.emit('deploy');
-        this._contentDirty = false;
-    }
-
-    ElementOutput.prototype.commit.call(this, context);
-};
-
-/**
- *  Remove all Famous-relevant attributes from a document element.
- *    This is called by SurfaceManager's detach().
- *    This is in some sense the reverse of .deploy().
- *
- * @private
- * @method cleanup
- * @param {ElementAllocator} allocator
- */
-Surface.prototype.cleanup = function cleanup(allocator) {
-    var i = 0;
-    var target = this._currentTarget;
-    this._eventOutput.emit('recall');
-    this.recall(target);
-    target.style.display = 'none';
-    target.style.width = '';
-    target.style.height = '';
-    this._size = null;
-    _cleanupStyles.call(this, target);
-    var classList = this.getClassList();
-    _cleanupClasses.call(this, target);
-    for (i = 0; i < classList.length; i++) target.classList.remove(classList[i]);
-    if (this.elementClass) {
-        if (this.elementClass instanceof Array) {
-            for (i = 0; i < this.elementClass.length; i++) {
-                target.classList.remove(this.elementClass[i]);
-            }
-        }
-        else {
-            target.classList.remove(this.elementClass);
-        }
-    }
-    this.detach(target);
-    this._currentTarget = null;
-    allocator.deallocate(target);
-};
-
-/**
- * Place the document element that this component manages into the document.
- *
- * @private
- * @method deploy
- * @param {Node} target document parent of this container
- */
-Surface.prototype.deploy = function deploy(target) {
-    var content = this.getContent();
-    if (content instanceof Node) {
-        while (target.hasChildNodes()) target.removeChild(target.firstChild);
-        target.appendChild(content);
-    }
-    else target.innerHTML = content;
-};
-
-/**
- * Remove any contained document content associated with this surface
- *   from the actual document.
- *
- * @private
- * @method recall
- */
-Surface.prototype.recall = function recall(target) {
-    var df = document.createDocumentFragment();
-    while (target.hasChildNodes()) df.appendChild(target.firstChild);
-    this.setContent(df);
-};
-
-/**
- *  Get the x and y dimensions of the surface.
- *
- * @method getSize
- * @return {Array.Number} [x,y] size of surface
- */
-Surface.prototype.getSize = function getSize() {
-    return this._size;
-};
-
-/**
- * Set x and y dimensions of the surface.
- *
- * @method setSize
- * @param {Array.Number} size as [width, height]
- */
-Surface.prototype.setSize = function setSize(size) {
-    this.size = size ? [size[0], size[1]] : null;
-    this._sizeDirty = true;
-};
-
-module.exports = Surface;
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/core/Surface.js","/node_modules/famous/core")
-},{"./ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js":[function(require,module,exports){
+},{"./Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -6678,1909 +5839,7 @@ Utility.clone = function clone(b) {
 
 module.exports = Utility;
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/utilities/Utility.js","/node_modules/famous/utilities")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseDifference = require('lodash._basedifference'),
-    baseFlatten = require('lodash._baseflatten'),
-    createCallback = require('lodash.createcallback'),
-    forIn = require('lodash.forin');
-
-/**
- * Creates a shallow clone of `object` excluding the specified properties.
- * Property names may be specified as individual arguments or as arrays of
- * property names. If a callback is provided it will be executed for each
- * property of `object` omitting the properties the callback returns truey
- * for. The callback is bound to `thisArg` and invoked with three arguments;
- * (value, key, object).
- *
- * @static
- * @memberOf _
- * @category Objects
- * @param {Object} object The source object.
- * @param {Function|...string|string[]} [callback] The properties to omit or the
- *  function called per iteration.
- * @param {*} [thisArg] The `this` binding of `callback`.
- * @returns {Object} Returns an object without the omitted properties.
- * @example
- *
- * _.omit({ 'name': 'fred', 'age': 40 }, 'age');
- * // => { 'name': 'fred' }
- *
- * _.omit({ 'name': 'fred', 'age': 40 }, function(value) {
- *   return typeof value == 'number';
- * });
- * // => { 'name': 'fred' }
- */
-function omit(object, callback, thisArg) {
-  var result = {};
-  if (typeof callback != 'function') {
-    var props = [];
-    forIn(object, function(value, key) {
-      props.push(key);
-    });
-    props = baseDifference(props, baseFlatten(arguments, true, false, 1));
-
-    var index = -1,
-        length = props.length;
-
-    while (++index < length) {
-      var key = props[index];
-      result[key] = object[key];
-    }
-  } else {
-    callback = createCallback(callback, thisArg, 3);
-    forIn(object, function(value, key, object) {
-      if (!callback(value, key, object)) {
-        result[key] = value;
-      }
-    });
-  }
-  return result;
-}
-
-module.exports = omit;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/index.js","/node_modules/lodash.omit")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._basedifference":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/index.js","lodash._baseflatten":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._baseflatten/index.js","lodash.createcallback":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/index.js","lodash.forin":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.forin/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var bind = require('lodash.bind'),
-    identity = require('lodash.identity'),
-    setBindData = require('lodash._setbinddata'),
-    support = require('lodash.support');
-
-/** Used to detected named functions */
-var reFuncName = /^\s*function[ \n\r\t]+\w/;
-
-/** Used to detect functions containing a `this` reference */
-var reThis = /\bthis\b/;
-
-/** Native method shortcuts */
-var fnToString = Function.prototype.toString;
-
-/**
- * The base implementation of `_.createCallback` without support for creating
- * "_.pluck" or "_.where" style callbacks.
- *
- * @private
- * @param {*} [func=identity] The value to convert to a callback.
- * @param {*} [thisArg] The `this` binding of the created callback.
- * @param {number} [argCount] The number of arguments the callback accepts.
- * @returns {Function} Returns a callback function.
- */
-function baseCreateCallback(func, thisArg, argCount) {
-  if (typeof func != 'function') {
-    return identity;
-  }
-  // exit early for no `thisArg` or already bound by `Function#bind`
-  if (typeof thisArg == 'undefined' || !('prototype' in func)) {
-    return func;
-  }
-  var bindData = func.__bindData__;
-  if (typeof bindData == 'undefined') {
-    if (support.funcNames) {
-      bindData = !func.name;
-    }
-    bindData = bindData || !support.funcDecomp;
-    if (!bindData) {
-      var source = fnToString.call(func);
-      if (!support.funcNames) {
-        bindData = !reFuncName.test(source);
-      }
-      if (!bindData) {
-        // checks if `func` references the `this` keyword and stores the result
-        bindData = reThis.test(source);
-        setBindData(func, bindData);
-      }
-    }
-  }
-  // exit early if there are no `this` references or `func` is bound
-  if (bindData === false || (bindData !== true && bindData[1] & 1)) {
-    return func;
-  }
-  switch (argCount) {
-    case 1: return function(value) {
-      return func.call(thisArg, value);
-    };
-    case 2: return function(a, b) {
-      return func.call(thisArg, a, b);
-    };
-    case 3: return function(value, index, collection) {
-      return func.call(thisArg, value, index, collection);
-    };
-    case 4: return function(accumulator, value, index, collection) {
-      return func.call(thisArg, accumulator, value, index, collection);
-    };
-  }
-  return bind(func, thisArg);
-}
-
-module.exports = baseCreateCallback;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._setbinddata":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash._setbinddata/index.js","lodash.bind":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/index.js","lodash.identity":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.identity/index.js","lodash.support":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.support/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash._setbinddata/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isNative = require('lodash._isnative'),
-    noop = require('lodash.noop');
-
-/** Used as the property descriptor for `__bindData__` */
-var descriptor = {
-  'configurable': false,
-  'enumerable': false,
-  'value': null,
-  'writable': false
-};
-
-/** Used to set meta data on functions */
-var defineProperty = (function() {
-  // IE 8 only accepts DOM elements
-  try {
-    var o = {},
-        func = isNative(func = Object.defineProperty) && func,
-        result = func(o, o, o) && func;
-  } catch(e) { }
-  return result;
-}());
-
-/**
- * Sets `this` binding data on a given function.
- *
- * @private
- * @param {Function} func The function to set data on.
- * @param {Array} value The data array to set.
- */
-var setBindData = !defineProperty ? noop : function(func, value) {
-  descriptor.value = value;
-  defineProperty(func, '__bindData__', descriptor);
-};
-
-module.exports = setBindData;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash._setbinddata/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash._setbinddata")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._isnative":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._isnative/index.js","lodash.noop":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.noop/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var createWrapper = require('lodash._createwrapper'),
-    slice = require('lodash._slice');
-
-/**
- * Creates a function that, when called, invokes `func` with the `this`
- * binding of `thisArg` and prepends any additional `bind` arguments to those
- * provided to the bound function.
- *
- * @static
- * @memberOf _
- * @category Functions
- * @param {Function} func The function to bind.
- * @param {*} [thisArg] The `this` binding of `func`.
- * @param {...*} [arg] Arguments to be partially applied.
- * @returns {Function} Returns the new bound function.
- * @example
- *
- * var func = function(greeting) {
- *   return greeting + ' ' + this.name;
- * };
- *
- * func = _.bind(func, { 'name': 'fred' }, 'hi');
- * func();
- * // => 'hi fred'
- */
-function bind(func, thisArg) {
-  return arguments.length > 2
-    ? createWrapper(func, 17, slice(arguments, 2), null, thisArg)
-    : createWrapper(func, 1, null, null, thisArg);
-}
-
-module.exports = bind;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._createwrapper":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/index.js","lodash._slice":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._slice/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseBind = require('lodash._basebind'),
-    baseCreateWrapper = require('lodash._basecreatewrapper'),
-    isFunction = require('lodash.isfunction'),
-    slice = require('lodash._slice');
-
-/**
- * Used for `Array` method references.
- *
- * Normally `Array.prototype` would suffice, however, using an array literal
- * avoids issues in Narwhal.
- */
-var arrayRef = [];
-
-/** Native method shortcuts */
-var push = arrayRef.push,
-    unshift = arrayRef.unshift;
-
-/**
- * Creates a function that, when called, either curries or invokes `func`
- * with an optional `this` binding and partially applied arguments.
- *
- * @private
- * @param {Function|string} func The function or method name to reference.
- * @param {number} bitmask The bitmask of method flags to compose.
- *  The bitmask may be composed of the following flags:
- *  1 - `_.bind`
- *  2 - `_.bindKey`
- *  4 - `_.curry`
- *  8 - `_.curry` (bound)
- *  16 - `_.partial`
- *  32 - `_.partialRight`
- * @param {Array} [partialArgs] An array of arguments to prepend to those
- *  provided to the new function.
- * @param {Array} [partialRightArgs] An array of arguments to append to those
- *  provided to the new function.
- * @param {*} [thisArg] The `this` binding of `func`.
- * @param {number} [arity] The arity of `func`.
- * @returns {Function} Returns the new function.
- */
-function createWrapper(func, bitmask, partialArgs, partialRightArgs, thisArg, arity) {
-  var isBind = bitmask & 1,
-      isBindKey = bitmask & 2,
-      isCurry = bitmask & 4,
-      isCurryBound = bitmask & 8,
-      isPartial = bitmask & 16,
-      isPartialRight = bitmask & 32;
-
-  if (!isBindKey && !isFunction(func)) {
-    throw new TypeError;
-  }
-  if (isPartial && !partialArgs.length) {
-    bitmask &= ~16;
-    isPartial = partialArgs = false;
-  }
-  if (isPartialRight && !partialRightArgs.length) {
-    bitmask &= ~32;
-    isPartialRight = partialRightArgs = false;
-  }
-  var bindData = func && func.__bindData__;
-  if (bindData && bindData !== true) {
-    // clone `bindData`
-    bindData = slice(bindData);
-    if (bindData[2]) {
-      bindData[2] = slice(bindData[2]);
-    }
-    if (bindData[3]) {
-      bindData[3] = slice(bindData[3]);
-    }
-    // set `thisBinding` is not previously bound
-    if (isBind && !(bindData[1] & 1)) {
-      bindData[4] = thisArg;
-    }
-    // set if previously bound but not currently (subsequent curried functions)
-    if (!isBind && bindData[1] & 1) {
-      bitmask |= 8;
-    }
-    // set curried arity if not yet set
-    if (isCurry && !(bindData[1] & 4)) {
-      bindData[5] = arity;
-    }
-    // append partial left arguments
-    if (isPartial) {
-      push.apply(bindData[2] || (bindData[2] = []), partialArgs);
-    }
-    // append partial right arguments
-    if (isPartialRight) {
-      unshift.apply(bindData[3] || (bindData[3] = []), partialRightArgs);
-    }
-    // merge flags
-    bindData[1] |= bitmask;
-    return createWrapper.apply(null, bindData);
-  }
-  // fast path for `_.bind`
-  var creater = (bitmask == 1 || bitmask === 17) ? baseBind : baseCreateWrapper;
-  return creater([func, bitmask, partialArgs, partialRightArgs, thisArg, arity]);
-}
-
-module.exports = createWrapper;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._basebind":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basebind/index.js","lodash._basecreatewrapper":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreatewrapper/index.js","lodash._slice":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._slice/index.js","lodash.isfunction":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isfunction/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basebind/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreate = require('lodash._basecreate'),
-    isObject = require('lodash.isobject'),
-    setBindData = require('lodash._setbinddata'),
-    slice = require('lodash._slice');
-
-/**
- * Used for `Array` method references.
- *
- * Normally `Array.prototype` would suffice, however, using an array literal
- * avoids issues in Narwhal.
- */
-var arrayRef = [];
-
-/** Native method shortcuts */
-var push = arrayRef.push;
-
-/**
- * The base implementation of `_.bind` that creates the bound function and
- * sets its meta data.
- *
- * @private
- * @param {Array} bindData The bind data array.
- * @returns {Function} Returns the new bound function.
- */
-function baseBind(bindData) {
-  var func = bindData[0],
-      partialArgs = bindData[2],
-      thisArg = bindData[4];
-
-  function bound() {
-    // `Function#bind` spec
-    // http://es5.github.io/#x15.3.4.5
-    if (partialArgs) {
-      // avoid `arguments` object deoptimizations by using `slice` instead
-      // of `Array.prototype.slice.call` and not assigning `arguments` to a
-      // variable as a ternary expression
-      var args = slice(partialArgs);
-      push.apply(args, arguments);
-    }
-    // mimic the constructor's `return` behavior
-    // http://es5.github.io/#x13.2.2
-    if (this instanceof bound) {
-      // ensure `new bound` is an instance of `func`
-      var thisBinding = baseCreate(func.prototype),
-          result = func.apply(thisBinding, args || arguments);
-      return isObject(result) ? result : thisBinding;
-    }
-    return func.apply(thisArg, args || arguments);
-  }
-  setBindData(bound, bindData);
-  return bound;
-}
-
-module.exports = baseBind;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basebind/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basebind")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._basecreate":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreate/index.js","lodash._setbinddata":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash._setbinddata/index.js","lodash._slice":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._slice/index.js","lodash.isobject":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isobject/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreate/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isNative = require('lodash._isnative'),
-    isObject = require('lodash.isobject'),
-    noop = require('lodash.noop');
-
-/* Native method shortcuts for methods with the same name as other `lodash` methods */
-var nativeCreate = isNative(nativeCreate = Object.create) && nativeCreate;
-
-/**
- * The base implementation of `_.create` without support for assigning
- * properties to the created object.
- *
- * @private
- * @param {Object} prototype The object to inherit from.
- * @returns {Object} Returns the new object.
- */
-function baseCreate(prototype, properties) {
-  return isObject(prototype) ? nativeCreate(prototype) : {};
-}
-// fallback for browsers without `Object.create`
-if (!nativeCreate) {
-  baseCreate = (function() {
-    function Object() {}
-    return function(prototype) {
-      if (isObject(prototype)) {
-        Object.prototype = prototype;
-        var result = new Object;
-        Object.prototype = null;
-      }
-      return result || global.Object();
-    };
-  }());
-}
-
-module.exports = baseCreate;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreate/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreate")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._isnative":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._isnative/index.js","lodash.isobject":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isobject/index.js","lodash.noop":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.noop/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreatewrapper/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreate = require('lodash._basecreate'),
-    isObject = require('lodash.isobject'),
-    setBindData = require('lodash._setbinddata'),
-    slice = require('lodash._slice');
-
-/**
- * Used for `Array` method references.
- *
- * Normally `Array.prototype` would suffice, however, using an array literal
- * avoids issues in Narwhal.
- */
-var arrayRef = [];
-
-/** Native method shortcuts */
-var push = arrayRef.push;
-
-/**
- * The base implementation of `createWrapper` that creates the wrapper and
- * sets its meta data.
- *
- * @private
- * @param {Array} bindData The bind data array.
- * @returns {Function} Returns the new function.
- */
-function baseCreateWrapper(bindData) {
-  var func = bindData[0],
-      bitmask = bindData[1],
-      partialArgs = bindData[2],
-      partialRightArgs = bindData[3],
-      thisArg = bindData[4],
-      arity = bindData[5];
-
-  var isBind = bitmask & 1,
-      isBindKey = bitmask & 2,
-      isCurry = bitmask & 4,
-      isCurryBound = bitmask & 8,
-      key = func;
-
-  function bound() {
-    var thisBinding = isBind ? thisArg : this;
-    if (partialArgs) {
-      var args = slice(partialArgs);
-      push.apply(args, arguments);
-    }
-    if (partialRightArgs || isCurry) {
-      args || (args = slice(arguments));
-      if (partialRightArgs) {
-        push.apply(args, partialRightArgs);
-      }
-      if (isCurry && args.length < arity) {
-        bitmask |= 16 & ~32;
-        return baseCreateWrapper([func, (isCurryBound ? bitmask : bitmask & ~3), args, null, thisArg, arity]);
-      }
-    }
-    args || (args = arguments);
-    if (isBindKey) {
-      func = thisBinding[key];
-    }
-    if (this instanceof bound) {
-      thisBinding = baseCreate(func.prototype);
-      var result = func.apply(thisBinding, args);
-      return isObject(result) ? result : thisBinding;
-    }
-    return func.apply(thisBinding, args);
-  }
-  setBindData(bound, bindData);
-  return bound;
-}
-
-module.exports = baseCreateWrapper;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreatewrapper/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreatewrapper")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._basecreate":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._createwrapper/node_modules/lodash._basecreate/index.js","lodash._setbinddata":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash._setbinddata/index.js","lodash._slice":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._slice/index.js","lodash.isobject":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isobject/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._slice/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * Slices the `collection` from the `start` index up to, but not including,
- * the `end` index.
- *
- * Note: This function is used instead of `Array#slice` to support node lists
- * in IE < 9 and to ensure dense arrays are returned.
- *
- * @private
- * @param {Array|Object|string} collection The collection to slice.
- * @param {number} start The start index.
- * @param {number} end The end index.
- * @returns {Array} Returns the new array.
- */
-function slice(array, start, end) {
-  start || (start = 0);
-  if (typeof end == 'undefined') {
-    end = array ? array.length : 0;
-  }
-  var index = -1,
-      length = end - start || 0,
-      result = Array(length < 0 ? 0 : length);
-
-  while (++index < length) {
-    result[index] = array[start + index];
-  }
-  return result;
-}
-
-module.exports = slice;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._slice/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.bind/node_modules/lodash._slice")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.identity/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * This method returns the first argument provided to it.
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @param {*} value Any value.
- * @returns {*} Returns `value`.
- * @example
- *
- * var object = { 'name': 'fred' };
- * _.identity(object) === object;
- * // => true
- */
-function identity(value) {
-  return value;
-}
-
-module.exports = identity;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.identity/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.identity")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.noop/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * A no-operation function.
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @example
- *
- * var object = { 'name': 'fred' };
- * _.noop(object) === undefined;
- * // => true
- */
-function noop() {
-  // no operation performed
-}
-
-module.exports = noop;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.noop/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.noop")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.support/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isNative = require('lodash._isnative');
-
-/** Used to detect functions containing a `this` reference */
-var reThis = /\bthis\b/;
-
-/**
- * An object used to flag environments features.
- *
- * @static
- * @memberOf _
- * @type Object
- */
-var support = {};
-
-/**
- * Detect if functions can be decompiled by `Function#toString`
- * (all but PS3 and older Opera mobile browsers & avoided in Windows 8 apps).
- *
- * @memberOf _.support
- * @type boolean
- */
-support.funcDecomp = !isNative(global.WinRTError) && reThis.test(function() { return this; });
-
-/**
- * Detect if `Function#name` is supported (all but IE).
- *
- * @memberOf _.support
- * @type boolean
- */
-support.funcNames = typeof Function.name == 'string';
-
-module.exports = support;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.support/index.js","/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/node_modules/lodash.support")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._isnative":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._isnative/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseIndexOf = require('lodash._baseindexof'),
-    cacheIndexOf = require('lodash._cacheindexof'),
-    createCache = require('lodash._createcache'),
-    largeArraySize = require('lodash._largearraysize'),
-    releaseObject = require('lodash._releaseobject');
-
-/**
- * The base implementation of `_.difference` that accepts a single array
- * of values to exclude.
- *
- * @private
- * @param {Array} array The array to process.
- * @param {Array} [values] The array of values to exclude.
- * @returns {Array} Returns a new array of filtered values.
- */
-function baseDifference(array, values) {
-  var index = -1,
-      indexOf = baseIndexOf,
-      length = array ? array.length : 0,
-      isLarge = length >= largeArraySize,
-      result = [];
-
-  if (isLarge) {
-    var cache = createCache(values);
-    if (cache) {
-      indexOf = cacheIndexOf;
-      values = cache;
-    } else {
-      isLarge = false;
-    }
-  }
-  while (++index < length) {
-    var value = array[index];
-    if (indexOf(values, value) < 0) {
-      result.push(value);
-    }
-  }
-  if (isLarge) {
-    releaseObject(values);
-  }
-  return result;
-}
-
-module.exports = baseDifference;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._baseindexof":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._baseindexof/index.js","lodash._cacheindexof":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._cacheindexof/index.js","lodash._createcache":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/index.js","lodash._largearraysize":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._largearraysize/index.js","lodash._releaseobject":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._releaseobject/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._baseindexof/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * The base implementation of `_.indexOf` without support for binary searches
- * or `fromIndex` constraints.
- *
- * @private
- * @param {Array} array The array to search.
- * @param {*} value The value to search for.
- * @param {number} [fromIndex=0] The index to search from.
- * @returns {number} Returns the index of the matched value or `-1`.
- */
-function baseIndexOf(array, value, fromIndex) {
-  var index = (fromIndex || 0) - 1,
-      length = array ? array.length : 0;
-
-  while (++index < length) {
-    if (array[index] === value) {
-      return index;
-    }
-  }
-  return -1;
-}
-
-module.exports = baseIndexOf;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._baseindexof/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._baseindexof")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._cacheindexof/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseIndexOf = require('lodash._baseindexof'),
-    keyPrefix = require('lodash._keyprefix');
-
-/**
- * An implementation of `_.contains` for cache objects that mimics the return
- * signature of `_.indexOf` by returning `0` if the value is found, else `-1`.
- *
- * @private
- * @param {Object} cache The cache object to inspect.
- * @param {*} value The value to search for.
- * @returns {number} Returns `0` if `value` is found, else `-1`.
- */
-function cacheIndexOf(cache, value) {
-  var type = typeof value;
-  cache = cache.cache;
-
-  if (type == 'boolean' || value == null) {
-    return cache[value] ? 0 : -1;
-  }
-  if (type != 'number' && type != 'string') {
-    type = 'object';
-  }
-  var key = type == 'number' ? value : keyPrefix + value;
-  cache = (cache = cache[type]) && cache[key];
-
-  return type == 'object'
-    ? (cache && baseIndexOf(cache, value) > -1 ? 0 : -1)
-    : (cache ? 0 : -1);
-}
-
-module.exports = cacheIndexOf;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._cacheindexof/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._cacheindexof")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._baseindexof":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._baseindexof/index.js","lodash._keyprefix":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._keyprefix/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var cachePush = require('lodash._cachepush'),
-    getObject = require('lodash._getobject'),
-    releaseObject = require('lodash._releaseobject');
-
-/**
- * Creates a cache object to optimize linear searches of large arrays.
- *
- * @private
- * @param {Array} [array=[]] The array to search.
- * @returns {null|Object} Returns the cache object or `null` if caching should not be used.
- */
-function createCache(array) {
-  var index = -1,
-      length = array.length,
-      first = array[0],
-      mid = array[(length / 2) | 0],
-      last = array[length - 1];
-
-  if (first && typeof first == 'object' &&
-      mid && typeof mid == 'object' && last && typeof last == 'object') {
-    return false;
-  }
-  var cache = getObject();
-  cache['false'] = cache['null'] = cache['true'] = cache['undefined'] = false;
-
-  var result = getObject();
-  result.array = array;
-  result.cache = cache;
-  result.push = cachePush;
-
-  while (++index < length) {
-    result.push(array[index]);
-  }
-  return result;
-}
-
-module.exports = createCache;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._cachepush":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/node_modules/lodash._cachepush/index.js","lodash._getobject":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/node_modules/lodash._getobject/index.js","lodash._releaseobject":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._releaseobject/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/node_modules/lodash._cachepush/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var keyPrefix = require('lodash._keyprefix');
-
-/**
- * Adds a given value to the corresponding cache object.
- *
- * @private
- * @param {*} value The value to add to the cache.
- */
-function cachePush(value) {
-  var cache = this.cache,
-      type = typeof value;
-
-  if (type == 'boolean' || value == null) {
-    cache[value] = true;
-  } else {
-    if (type != 'number' && type != 'string') {
-      type = 'object';
-    }
-    var key = type == 'number' ? value : keyPrefix + value,
-        typeCache = cache[type] || (cache[type] = {});
-
-    if (type == 'object') {
-      (typeCache[key] || (typeCache[key] = [])).push(value);
-    } else {
-      typeCache[key] = true;
-    }
-  }
-}
-
-module.exports = cachePush;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/node_modules/lodash._cachepush/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/node_modules/lodash._cachepush")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._keyprefix":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._keyprefix/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/node_modules/lodash._getobject/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var objectPool = require('lodash._objectpool');
-
-/**
- * Gets an object from the object pool or creates a new one if the pool is empty.
- *
- * @private
- * @returns {Object} The object from the pool.
- */
-function getObject() {
-  return objectPool.pop() || {
-    'array': null,
-    'cache': null,
-    'criteria': null,
-    'false': false,
-    'index': 0,
-    'null': false,
-    'number': null,
-    'object': null,
-    'push': null,
-    'string': null,
-    'true': false,
-    'undefined': false,
-    'value': null
-  };
-}
-
-module.exports = getObject;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/node_modules/lodash._getobject/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._createcache/node_modules/lodash._getobject")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._objectpool":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._objectpool/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._keyprefix/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.2 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2014 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** Used to prefix keys to avoid issues with `__proto__` and properties on `Object.prototype` */
-var keyPrefix = '__1335248838000__';
-
-module.exports = keyPrefix;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._keyprefix/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._keyprefix")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._largearraysize/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** Used as the size when optimizations are enabled for large arrays */
-var largeArraySize = 75;
-
-module.exports = largeArraySize;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._largearraysize/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._largearraysize")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._objectpool/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** Used to pool arrays and objects used internally */
-var objectPool = [];
-
-module.exports = objectPool;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._objectpool/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._objectpool")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._releaseobject/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var maxPoolSize = require('lodash._maxpoolsize'),
-    objectPool = require('lodash._objectpool');
-
-/**
- * Releases the given object back to the object pool.
- *
- * @private
- * @param {Object} [object] The object to release.
- */
-function releaseObject(object) {
-  var cache = object.cache;
-  if (cache) {
-    releaseObject(cache);
-  }
-  object.array = object.cache = object.criteria = object.object = object.number = object.string = object.value = null;
-  if (objectPool.length < maxPoolSize) {
-    objectPool.push(object);
-  }
-}
-
-module.exports = releaseObject;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._releaseobject/index.js","/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._releaseobject")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._maxpoolsize":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._maxpoolsize/index.js","lodash._objectpool":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basedifference/node_modules/lodash._objectpool/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._baseflatten/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isArguments = require('lodash.isarguments'),
-    isArray = require('lodash.isarray');
-
-/**
- * The base implementation of `_.flatten` without support for callback
- * shorthands or `thisArg` binding.
- *
- * @private
- * @param {Array} array The array to flatten.
- * @param {boolean} [isShallow=false] A flag to restrict flattening to a single level.
- * @param {boolean} [isStrict=false] A flag to restrict flattening to arrays and `arguments` objects.
- * @param {number} [fromIndex=0] The index to start from.
- * @returns {Array} Returns a new flattened array.
- */
-function baseFlatten(array, isShallow, isStrict, fromIndex) {
-  var index = (fromIndex || 0) - 1,
-      length = array ? array.length : 0,
-      result = [];
-
-  while (++index < length) {
-    var value = array[index];
-
-    if (value && typeof value == 'object' && typeof value.length == 'number'
-        && (isArray(value) || isArguments(value))) {
-      // recursively flatten arrays (susceptible to call stack limits)
-      if (!isShallow) {
-        value = baseFlatten(value, isShallow, isStrict);
-      }
-      var valIndex = -1,
-          valLength = value.length,
-          resIndex = result.length;
-
-      result.length += valLength;
-      while (++valIndex < valLength) {
-        result[resIndex++] = value[valIndex];
-      }
-    } else if (!isStrict) {
-      result.push(value);
-    }
-  }
-  return result;
-}
-
-module.exports = baseFlatten;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._baseflatten/index.js","/node_modules/lodash.omit/node_modules/lodash._baseflatten")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash.isarguments":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._baseflatten/node_modules/lodash.isarguments/index.js","lodash.isarray":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._baseflatten/node_modules/lodash.isarray/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._baseflatten/node_modules/lodash.isarguments/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** `Object#toString` result shortcuts */
-var argsClass = '[object Arguments]';
-
-/** Used for native method references */
-var objectProto = Object.prototype;
-
-/** Used to resolve the internal [[Class]] of values */
-var toString = objectProto.toString;
-
-/**
- * Checks if `value` is an `arguments` object.
- *
- * @static
- * @memberOf _
- * @category Objects
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if the `value` is an `arguments` object, else `false`.
- * @example
- *
- * (function() { return _.isArguments(arguments); })(1, 2, 3);
- * // => true
- *
- * _.isArguments([1, 2, 3]);
- * // => false
- */
-function isArguments(value) {
-  return value && typeof value == 'object' && typeof value.length == 'number' &&
-    toString.call(value) == argsClass || false;
-}
-
-module.exports = isArguments;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._baseflatten/node_modules/lodash.isarguments/index.js","/node_modules/lodash.omit/node_modules/lodash._baseflatten/node_modules/lodash.isarguments")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._baseflatten/node_modules/lodash.isarray/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isNative = require('lodash._isnative');
-
-/** `Object#toString` result shortcuts */
-var arrayClass = '[object Array]';
-
-/** Used for native method references */
-var objectProto = Object.prototype;
-
-/** Used to resolve the internal [[Class]] of values */
-var toString = objectProto.toString;
-
-/* Native method shortcuts for methods with the same name as other `lodash` methods */
-var nativeIsArray = isNative(nativeIsArray = Array.isArray) && nativeIsArray;
-
-/**
- * Checks if `value` is an array.
- *
- * @static
- * @memberOf _
- * @type Function
- * @category Objects
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if the `value` is an array, else `false`.
- * @example
- *
- * (function() { return _.isArray(arguments); })();
- * // => false
- *
- * _.isArray([1, 2, 3]);
- * // => true
- */
-var isArray = nativeIsArray || function(value) {
-  return value && typeof value == 'object' && typeof value.length == 'number' &&
-    toString.call(value) == arrayClass || false;
-};
-
-module.exports = isArray;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._baseflatten/node_modules/lodash.isarray/index.js","/node_modules/lodash.omit/node_modules/lodash._baseflatten/node_modules/lodash.isarray")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._isnative":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._isnative/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._isnative/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** Used for native method references */
-var objectProto = Object.prototype;
-
-/** Used to resolve the internal [[Class]] of values */
-var toString = objectProto.toString;
-
-/** Used to detect if a method is native */
-var reNative = RegExp('^' +
-  String(toString)
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    .replace(/toString| for [^\]]+/g, '.*?') + '$'
-);
-
-/**
- * Checks if `value` is a native function.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if the `value` is a native function, else `false`.
- */
-function isNative(value) {
-  return typeof value == 'function' && reNative.test(value);
-}
-
-module.exports = isNative;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._isnative/index.js","/node_modules/lodash.omit/node_modules/lodash._isnative")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._maxpoolsize/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** Used as the max size of the `arrayPool` and `objectPool` */
-var maxPoolSize = 40;
-
-module.exports = maxPoolSize;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._maxpoolsize/index.js","/node_modules/lodash.omit/node_modules/lodash._maxpoolsize")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._objecttypes/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** Used to determine if values are of the language type Object */
-var objectTypes = {
-  'boolean': false,
-  'function': true,
-  'object': true,
-  'number': false,
-  'string': false,
-  'undefined': false
-};
-
-module.exports = objectTypes;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash._objecttypes/index.js","/node_modules/lodash.omit/node_modules/lodash._objecttypes")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreateCallback = require('lodash._basecreatecallback'),
-    baseIsEqual = require('lodash._baseisequal'),
-    isObject = require('lodash.isobject'),
-    keys = require('lodash.keys'),
-    property = require('lodash.property');
-
-/**
- * Produces a callback bound to an optional `thisArg`. If `func` is a property
- * name the created callback will return the property value for a given element.
- * If `func` is an object the created callback will return `true` for elements
- * that contain the equivalent object properties, otherwise it will return `false`.
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @param {*} [func=identity] The value to convert to a callback.
- * @param {*} [thisArg] The `this` binding of the created callback.
- * @param {number} [argCount] The number of arguments the callback accepts.
- * @returns {Function} Returns a callback function.
- * @example
- *
- * var characters = [
- *   { 'name': 'barney', 'age': 36 },
- *   { 'name': 'fred',   'age': 40 }
- * ];
- *
- * // wrap to create custom callback shorthands
- * _.createCallback = _.wrap(_.createCallback, function(func, callback, thisArg) {
- *   var match = /^(.+?)__([gl]t)(.+)$/.exec(callback);
- *   return !match ? func(callback, thisArg) : function(object) {
- *     return match[2] == 'gt' ? object[match[1]] > match[3] : object[match[1]] < match[3];
- *   };
- * });
- *
- * _.filter(characters, 'age__gt38');
- * // => [{ 'name': 'fred', 'age': 40 }]
- */
-function createCallback(func, thisArg, argCount) {
-  var type = typeof func;
-  if (func == null || type == 'function') {
-    return baseCreateCallback(func, thisArg, argCount);
-  }
-  // handle "_.pluck" style callback shorthands
-  if (type != 'object') {
-    return property(func);
-  }
-  var props = keys(func),
-      key = props[0],
-      a = func[key];
-
-  // handle "_.where" style callback shorthands
-  if (props.length == 1 && a === a && !isObject(a)) {
-    // fast path the common case of providing an object with a single
-    // property containing a primitive value
-    return function(object) {
-      var b = object[key];
-      return a === b && (a !== 0 || (1 / a == 1 / b));
-    };
-  }
-  return function(object) {
-    var length = props.length,
-        result = false;
-
-    while (length--) {
-      if (!(result = baseIsEqual(object[props[length]], func[props[length]], null, true))) {
-        break;
-      }
-    }
-    return result;
-  };
-}
-
-module.exports = createCallback;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.createcallback/index.js","/node_modules/lodash.omit/node_modules/lodash.createcallback")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._basecreatecallback":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/index.js","lodash._baseisequal":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/index.js","lodash.isobject":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isobject/index.js","lodash.keys":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.keys/index.js","lodash.property":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.property/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var forIn = require('lodash.forin'),
-    getArray = require('lodash._getarray'),
-    isFunction = require('lodash.isfunction'),
-    objectTypes = require('lodash._objecttypes'),
-    releaseArray = require('lodash._releasearray');
-
-/** `Object#toString` result shortcuts */
-var argsClass = '[object Arguments]',
-    arrayClass = '[object Array]',
-    boolClass = '[object Boolean]',
-    dateClass = '[object Date]',
-    numberClass = '[object Number]',
-    objectClass = '[object Object]',
-    regexpClass = '[object RegExp]',
-    stringClass = '[object String]';
-
-/** Used for native method references */
-var objectProto = Object.prototype;
-
-/** Used to resolve the internal [[Class]] of values */
-var toString = objectProto.toString;
-
-/** Native method shortcuts */
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-/**
- * The base implementation of `_.isEqual`, without support for `thisArg` binding,
- * that allows partial "_.where" style comparisons.
- *
- * @private
- * @param {*} a The value to compare.
- * @param {*} b The other value to compare.
- * @param {Function} [callback] The function to customize comparing values.
- * @param {Function} [isWhere=false] A flag to indicate performing partial comparisons.
- * @param {Array} [stackA=[]] Tracks traversed `a` objects.
- * @param {Array} [stackB=[]] Tracks traversed `b` objects.
- * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
- */
-function baseIsEqual(a, b, callback, isWhere, stackA, stackB) {
-  // used to indicate that when comparing objects, `a` has at least the properties of `b`
-  if (callback) {
-    var result = callback(a, b);
-    if (typeof result != 'undefined') {
-      return !!result;
-    }
-  }
-  // exit early for identical values
-  if (a === b) {
-    // treat `+0` vs. `-0` as not equal
-    return a !== 0 || (1 / a == 1 / b);
-  }
-  var type = typeof a,
-      otherType = typeof b;
-
-  // exit early for unlike primitive values
-  if (a === a &&
-      !(a && objectTypes[type]) &&
-      !(b && objectTypes[otherType])) {
-    return false;
-  }
-  // exit early for `null` and `undefined` avoiding ES3's Function#call behavior
-  // http://es5.github.io/#x15.3.4.4
-  if (a == null || b == null) {
-    return a === b;
-  }
-  // compare [[Class]] names
-  var className = toString.call(a),
-      otherClass = toString.call(b);
-
-  if (className == argsClass) {
-    className = objectClass;
-  }
-  if (otherClass == argsClass) {
-    otherClass = objectClass;
-  }
-  if (className != otherClass) {
-    return false;
-  }
-  switch (className) {
-    case boolClass:
-    case dateClass:
-      // coerce dates and booleans to numbers, dates to milliseconds and booleans
-      // to `1` or `0` treating invalid dates coerced to `NaN` as not equal
-      return +a == +b;
-
-    case numberClass:
-      // treat `NaN` vs. `NaN` as equal
-      return (a != +a)
-        ? b != +b
-        // but treat `+0` vs. `-0` as not equal
-        : (a == 0 ? (1 / a == 1 / b) : a == +b);
-
-    case regexpClass:
-    case stringClass:
-      // coerce regexes to strings (http://es5.github.io/#x15.10.6.4)
-      // treat string primitives and their corresponding object instances as equal
-      return a == String(b);
-  }
-  var isArr = className == arrayClass;
-  if (!isArr) {
-    // unwrap any `lodash` wrapped values
-    var aWrapped = hasOwnProperty.call(a, '__wrapped__'),
-        bWrapped = hasOwnProperty.call(b, '__wrapped__');
-
-    if (aWrapped || bWrapped) {
-      return baseIsEqual(aWrapped ? a.__wrapped__ : a, bWrapped ? b.__wrapped__ : b, callback, isWhere, stackA, stackB);
-    }
-    // exit for functions and DOM nodes
-    if (className != objectClass) {
-      return false;
-    }
-    // in older versions of Opera, `arguments` objects have `Array` constructors
-    var ctorA = a.constructor,
-        ctorB = b.constructor;
-
-    // non `Object` object instances with different constructors are not equal
-    if (ctorA != ctorB &&
-          !(isFunction(ctorA) && ctorA instanceof ctorA && isFunction(ctorB) && ctorB instanceof ctorB) &&
-          ('constructor' in a && 'constructor' in b)
-        ) {
-      return false;
-    }
-  }
-  // assume cyclic structures are equal
-  // the algorithm for detecting cyclic structures is adapted from ES 5.1
-  // section 15.12.3, abstract operation `JO` (http://es5.github.io/#x15.12.3)
-  var initedStack = !stackA;
-  stackA || (stackA = getArray());
-  stackB || (stackB = getArray());
-
-  var length = stackA.length;
-  while (length--) {
-    if (stackA[length] == a) {
-      return stackB[length] == b;
-    }
-  }
-  var size = 0;
-  result = true;
-
-  // add `a` and `b` to the stack of traversed objects
-  stackA.push(a);
-  stackB.push(b);
-
-  // recursively compare objects and arrays (susceptible to call stack limits)
-  if (isArr) {
-    // compare lengths to determine if a deep comparison is necessary
-    length = a.length;
-    size = b.length;
-    result = size == length;
-
-    if (result || isWhere) {
-      // deep compare the contents, ignoring non-numeric properties
-      while (size--) {
-        var index = length,
-            value = b[size];
-
-        if (isWhere) {
-          while (index--) {
-            if ((result = baseIsEqual(a[index], value, callback, isWhere, stackA, stackB))) {
-              break;
-            }
-          }
-        } else if (!(result = baseIsEqual(a[size], value, callback, isWhere, stackA, stackB))) {
-          break;
-        }
-      }
-    }
-  }
-  else {
-    // deep compare objects using `forIn`, instead of `forOwn`, to avoid `Object.keys`
-    // which, in this case, is more costly
-    forIn(b, function(value, key, b) {
-      if (hasOwnProperty.call(b, key)) {
-        // count the number of properties.
-        size++;
-        // deep compare each property value.
-        return (result = hasOwnProperty.call(a, key) && baseIsEqual(a[key], value, callback, isWhere, stackA, stackB));
-      }
-    });
-
-    if (result && !isWhere) {
-      // ensure both objects have the same number of properties
-      forIn(a, function(value, key, a) {
-        if (hasOwnProperty.call(a, key)) {
-          // `size` will be `-1` if `a` has more properties than `b`
-          return (result = --size > -1);
-        }
-      });
-    }
-  }
-  stackA.pop();
-  stackB.pop();
-
-  if (initedStack) {
-    releaseArray(stackA);
-    releaseArray(stackB);
-  }
-  return result;
-}
-
-module.exports = baseIsEqual;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/index.js","/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._getarray":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._getarray/index.js","lodash._objecttypes":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._objecttypes/index.js","lodash._releasearray":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._releasearray/index.js","lodash.forin":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.forin/index.js","lodash.isfunction":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isfunction/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._arraypool/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/** Used to pool arrays and objects used internally */
-var arrayPool = [];
-
-module.exports = arrayPool;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._arraypool/index.js","/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._arraypool")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._getarray/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var arrayPool = require('lodash._arraypool');
-
-/**
- * Gets an array from the array pool or creates a new one if the pool is empty.
- *
- * @private
- * @returns {Array} The array from the pool.
- */
-function getArray() {
-  return arrayPool.pop() || [];
-}
-
-module.exports = getArray;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._getarray/index.js","/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._getarray")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._arraypool":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._arraypool/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._releasearray/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var arrayPool = require('lodash._arraypool'),
-    maxPoolSize = require('lodash._maxpoolsize');
-
-/**
- * Releases the given array back to the array pool.
- *
- * @private
- * @param {Array} [array] The array to release.
- */
-function releaseArray(array) {
-  array.length = 0;
-  if (arrayPool.length < maxPoolSize) {
-    arrayPool.push(array);
-  }
-}
-
-module.exports = releaseArray;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._releasearray/index.js","/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._releasearray")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._arraypool":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash._baseisequal/node_modules/lodash._arraypool/index.js","lodash._maxpoolsize":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._maxpoolsize/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.keys/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var isNative = require('lodash._isnative'),
-    isObject = require('lodash.isobject'),
-    shimKeys = require('lodash._shimkeys');
-
-/* Native method shortcuts for methods with the same name as other `lodash` methods */
-var nativeKeys = isNative(nativeKeys = Object.keys) && nativeKeys;
-
-/**
- * Creates an array composed of the own enumerable property names of an object.
- *
- * @static
- * @memberOf _
- * @category Objects
- * @param {Object} object The object to inspect.
- * @returns {Array} Returns an array of property names.
- * @example
- *
- * _.keys({ 'one': 1, 'two': 2, 'three': 3 });
- * // => ['one', 'two', 'three'] (property order is not guaranteed across environments)
- */
-var keys = !nativeKeys ? shimKeys : function(object) {
-  if (!isObject(object)) {
-    return [];
-  }
-  return nativeKeys(object);
-};
-
-module.exports = keys;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.keys/index.js","/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.keys")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._isnative":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._isnative/index.js","lodash._shimkeys":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.keys/node_modules/lodash._shimkeys/index.js","lodash.isobject":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isobject/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.keys/node_modules/lodash._shimkeys/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var objectTypes = require('lodash._objecttypes');
-
-/** Used for native method references */
-var objectProto = Object.prototype;
-
-/** Native method shortcuts */
-var hasOwnProperty = objectProto.hasOwnProperty;
-
-/**
- * A fallback implementation of `Object.keys` which produces an array of the
- * given object's own enumerable property names.
- *
- * @private
- * @type Function
- * @param {Object} object The object to inspect.
- * @returns {Array} Returns an array of property names.
- */
-var shimKeys = function(object) {
-  var index, iterable = object, result = [];
-  if (!iterable) return result;
-  if (!(objectTypes[typeof object])) return result;
-    for (index in iterable) {
-      if (hasOwnProperty.call(iterable, index)) {
-        result.push(index);
-      }
-    }
-  return result
-};
-
-module.exports = shimKeys;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.keys/node_modules/lodash._shimkeys/index.js","/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.keys/node_modules/lodash._shimkeys")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._objecttypes":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._objecttypes/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.property/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * Creates a "_.pluck" style function, which returns the `key` value of a
- * given object.
- *
- * @static
- * @memberOf _
- * @category Utilities
- * @param {string} key The name of the property to retrieve.
- * @returns {Function} Returns the new function.
- * @example
- *
- * var characters = [
- *   { 'name': 'fred',   'age': 40 },
- *   { 'name': 'barney', 'age': 36 }
- * ];
- *
- * var getName = _.property('name');
- *
- * _.map(characters, getName);
- * // => ['barney', 'fred']
- *
- * _.sortBy(characters, getName);
- * // => [{ 'name': 'barney', 'age': 36 }, { 'name': 'fred',   'age': 40 }]
- */
-function property(key) {
-  return function(object) {
-    return object[key];
-  };
-}
-
-module.exports = property;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.property/index.js","/node_modules/lodash.omit/node_modules/lodash.createcallback/node_modules/lodash.property")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.forin/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var baseCreateCallback = require('lodash._basecreatecallback'),
-    objectTypes = require('lodash._objecttypes');
-
-/**
- * Iterates over own and inherited enumerable properties of an object,
- * executing the callback for each property. The callback is bound to `thisArg`
- * and invoked with three arguments; (value, key, object). Callbacks may exit
- * iteration early by explicitly returning `false`.
- *
- * @static
- * @memberOf _
- * @type Function
- * @category Objects
- * @param {Object} object The object to iterate over.
- * @param {Function} [callback=identity] The function called per iteration.
- * @param {*} [thisArg] The `this` binding of `callback`.
- * @returns {Object} Returns `object`.
- * @example
- *
- * function Shape() {
- *   this.x = 0;
- *   this.y = 0;
- * }
- *
- * Shape.prototype.move = function(x, y) {
- *   this.x += x;
- *   this.y += y;
- * };
- *
- * _.forIn(new Shape, function(value, key) {
- *   console.log(key);
- * });
- * // => logs 'x', 'y', and 'move' (property order is not guaranteed across environments)
- */
-var forIn = function(collection, callback, thisArg) {
-  var index, iterable = collection, result = iterable;
-  if (!iterable) return result;
-  if (!objectTypes[typeof iterable]) return result;
-  callback = callback && typeof thisArg == 'undefined' ? callback : baseCreateCallback(callback, thisArg, 3);
-    for (index in iterable) {
-      if (callback(iterable[index], index, collection) === false) return result;
-    }
-  return result
-};
-
-module.exports = forIn;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.forin/index.js","/node_modules/lodash.omit/node_modules/lodash.forin")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._basecreatecallback":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._basecreatecallback/index.js","lodash._objecttypes":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._objecttypes/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isfunction/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-
-/**
- * Checks if `value` is a function.
- *
- * @static
- * @memberOf _
- * @category Objects
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if the `value` is a function, else `false`.
- * @example
- *
- * _.isFunction(_);
- * // => true
- */
-function isFunction(value) {
-  return typeof value == 'function';
-}
-
-module.exports = isFunction;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.isfunction/index.js","/node_modules/lodash.omit/node_modules/lodash.isfunction")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash.isobject/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Lo-Dash 2.4.1 (Custom Build) <http://lodash.com/>
- * Build: `lodash modularize modern exports="npm" -o ./npm/`
- * Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
- * Based on Underscore.js 1.5.2 <http://underscorejs.org/LICENSE>
- * Copyright 2009-2013 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- * Available under MIT license <http://lodash.com/license>
- */
-var objectTypes = require('lodash._objecttypes');
-
-/**
- * Checks if `value` is the language type of Object.
- * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
- *
- * @static
- * @memberOf _
- * @category Objects
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if the `value` is an object, else `false`.
- * @example
- *
- * _.isObject({});
- * // => true
- *
- * _.isObject([1, 2, 3]);
- * // => true
- *
- * _.isObject(1);
- * // => false
- */
-function isObject(value) {
-  // check if the value is the ECMAScript language type of Object
-  // http://es5.github.io/#x8
-  // and avoid a V8 bug
-  // http://code.google.com/p/v8/issues/detail?id=2291
-  return !!(value && objectTypes[typeof value]);
-}
-
-module.exports = isObject;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/lodash.omit/node_modules/lodash.isobject/index.js","/node_modules/lodash.omit/node_modules/lodash.isobject")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash._objecttypes":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/node_modules/lodash._objecttypes/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSProperty.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSProperty.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -10268,130 +7527,7 @@ var ExecutionEnvironment = {
 module.exports = ExecutionEnvironment;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ExecutionEnvironment.js","/node_modules/react/lib")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule PooledClass
- */
-
-"use strict";
-
-var invariant = require("./invariant");
-
-/**
- * Static poolers. Several custom versions for each potential number of
- * arguments. A completely generic pooler is easy to implement, but would
- * require accessing the `arguments` object. In each of these, `this` refers to
- * the Class itself, not an instance. If any others are needed, simply add them
- * here, or in their own files.
- */
-var oneArgumentPooler = function(copyFieldsFrom) {
-  var Klass = this;
-  if (Klass.instancePool.length) {
-    var instance = Klass.instancePool.pop();
-    Klass.call(instance, copyFieldsFrom);
-    return instance;
-  } else {
-    return new Klass(copyFieldsFrom);
-  }
-};
-
-var twoArgumentPooler = function(a1, a2) {
-  var Klass = this;
-  if (Klass.instancePool.length) {
-    var instance = Klass.instancePool.pop();
-    Klass.call(instance, a1, a2);
-    return instance;
-  } else {
-    return new Klass(a1, a2);
-  }
-};
-
-var threeArgumentPooler = function(a1, a2, a3) {
-  var Klass = this;
-  if (Klass.instancePool.length) {
-    var instance = Klass.instancePool.pop();
-    Klass.call(instance, a1, a2, a3);
-    return instance;
-  } else {
-    return new Klass(a1, a2, a3);
-  }
-};
-
-var fiveArgumentPooler = function(a1, a2, a3, a4, a5) {
-  var Klass = this;
-  if (Klass.instancePool.length) {
-    var instance = Klass.instancePool.pop();
-    Klass.call(instance, a1, a2, a3, a4, a5);
-    return instance;
-  } else {
-    return new Klass(a1, a2, a3, a4, a5);
-  }
-};
-
-var standardReleaser = function(instance) {
-  var Klass = this;
-  ("production" !== process.env.NODE_ENV ? invariant(
-    instance instanceof Klass,
-    'Trying to release an instance into a pool of a different type.'
-  ) : invariant(instance instanceof Klass));
-  if (instance.destructor) {
-    instance.destructor();
-  }
-  if (Klass.instancePool.length < Klass.poolSize) {
-    Klass.instancePool.push(instance);
-  }
-};
-
-var DEFAULT_POOL_SIZE = 10;
-var DEFAULT_POOLER = oneArgumentPooler;
-
-/**
- * Augments `CopyConstructor` to be a poolable class, augmenting only the class
- * itself (statically) not adding any prototypical fields. Any CopyConstructor
- * you give this may have a `poolSize` property, and will look for a
- * prototypical `destructor` on instances (optional).
- *
- * @param {Function} CopyConstructor Constructor that can be used to reset.
- * @param {Function} pooler Customizable pooler.
- */
-var addPoolingTo = function(CopyConstructor, pooler) {
-  var NewKlass = CopyConstructor;
-  NewKlass.instancePool = [];
-  NewKlass.getPooled = pooler || DEFAULT_POOLER;
-  if (!NewKlass.poolSize) {
-    NewKlass.poolSize = DEFAULT_POOL_SIZE;
-  }
-  NewKlass.release = standardReleaser;
-  return NewKlass;
-};
-
-var PooledClass = {
-  addPoolingTo: addPoolingTo,
-  oneArgumentPooler: oneArgumentPooler,
-  twoArgumentPooler: twoArgumentPooler,
-  threeArgumentPooler: threeArgumentPooler,
-  fiveArgumentPooler: fiveArgumentPooler
-};
-
-module.exports = PooledClass;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/PooledClass.js","/node_modules/react/lib")
-},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -11036,7 +8172,1669 @@ var ReactComponent = {
 module.exports = ReactComponent;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactComponent.js","/node_modules/react/lib")
-},{"./ReactCurrentOwner":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCurrentOwner.js","./ReactOwner":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactOwner.js","./ReactUpdates":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactUpdates.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./keyMirror":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyMirror.js","./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js","./monitorCodeUse":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/monitorCodeUse.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCurrentOwner.js":[function(require,module,exports){
+},{"./ReactCurrentOwner":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCurrentOwner.js","./ReactOwner":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactOwner.js","./ReactUpdates":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactUpdates.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./keyMirror":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyMirror.js","./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js","./monitorCodeUse":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/monitorCodeUse.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactCompositeComponent
+ */
+
+"use strict";
+
+var ReactComponent = require("./ReactComponent");
+var ReactContext = require("./ReactContext");
+var ReactCurrentOwner = require("./ReactCurrentOwner");
+var ReactErrorUtils = require("./ReactErrorUtils");
+var ReactOwner = require("./ReactOwner");
+var ReactPerf = require("./ReactPerf");
+var ReactPropTransferer = require("./ReactPropTransferer");
+var ReactPropTypeLocations = require("./ReactPropTypeLocations");
+var ReactPropTypeLocationNames = require("./ReactPropTypeLocationNames");
+var ReactUpdates = require("./ReactUpdates");
+
+var instantiateReactComponent = require("./instantiateReactComponent");
+var invariant = require("./invariant");
+var keyMirror = require("./keyMirror");
+var merge = require("./merge");
+var mixInto = require("./mixInto");
+var monitorCodeUse = require("./monitorCodeUse");
+var objMap = require("./objMap");
+var shouldUpdateReactComponent = require("./shouldUpdateReactComponent");
+var warning = require("./warning");
+
+/**
+ * Policies that describe methods in `ReactCompositeComponentInterface`.
+ */
+var SpecPolicy = keyMirror({
+  /**
+   * These methods may be defined only once by the class specification or mixin.
+   */
+  DEFINE_ONCE: null,
+  /**
+   * These methods may be defined by both the class specification and mixins.
+   * Subsequent definitions will be chained. These methods must return void.
+   */
+  DEFINE_MANY: null,
+  /**
+   * These methods are overriding the base ReactCompositeComponent class.
+   */
+  OVERRIDE_BASE: null,
+  /**
+   * These methods are similar to DEFINE_MANY, except we assume they return
+   * objects. We try to merge the keys of the return values of all the mixed in
+   * functions. If there is a key conflict we throw.
+   */
+  DEFINE_MANY_MERGED: null
+});
+
+
+var injectedMixins = [];
+
+/**
+ * Composite components are higher-level components that compose other composite
+ * or native components.
+ *
+ * To create a new type of `ReactCompositeComponent`, pass a specification of
+ * your new class to `React.createClass`. The only requirement of your class
+ * specification is that you implement a `render` method.
+ *
+ *   var MyComponent = React.createClass({
+ *     render: function() {
+ *       return <div>Hello World</div>;
+ *     }
+ *   });
+ *
+ * The class specification supports a specific protocol of methods that have
+ * special meaning (e.g. `render`). See `ReactCompositeComponentInterface` for
+ * more the comprehensive protocol. Any other properties and methods in the
+ * class specification will available on the prototype.
+ *
+ * @interface ReactCompositeComponentInterface
+ * @internal
+ */
+var ReactCompositeComponentInterface = {
+
+  /**
+   * An array of Mixin objects to include when defining your component.
+   *
+   * @type {array}
+   * @optional
+   */
+  mixins: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * An object containing properties and methods that should be defined on
+   * the component's constructor instead of its prototype (static methods).
+   *
+   * @type {object}
+   * @optional
+   */
+  statics: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * Definition of prop types for this component.
+   *
+   * @type {object}
+   * @optional
+   */
+  propTypes: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * Definition of context types for this component.
+   *
+   * @type {object}
+   * @optional
+   */
+  contextTypes: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * Definition of context types this component sets for its children.
+   *
+   * @type {object}
+   * @optional
+   */
+  childContextTypes: SpecPolicy.DEFINE_MANY,
+
+  // ==== Definition methods ====
+
+  /**
+   * Invoked when the component is mounted. Values in the mapping will be set on
+   * `this.props` if that prop is not specified (i.e. using an `in` check).
+   *
+   * This method is invoked before `getInitialState` and therefore cannot rely
+   * on `this.state` or use `this.setState`.
+   *
+   * @return {object}
+   * @optional
+   */
+  getDefaultProps: SpecPolicy.DEFINE_MANY_MERGED,
+
+  /**
+   * Invoked once before the component is mounted. The return value will be used
+   * as the initial value of `this.state`.
+   *
+   *   getInitialState: function() {
+   *     return {
+   *       isOn: false,
+   *       fooBaz: new BazFoo()
+   *     }
+   *   }
+   *
+   * @return {object}
+   * @optional
+   */
+  getInitialState: SpecPolicy.DEFINE_MANY_MERGED,
+
+  /**
+   * @return {object}
+   * @optional
+   */
+  getChildContext: SpecPolicy.DEFINE_MANY_MERGED,
+
+  /**
+   * Uses props from `this.props` and state from `this.state` to render the
+   * structure of the component.
+   *
+   * No guarantees are made about when or how often this method is invoked, so
+   * it must not have side effects.
+   *
+   *   render: function() {
+   *     var name = this.props.name;
+   *     return <div>Hello, {name}!</div>;
+   *   }
+   *
+   * @return {ReactComponent}
+   * @nosideeffects
+   * @required
+   */
+  render: SpecPolicy.DEFINE_ONCE,
+
+
+
+  // ==== Delegate methods ====
+
+  /**
+   * Invoked when the component is initially created and about to be mounted.
+   * This may have side effects, but any external subscriptions or data created
+   * by this method must be cleaned up in `componentWillUnmount`.
+   *
+   * @optional
+   */
+  componentWillMount: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * Invoked when the component has been mounted and has a DOM representation.
+   * However, there is no guarantee that the DOM node is in the document.
+   *
+   * Use this as an opportunity to operate on the DOM when the component has
+   * been mounted (initialized and rendered) for the first time.
+   *
+   * @param {DOMElement} rootNode DOM element representing the component.
+   * @optional
+   */
+  componentDidMount: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * Invoked before the component receives new props.
+   *
+   * Use this as an opportunity to react to a prop transition by updating the
+   * state using `this.setState`. Current props are accessed via `this.props`.
+   *
+   *   componentWillReceiveProps: function(nextProps, nextContext) {
+   *     this.setState({
+   *       likesIncreasing: nextProps.likeCount > this.props.likeCount
+   *     });
+   *   }
+   *
+   * NOTE: There is no equivalent `componentWillReceiveState`. An incoming prop
+   * transition may cause a state change, but the opposite is not true. If you
+   * need it, you are probably looking for `componentWillUpdate`.
+   *
+   * @param {object} nextProps
+   * @optional
+   */
+  componentWillReceiveProps: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * Invoked while deciding if the component should be updated as a result of
+   * receiving new props, state and/or context.
+   *
+   * Use this as an opportunity to `return false` when you're certain that the
+   * transition to the new props/state/context will not require a component
+   * update.
+   *
+   *   shouldComponentUpdate: function(nextProps, nextState, nextContext) {
+   *     return !equal(nextProps, this.props) ||
+   *       !equal(nextState, this.state) ||
+   *       !equal(nextContext, this.context);
+   *   }
+   *
+   * @param {object} nextProps
+   * @param {?object} nextState
+   * @param {?object} nextContext
+   * @return {boolean} True if the component should update.
+   * @optional
+   */
+  shouldComponentUpdate: SpecPolicy.DEFINE_ONCE,
+
+  /**
+   * Invoked when the component is about to update due to a transition from
+   * `this.props`, `this.state` and `this.context` to `nextProps`, `nextState`
+   * and `nextContext`.
+   *
+   * Use this as an opportunity to perform preparation before an update occurs.
+   *
+   * NOTE: You **cannot** use `this.setState()` in this method.
+   *
+   * @param {object} nextProps
+   * @param {?object} nextState
+   * @param {?object} nextContext
+   * @param {ReactReconcileTransaction} transaction
+   * @optional
+   */
+  componentWillUpdate: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * Invoked when the component's DOM representation has been updated.
+   *
+   * Use this as an opportunity to operate on the DOM when the component has
+   * been updated.
+   *
+   * @param {object} prevProps
+   * @param {?object} prevState
+   * @param {?object} prevContext
+   * @param {DOMElement} rootNode DOM element representing the component.
+   * @optional
+   */
+  componentDidUpdate: SpecPolicy.DEFINE_MANY,
+
+  /**
+   * Invoked when the component is about to be removed from its parent and have
+   * its DOM representation destroyed.
+   *
+   * Use this as an opportunity to deallocate any external resources.
+   *
+   * NOTE: There is no `componentDidUnmount` since your component will have been
+   * destroyed by that point.
+   *
+   * @optional
+   */
+  componentWillUnmount: SpecPolicy.DEFINE_MANY,
+
+
+
+  // ==== Advanced methods ====
+
+  /**
+   * Updates the component's currently mounted DOM representation.
+   *
+   * By default, this implements React's rendering and reconciliation algorithm.
+   * Sophisticated clients may wish to override this.
+   *
+   * @param {ReactReconcileTransaction} transaction
+   * @internal
+   * @overridable
+   */
+  updateComponent: SpecPolicy.OVERRIDE_BASE
+
+};
+
+/**
+ * Mapping from class specification keys to special processing functions.
+ *
+ * Although these are declared like instance properties in the specification
+ * when defining classes using `React.createClass`, they are actually static
+ * and are accessible on the constructor instead of the prototype. Despite
+ * being static, they must be defined outside of the "statics" key under
+ * which all other static methods are defined.
+ */
+var RESERVED_SPEC_KEYS = {
+  displayName: function(ConvenienceConstructor, displayName) {
+    ConvenienceConstructor.componentConstructor.displayName = displayName;
+  },
+  mixins: function(ConvenienceConstructor, mixins) {
+    if (mixins) {
+      for (var i = 0; i < mixins.length; i++) {
+        mixSpecIntoComponent(ConvenienceConstructor, mixins[i]);
+      }
+    }
+  },
+  childContextTypes: function(ConvenienceConstructor, childContextTypes) {
+    var Constructor = ConvenienceConstructor.componentConstructor;
+    validateTypeDef(
+      Constructor,
+      childContextTypes,
+      ReactPropTypeLocations.childContext
+    );
+    Constructor.childContextTypes = merge(
+      Constructor.childContextTypes,
+      childContextTypes
+    );
+  },
+  contextTypes: function(ConvenienceConstructor, contextTypes) {
+    var Constructor = ConvenienceConstructor.componentConstructor;
+    validateTypeDef(
+      Constructor,
+      contextTypes,
+      ReactPropTypeLocations.context
+    );
+    Constructor.contextTypes = merge(Constructor.contextTypes, contextTypes);
+  },
+  propTypes: function(ConvenienceConstructor, propTypes) {
+    var Constructor = ConvenienceConstructor.componentConstructor;
+    validateTypeDef(
+      Constructor,
+      propTypes,
+      ReactPropTypeLocations.prop
+    );
+    Constructor.propTypes = merge(Constructor.propTypes, propTypes);
+  },
+  statics: function(ConvenienceConstructor, statics) {
+    mixStaticSpecIntoComponent(ConvenienceConstructor, statics);
+  }
+};
+
+function validateTypeDef(Constructor, typeDef, location) {
+  for (var propName in typeDef) {
+    if (typeDef.hasOwnProperty(propName)) {
+      ("production" !== process.env.NODE_ENV ? invariant(
+        typeof typeDef[propName] == 'function',
+        '%s: %s type `%s` is invalid; it must be a function, usually from ' +
+        'React.PropTypes.',
+        Constructor.displayName || 'ReactCompositeComponent',
+        ReactPropTypeLocationNames[location],
+        propName
+      ) : invariant(typeof typeDef[propName] == 'function'));
+    }
+  }
+}
+
+function validateMethodOverride(proto, name) {
+  var specPolicy = ReactCompositeComponentInterface[name];
+
+  // Disallow overriding of base class methods unless explicitly allowed.
+  if (ReactCompositeComponentMixin.hasOwnProperty(name)) {
+    ("production" !== process.env.NODE_ENV ? invariant(
+      specPolicy === SpecPolicy.OVERRIDE_BASE,
+      'ReactCompositeComponentInterface: You are attempting to override ' +
+      '`%s` from your class specification. Ensure that your method names ' +
+      'do not overlap with React methods.',
+      name
+    ) : invariant(specPolicy === SpecPolicy.OVERRIDE_BASE));
+  }
+
+  // Disallow defining methods more than once unless explicitly allowed.
+  if (proto.hasOwnProperty(name)) {
+    ("production" !== process.env.NODE_ENV ? invariant(
+      specPolicy === SpecPolicy.DEFINE_MANY ||
+      specPolicy === SpecPolicy.DEFINE_MANY_MERGED,
+      'ReactCompositeComponentInterface: You are attempting to define ' +
+      '`%s` on your component more than once. This conflict may be due ' +
+      'to a mixin.',
+      name
+    ) : invariant(specPolicy === SpecPolicy.DEFINE_MANY ||
+    specPolicy === SpecPolicy.DEFINE_MANY_MERGED));
+  }
+}
+
+function validateLifeCycleOnReplaceState(instance) {
+  var compositeLifeCycleState = instance._compositeLifeCycleState;
+  ("production" !== process.env.NODE_ENV ? invariant(
+    instance.isMounted() ||
+      compositeLifeCycleState === CompositeLifeCycle.MOUNTING,
+    'replaceState(...): Can only update a mounted or mounting component.'
+  ) : invariant(instance.isMounted() ||
+    compositeLifeCycleState === CompositeLifeCycle.MOUNTING));
+  ("production" !== process.env.NODE_ENV ? invariant(compositeLifeCycleState !== CompositeLifeCycle.RECEIVING_STATE,
+    'replaceState(...): Cannot update during an existing state transition ' +
+    '(such as within `render`). This could potentially cause an infinite ' +
+    'loop so it is forbidden.'
+  ) : invariant(compositeLifeCycleState !== CompositeLifeCycle.RECEIVING_STATE));
+  ("production" !== process.env.NODE_ENV ? invariant(compositeLifeCycleState !== CompositeLifeCycle.UNMOUNTING,
+    'replaceState(...): Cannot update while unmounting component. This ' +
+    'usually means you called setState() on an unmounted component.'
+  ) : invariant(compositeLifeCycleState !== CompositeLifeCycle.UNMOUNTING));
+}
+
+/**
+ * Custom version of `mixInto` which handles policy validation and reserved
+ * specification keys when building `ReactCompositeComponent` classses.
+ */
+function mixSpecIntoComponent(ConvenienceConstructor, spec) {
+  ("production" !== process.env.NODE_ENV ? invariant(
+    !isValidClass(spec),
+    'ReactCompositeComponent: You\'re attempting to ' +
+    'use a component class as a mixin. Instead, just use a regular object.'
+  ) : invariant(!isValidClass(spec)));
+  ("production" !== process.env.NODE_ENV ? invariant(
+    !ReactComponent.isValidComponent(spec),
+    'ReactCompositeComponent: You\'re attempting to ' +
+    'use a component as a mixin. Instead, just use a regular object.'
+  ) : invariant(!ReactComponent.isValidComponent(spec)));
+
+  var Constructor = ConvenienceConstructor.componentConstructor;
+  var proto = Constructor.prototype;
+  for (var name in spec) {
+    var property = spec[name];
+    if (!spec.hasOwnProperty(name)) {
+      continue;
+    }
+
+    validateMethodOverride(proto, name);
+
+    if (RESERVED_SPEC_KEYS.hasOwnProperty(name)) {
+      RESERVED_SPEC_KEYS[name](ConvenienceConstructor, property);
+    } else {
+      // Setup methods on prototype:
+      // The following member methods should not be automatically bound:
+      // 1. Expected ReactCompositeComponent methods (in the "interface").
+      // 2. Overridden methods (that were mixed in).
+      var isCompositeComponentMethod = name in ReactCompositeComponentInterface;
+      var isInherited = name in proto;
+      var markedDontBind = property && property.__reactDontBind;
+      var isFunction = typeof property === 'function';
+      var shouldAutoBind =
+        isFunction &&
+        !isCompositeComponentMethod &&
+        !isInherited &&
+        !markedDontBind;
+
+      if (shouldAutoBind) {
+        if (!proto.__reactAutoBindMap) {
+          proto.__reactAutoBindMap = {};
+        }
+        proto.__reactAutoBindMap[name] = property;
+        proto[name] = property;
+      } else {
+        if (isInherited) {
+          // For methods which are defined more than once, call the existing
+          // methods before calling the new property.
+          if (ReactCompositeComponentInterface[name] ===
+              SpecPolicy.DEFINE_MANY_MERGED) {
+            proto[name] = createMergedResultFunction(proto[name], property);
+          } else {
+            proto[name] = createChainedFunction(proto[name], property);
+          }
+        } else {
+          proto[name] = property;
+        }
+      }
+    }
+  }
+}
+
+function mixStaticSpecIntoComponent(ConvenienceConstructor, statics) {
+  if (!statics) {
+    return;
+  }
+  for (var name in statics) {
+    var property = statics[name];
+    if (!statics.hasOwnProperty(name)) {
+      return;
+    }
+
+    var isInherited = name in ConvenienceConstructor;
+    var result = property;
+    if (isInherited) {
+      var existingProperty = ConvenienceConstructor[name];
+      var existingType = typeof existingProperty;
+      var propertyType = typeof property;
+      ("production" !== process.env.NODE_ENV ? invariant(
+        existingType === 'function' && propertyType === 'function',
+        'ReactCompositeComponent: You are attempting to define ' +
+        '`%s` on your component more than once, but that is only supported ' +
+        'for functions, which are chained together. This conflict may be ' +
+        'due to a mixin.',
+        name
+      ) : invariant(existingType === 'function' && propertyType === 'function'));
+      result = createChainedFunction(existingProperty, property);
+    }
+    ConvenienceConstructor[name] = result;
+    ConvenienceConstructor.componentConstructor[name] = result;
+  }
+}
+
+/**
+ * Merge two objects, but throw if both contain the same key.
+ *
+ * @param {object} one The first object, which is mutated.
+ * @param {object} two The second object
+ * @return {object} one after it has been mutated to contain everything in two.
+ */
+function mergeObjectsWithNoDuplicateKeys(one, two) {
+  ("production" !== process.env.NODE_ENV ? invariant(
+    one && two && typeof one === 'object' && typeof two === 'object',
+    'mergeObjectsWithNoDuplicateKeys(): Cannot merge non-objects'
+  ) : invariant(one && two && typeof one === 'object' && typeof two === 'object'));
+
+  objMap(two, function(value, key) {
+    ("production" !== process.env.NODE_ENV ? invariant(
+      one[key] === undefined,
+      'mergeObjectsWithNoDuplicateKeys(): ' +
+      'Tried to merge two objects with the same key: %s',
+      key
+    ) : invariant(one[key] === undefined));
+    one[key] = value;
+  });
+  return one;
+}
+
+/**
+ * Creates a function that invokes two functions and merges their return values.
+ *
+ * @param {function} one Function to invoke first.
+ * @param {function} two Function to invoke second.
+ * @return {function} Function that invokes the two argument functions.
+ * @private
+ */
+function createMergedResultFunction(one, two) {
+  return function mergedResult() {
+    var a = one.apply(this, arguments);
+    var b = two.apply(this, arguments);
+    if (a == null) {
+      return b;
+    } else if (b == null) {
+      return a;
+    }
+    return mergeObjectsWithNoDuplicateKeys(a, b);
+  };
+}
+
+/**
+ * Creates a function that invokes two functions and ignores their return vales.
+ *
+ * @param {function} one Function to invoke first.
+ * @param {function} two Function to invoke second.
+ * @return {function} Function that invokes the two argument functions.
+ * @private
+ */
+function createChainedFunction(one, two) {
+  return function chainedFunction() {
+    one.apply(this, arguments);
+    two.apply(this, arguments);
+  };
+}
+
+if ("production" !== process.env.NODE_ENV) {
+
+  var unmountedPropertyWhitelist = {
+    constructor: true,
+    construct: true,
+    isOwnedBy: true, // should be deprecated but can have code mod (internal)
+    type: true,
+    props: true,
+    // currently private but belong on the descriptor and are valid for use
+    // inside the framework:
+    __keyValidated__: true,
+    _owner: true,
+    _currentContext: true
+  };
+
+  var componentInstanceProperties = {
+    __keyValidated__: true,
+    __keySetters: true,
+    _compositeLifeCycleState: true,
+    _currentContext: true,
+    _defaultProps: true,
+    _instance: true,
+    _lifeCycleState: true,
+    _mountDepth: true,
+    _owner: true,
+    _pendingCallbacks: true,
+    _pendingContext: true,
+    _pendingForceUpdate: true,
+    _pendingOwner: true,
+    _pendingProps: true,
+    _pendingState: true,
+    _renderedComponent: true,
+    _rootNodeID: true,
+    context: true,
+    props: true,
+    refs: true,
+    state: true,
+
+    // These are known instance properties coming from other sources
+    _pendingQueries: true,
+    _queryPropListeners: true,
+    queryParams: true
+
+  };
+
+  var hasWarnedOnComponentType = {};
+
+  var warningStackCounter = 0;
+
+  var issueMembraneWarning = function(instance, key) {
+    var isWhitelisted = unmountedPropertyWhitelist.hasOwnProperty(key);
+    if (warningStackCounter > 0 || isWhitelisted) {
+      return;
+    }
+    var name = instance.constructor.displayName || 'Unknown';
+    var owner = ReactCurrentOwner.current;
+    var ownerName = (owner && owner.constructor.displayName) || 'Unknown';
+    var warningKey = key + '|' + name + '|' + ownerName;
+    if (hasWarnedOnComponentType.hasOwnProperty(warningKey)) {
+      // We have already warned for this combination. Skip it this time.
+      return;
+    }
+    hasWarnedOnComponentType[warningKey] = true;
+
+    var context = owner ? ' in ' + ownerName + '.' : ' at the top level.';
+    var staticMethodExample = '<' + name + ' />.type.' + key + '(...)';
+
+    monitorCodeUse('react_descriptor_property_access', { component: name });
+    console.warn(
+      'Invalid access to component property "' + key + '" on ' + name +
+      context + ' See http://fb.me/react-warning-descriptors .' +
+      ' Use a static method instead: ' + staticMethodExample
+    );
+  };
+
+  var wrapInMembraneFunction = function(fn, thisBinding) {
+    if (fn.__reactMembraneFunction && fn.__reactMembraneSelf === thisBinding) {
+      return fn.__reactMembraneFunction;
+    }
+    return fn.__reactMembraneFunction = function() {
+      /**
+       * By getting this function, you've already received a warning. The
+       * internals of this function will likely cause more warnings. To avoid
+       * Spamming too much we disable any warning triggered inside of this
+       * stack.
+       */
+      warningStackCounter++;
+      try {
+        // If the this binding is unchanged, we defer to the real component.
+        // This is important to keep some referential integrity in the
+        // internals. E.g. owner equality check.
+        var self = this === thisBinding ? this.__realComponentInstance : this;
+        return fn.apply(self, arguments);
+      } finally {
+        warningStackCounter--;
+      }
+    };
+  };
+
+  var defineMembraneProperty = function(membrane, prototype, key) {
+    Object.defineProperty(membrane, key, {
+
+      configurable: false,
+      enumerable: true,
+
+      get: function() {
+        if (this === membrane) {
+          // We're allowed to access the prototype directly.
+          return prototype[key];
+        }
+        issueMembraneWarning(this, key);
+
+        var realValue = this.__realComponentInstance[key];
+        // If the real value is a function, we need to provide a wrapper that
+        // disables nested warnings. The properties type and constructors are
+        // expected to the be constructors and therefore is often use with an
+        // equality check and we shouldn't try to rebind those.
+        if (typeof realValue === 'function' &&
+            key !== 'type' &&
+            key !== 'constructor') {
+          return wrapInMembraneFunction(realValue, this);
+        }
+        return realValue;
+      },
+
+      set: function(value) {
+        if (this === membrane) {
+          // We're allowed to set a value on the prototype directly.
+          prototype[key] = value;
+          return;
+        }
+        issueMembraneWarning(this, key);
+        this.__realComponentInstance[key] = value;
+      }
+
+    });
+  };
+
+  /**
+   * Creates a membrane prototype which wraps the original prototype. If any
+   * property is accessed in an unmounted state, a warning is issued.
+   *
+   * @param {object} prototype Original prototype.
+   * @return {object} The membrane prototype.
+   * @private
+   */
+  var createMountWarningMembrane = function(prototype) {
+    var membrane = {};
+    var key;
+    for (key in prototype) {
+      defineMembraneProperty(membrane, prototype, key);
+    }
+    // These are properties that goes into the instance but not the prototype.
+    // We can create the membrane on the prototype even though this will
+    // result in a faulty hasOwnProperty check it's better perf.
+    for (key in componentInstanceProperties) {
+      if (componentInstanceProperties.hasOwnProperty(key) &&
+          !(key in prototype)) {
+        defineMembraneProperty(membrane, prototype, key);
+      }
+    }
+    return membrane;
+  };
+
+  /**
+   * Creates a membrane constructor which wraps the component that gets mounted.
+   *
+   * @param {function} constructor Original constructor.
+   * @return {function} The membrane constructor.
+   * @private
+   */
+  var createDescriptorProxy = function(constructor) {
+    try {
+      var ProxyConstructor = function() {
+        this.__realComponentInstance = new constructor();
+
+        // We can only safely pass through known instance variables. Unknown
+        // expandos are not safe. Use the real mounted instance to avoid this
+        // problem if it blows something up.
+        Object.freeze(this);
+      };
+
+      ProxyConstructor.prototype = createMountWarningMembrane(
+        constructor.prototype
+      );
+
+      return ProxyConstructor;
+    } catch(x) {
+      // In IE8 define property will fail on non-DOM objects. If anything in
+      // the membrane creation fails, we'll bail out and just use the plain
+      // constructor without warnings.
+      return constructor;
+    }
+  };
+
+}
+
+/**
+ * `ReactCompositeComponent` maintains an auxiliary life cycle state in
+ * `this._compositeLifeCycleState` (which can be null).
+ *
+ * This is different from the life cycle state maintained by `ReactComponent` in
+ * `this._lifeCycleState`. The following diagram shows how the states overlap in
+ * time. There are times when the CompositeLifeCycle is null - at those times it
+ * is only meaningful to look at ComponentLifeCycle alone.
+ *
+ * Top Row: ReactComponent.ComponentLifeCycle
+ * Low Row: ReactComponent.CompositeLifeCycle
+ *
+ * +-------+------------------------------------------------------+--------+
+ * |  UN   |                    MOUNTED                           |   UN   |
+ * |MOUNTED|                                                      | MOUNTED|
+ * +-------+------------------------------------------------------+--------+
+ * |       ^--------+   +------+   +------+   +------+   +--------^        |
+ * |       |        |   |      |   |      |   |      |   |        |        |
+ * |    0--|MOUNTING|-0-|RECEIV|-0-|RECEIV|-0-|RECEIV|-0-|   UN   |--->0   |
+ * |       |        |   |PROPS |   | PROPS|   | STATE|   |MOUNTING|        |
+ * |       |        |   |      |   |      |   |      |   |        |        |
+ * |       |        |   |      |   |      |   |      |   |        |        |
+ * |       +--------+   +------+   +------+   +------+   +--------+        |
+ * |       |                                                      |        |
+ * +-------+------------------------------------------------------+--------+
+ */
+var CompositeLifeCycle = keyMirror({
+  /**
+   * Components in the process of being mounted respond to state changes
+   * differently.
+   */
+  MOUNTING: null,
+  /**
+   * Components in the process of being unmounted are guarded against state
+   * changes.
+   */
+  UNMOUNTING: null,
+  /**
+   * Components that are mounted and receiving new props respond to state
+   * changes differently.
+   */
+  RECEIVING_PROPS: null,
+  /**
+   * Components that are mounted and receiving new state are guarded against
+   * additional state changes.
+   */
+  RECEIVING_STATE: null
+});
+
+/**
+ * @lends {ReactCompositeComponent.prototype}
+ */
+var ReactCompositeComponentMixin = {
+
+  /**
+   * Base constructor for all composite component.
+   *
+   * @param {?object} initialProps
+   * @param {*} children
+   * @final
+   * @internal
+   */
+  construct: function(initialProps, children) {
+    // Children can be either an array or more than one argument
+    ReactComponent.Mixin.construct.apply(this, arguments);
+    ReactOwner.Mixin.construct.apply(this, arguments);
+
+    this.state = null;
+    this._pendingState = null;
+
+    this.context = null;
+    this._currentContext = ReactContext.current;
+    this._pendingContext = null;
+
+    // The descriptor that was used to instantiate this component. Will be
+    // set by the instantiator instead of the constructor since this
+    // constructor is currently used by both instances and descriptors.
+    this._descriptor = null;
+
+    this._compositeLifeCycleState = null;
+  },
+
+  /**
+   * Components in the intermediate state now has cyclic references. To avoid
+   * breaking JSON serialization we expose a custom JSON format.
+   * @return {object} JSON compatible representation.
+   * @internal
+   * @final
+   */
+  toJSON: function() {
+    return { type: this.type, props: this.props };
+  },
+
+  /**
+   * Checks whether or not this composite component is mounted.
+   * @return {boolean} True if mounted, false otherwise.
+   * @protected
+   * @final
+   */
+  isMounted: function() {
+    return ReactComponent.Mixin.isMounted.call(this) &&
+      this._compositeLifeCycleState !== CompositeLifeCycle.MOUNTING;
+  },
+
+  /**
+   * Initializes the component, renders markup, and registers event listeners.
+   *
+   * @param {string} rootID DOM ID of the root node.
+   * @param {ReactReconcileTransaction|ReactServerRenderingTransaction} transaction
+   * @param {number} mountDepth number of components in the owner hierarchy
+   * @return {?string} Rendered markup to be inserted into the DOM.
+   * @final
+   * @internal
+   */
+  mountComponent: ReactPerf.measure(
+    'ReactCompositeComponent',
+    'mountComponent',
+    function(rootID, transaction, mountDepth) {
+      ReactComponent.Mixin.mountComponent.call(
+        this,
+        rootID,
+        transaction,
+        mountDepth
+      );
+      this._compositeLifeCycleState = CompositeLifeCycle.MOUNTING;
+
+      this.context = this._processContext(this._currentContext);
+      this._defaultProps = this.getDefaultProps ? this.getDefaultProps() : null;
+      this.props = this._processProps(this.props);
+
+      if (this.__reactAutoBindMap) {
+        this._bindAutoBindMethods();
+      }
+
+      this.state = this.getInitialState ? this.getInitialState() : null;
+      ("production" !== process.env.NODE_ENV ? invariant(
+        typeof this.state === 'object' && !Array.isArray(this.state),
+        '%s.getInitialState(): must return an object or null',
+        this.constructor.displayName || 'ReactCompositeComponent'
+      ) : invariant(typeof this.state === 'object' && !Array.isArray(this.state)));
+
+      this._pendingState = null;
+      this._pendingForceUpdate = false;
+
+      if (this.componentWillMount) {
+        this.componentWillMount();
+        // When mounting, calls to `setState` by `componentWillMount` will set
+        // `this._pendingState` without triggering a re-render.
+        if (this._pendingState) {
+          this.state = this._pendingState;
+          this._pendingState = null;
+        }
+      }
+
+      this._renderedComponent = instantiateReactComponent(
+        this._renderValidatedComponent()
+      );
+
+      // Done with mounting, `setState` will now trigger UI changes.
+      this._compositeLifeCycleState = null;
+      var markup = this._renderedComponent.mountComponent(
+        rootID,
+        transaction,
+        mountDepth + 1
+      );
+      if (this.componentDidMount) {
+        transaction.getReactMountReady().enqueue(this, this.componentDidMount);
+      }
+      return markup;
+    }
+  ),
+
+  /**
+   * Releases any resources allocated by `mountComponent`.
+   *
+   * @final
+   * @internal
+   */
+  unmountComponent: function() {
+    this._compositeLifeCycleState = CompositeLifeCycle.UNMOUNTING;
+    if (this.componentWillUnmount) {
+      this.componentWillUnmount();
+    }
+    this._compositeLifeCycleState = null;
+
+    this._defaultProps = null;
+
+    this._renderedComponent.unmountComponent();
+    this._renderedComponent = null;
+
+    ReactComponent.Mixin.unmountComponent.call(this);
+
+    // Some existing components rely on this.props even after they've been
+    // destroyed (in event handlers).
+    // TODO: this.props = null;
+    // TODO: this.state = null;
+  },
+
+  /**
+   * Sets a subset of the state. Always use this or `replaceState` to mutate
+   * state. You should treat `this.state` as immutable.
+   *
+   * There is no guarantee that `this.state` will be immediately updated, so
+   * accessing `this.state` after calling this method may return the old value.
+   *
+   * There is no guarantee that calls to `setState` will run synchronously,
+   * as they may eventually be batched together.  You can provide an optional
+   * callback that will be executed when the call to setState is actually
+   * completed.
+   *
+   * @param {object} partialState Next partial state to be merged with state.
+   * @param {?function} callback Called after state is updated.
+   * @final
+   * @protected
+   */
+  setState: function(partialState, callback) {
+    ("production" !== process.env.NODE_ENV ? invariant(
+      typeof partialState === 'object' || partialState == null,
+      'setState(...): takes an object of state variables to update.'
+    ) : invariant(typeof partialState === 'object' || partialState == null));
+    if ("production" !== process.env.NODE_ENV) {
+      ("production" !== process.env.NODE_ENV ? warning(
+        partialState != null,
+        'setState(...): You passed an undefined or null state object; ' +
+        'instead, use forceUpdate().'
+      ) : null);
+    }
+    // Merge with `_pendingState` if it exists, otherwise with existing state.
+    this.replaceState(
+      merge(this._pendingState || this.state, partialState),
+      callback
+    );
+  },
+
+  /**
+   * Replaces all of the state. Always use this or `setState` to mutate state.
+   * You should treat `this.state` as immutable.
+   *
+   * There is no guarantee that `this.state` will be immediately updated, so
+   * accessing `this.state` after calling this method may return the old value.
+   *
+   * @param {object} completeState Next state.
+   * @param {?function} callback Called after state is updated.
+   * @final
+   * @protected
+   */
+  replaceState: function(completeState, callback) {
+    validateLifeCycleOnReplaceState(this);
+    this._pendingState = completeState;
+    ReactUpdates.enqueueUpdate(this, callback);
+  },
+
+  /**
+   * Filters the context object to only contain keys specified in
+   * `contextTypes`, and asserts that they are valid.
+   *
+   * @param {object} context
+   * @return {?object}
+   * @private
+   */
+  _processContext: function(context) {
+    var maskedContext = null;
+    var contextTypes = this.constructor.contextTypes;
+    if (contextTypes) {
+      maskedContext = {};
+      for (var contextName in contextTypes) {
+        maskedContext[contextName] = context[contextName];
+      }
+      if ("production" !== process.env.NODE_ENV) {
+        this._checkPropTypes(
+          contextTypes,
+          maskedContext,
+          ReactPropTypeLocations.context
+        );
+      }
+    }
+    return maskedContext;
+  },
+
+  /**
+   * @param {object} currentContext
+   * @return {object}
+   * @private
+   */
+  _processChildContext: function(currentContext) {
+    var childContext = this.getChildContext && this.getChildContext();
+    var displayName = this.constructor.displayName || 'ReactCompositeComponent';
+    if (childContext) {
+      ("production" !== process.env.NODE_ENV ? invariant(
+        typeof this.constructor.childContextTypes === 'object',
+        '%s.getChildContext(): childContextTypes must be defined in order to ' +
+        'use getChildContext().',
+        displayName
+      ) : invariant(typeof this.constructor.childContextTypes === 'object'));
+      if ("production" !== process.env.NODE_ENV) {
+        this._checkPropTypes(
+          this.constructor.childContextTypes,
+          childContext,
+          ReactPropTypeLocations.childContext
+        );
+      }
+      for (var name in childContext) {
+        ("production" !== process.env.NODE_ENV ? invariant(
+          name in this.constructor.childContextTypes,
+          '%s.getChildContext(): key "%s" is not defined in childContextTypes.',
+          displayName,
+          name
+        ) : invariant(name in this.constructor.childContextTypes));
+      }
+      return merge(currentContext, childContext);
+    }
+    return currentContext;
+  },
+
+  /**
+   * Processes props by setting default values for unspecified props and
+   * asserting that the props are valid. Does not mutate its argument; returns
+   * a new props object with defaults merged in.
+   *
+   * @param {object} newProps
+   * @return {object}
+   * @private
+   */
+  _processProps: function(newProps) {
+    var props = merge(newProps);
+    var defaultProps = this._defaultProps;
+    for (var propName in defaultProps) {
+      if (typeof props[propName] === 'undefined') {
+        props[propName] = defaultProps[propName];
+      }
+    }
+    if ("production" !== process.env.NODE_ENV) {
+      var propTypes = this.constructor.propTypes;
+      if (propTypes) {
+        this._checkPropTypes(propTypes, props, ReactPropTypeLocations.prop);
+      }
+    }
+    return props;
+  },
+
+  /**
+   * Assert that the props are valid
+   *
+   * @param {object} propTypes Map of prop name to a ReactPropType
+   * @param {object} props
+   * @param {string} location e.g. "prop", "context", "child context"
+   * @private
+   */
+  _checkPropTypes: function(propTypes, props, location) {
+    var componentName = this.constructor.displayName;
+    for (var propName in propTypes) {
+      if (propTypes.hasOwnProperty(propName)) {
+        propTypes[propName](props, propName, componentName, location);
+      }
+    }
+  },
+
+  performUpdateIfNecessary: function() {
+    var compositeLifeCycleState = this._compositeLifeCycleState;
+    // Do not trigger a state transition if we are in the middle of mounting or
+    // receiving props because both of those will already be doing this.
+    if (compositeLifeCycleState === CompositeLifeCycle.MOUNTING ||
+        compositeLifeCycleState === CompositeLifeCycle.RECEIVING_PROPS) {
+      return;
+    }
+    ReactComponent.Mixin.performUpdateIfNecessary.call(this);
+  },
+
+  /**
+   * If any of `_pendingProps`, `_pendingState`, or `_pendingForceUpdate` is
+   * set, update the component.
+   *
+   * @param {ReactReconcileTransaction} transaction
+   * @internal
+   */
+  _performUpdateIfNecessary: function(transaction) {
+    if (this._pendingProps == null &&
+        this._pendingState == null &&
+        this._pendingContext == null &&
+        !this._pendingForceUpdate) {
+      return;
+    }
+
+    var nextFullContext = this._pendingContext || this._currentContext;
+    var nextContext = this._processContext(nextFullContext);
+    this._pendingContext = null;
+
+    var nextProps = this.props;
+    if (this._pendingProps != null) {
+      nextProps = this._processProps(this._pendingProps);
+      this._pendingProps = null;
+
+      this._compositeLifeCycleState = CompositeLifeCycle.RECEIVING_PROPS;
+      if (this.componentWillReceiveProps) {
+        this.componentWillReceiveProps(nextProps, nextContext);
+      }
+    }
+
+    this._compositeLifeCycleState = CompositeLifeCycle.RECEIVING_STATE;
+
+    // Unlike props, state, and context, we specifically don't want to set
+    // _pendingOwner to null here because it's possible for a component to have
+    // a null owner, so we instead make `this._owner === this._pendingOwner`
+    // mean that there's no owner change pending.
+    var nextOwner = this._pendingOwner;
+
+    var nextState = this._pendingState || this.state;
+    this._pendingState = null;
+
+    try {
+      if (this._pendingForceUpdate ||
+          !this.shouldComponentUpdate ||
+          this.shouldComponentUpdate(nextProps, nextState, nextContext)) {
+        this._pendingForceUpdate = false;
+        // Will set `this.props`, `this.state` and `this.context`.
+        this._performComponentUpdate(
+          nextProps,
+          nextOwner,
+          nextState,
+          nextFullContext,
+          nextContext,
+          transaction
+        );
+      } else {
+        // If it's determined that a component should not update, we still want
+        // to set props and state.
+        this.props = nextProps;
+        this._owner = nextOwner;
+        this.state = nextState;
+        this._currentContext = nextFullContext;
+        this.context = nextContext;
+      }
+    } finally {
+      this._compositeLifeCycleState = null;
+    }
+  },
+
+  /**
+   * Merges new props and state, notifies delegate methods of update and
+   * performs update.
+   *
+   * @param {object} nextProps Next object to set as properties.
+   * @param {?ReactComponent} nextOwner Next component to set as owner
+   * @param {?object} nextState Next object to set as state.
+   * @param {?object} nextFullContext Next object to set as _currentContext.
+   * @param {?object} nextContext Next object to set as context.
+   * @param {ReactReconcileTransaction} transaction
+   * @private
+   */
+  _performComponentUpdate: function(
+    nextProps,
+    nextOwner,
+    nextState,
+    nextFullContext,
+    nextContext,
+    transaction
+  ) {
+    var prevProps = this.props;
+    var prevOwner = this._owner;
+    var prevState = this.state;
+    var prevContext = this.context;
+
+    if (this.componentWillUpdate) {
+      this.componentWillUpdate(nextProps, nextState, nextContext);
+    }
+
+    this.props = nextProps;
+    this._owner = nextOwner;
+    this.state = nextState;
+    this._currentContext = nextFullContext;
+    this.context = nextContext;
+
+    this.updateComponent(
+      transaction,
+      prevProps,
+      prevOwner,
+      prevState,
+      prevContext
+    );
+
+    if (this.componentDidUpdate) {
+      transaction.getReactMountReady().enqueue(
+        this,
+        this.componentDidUpdate.bind(this, prevProps, prevState, prevContext)
+      );
+    }
+  },
+
+  receiveComponent: function(nextComponent, transaction) {
+    if (nextComponent === this._descriptor) {
+      // Since props and context are immutable after the component is
+      // mounted, we can do a cheap identity compare here to determine
+      // if this is a superfluous reconcile.
+      return;
+    }
+
+    // Update the descriptor that was last used by this component instance
+    this._descriptor = nextComponent;
+
+    this._pendingContext = nextComponent._currentContext;
+    ReactComponent.Mixin.receiveComponent.call(
+      this,
+      nextComponent,
+      transaction
+    );
+  },
+
+  /**
+   * Updates the component's currently mounted DOM representation.
+   *
+   * By default, this implements React's rendering and reconciliation algorithm.
+   * Sophisticated clients may wish to override this.
+   *
+   * @param {ReactReconcileTransaction} transaction
+   * @param {object} prevProps
+   * @param {?ReactComponent} prevOwner
+   * @param {?object} prevState
+   * @param {?object} prevContext
+   * @internal
+   * @overridable
+   */
+  updateComponent: ReactPerf.measure(
+    'ReactCompositeComponent',
+    'updateComponent',
+    function(transaction, prevProps, prevOwner, prevState, prevContext) {
+      ReactComponent.Mixin.updateComponent.call(
+        this,
+        transaction,
+        prevProps,
+        prevOwner
+      );
+
+
+      var prevComponentInstance = this._renderedComponent;
+      var nextComponent = this._renderValidatedComponent();
+      if (shouldUpdateReactComponent(prevComponentInstance, nextComponent)) {
+        prevComponentInstance.receiveComponent(nextComponent, transaction);
+      } else {
+        // These two IDs are actually the same! But nothing should rely on that.
+        var thisID = this._rootNodeID;
+        var prevComponentID = prevComponentInstance._rootNodeID;
+        prevComponentInstance.unmountComponent();
+        this._renderedComponent = instantiateReactComponent(nextComponent);
+        var nextMarkup = this._renderedComponent.mountComponent(
+          thisID,
+          transaction,
+          this._mountDepth + 1
+        );
+        ReactComponent.BackendIDOperations.dangerouslyReplaceNodeWithMarkupByID(
+          prevComponentID,
+          nextMarkup
+        );
+      }
+    }
+  ),
+
+  /**
+   * Forces an update. This should only be invoked when it is known with
+   * certainty that we are **not** in a DOM transaction.
+   *
+   * You may want to call this when you know that some deeper aspect of the
+   * component's state has changed but `setState` was not called.
+   *
+   * This will not invoke `shouldUpdateComponent`, but it will invoke
+   * `componentWillUpdate` and `componentDidUpdate`.
+   *
+   * @param {?function} callback Called after update is complete.
+   * @final
+   * @protected
+   */
+  forceUpdate: function(callback) {
+    var compositeLifeCycleState = this._compositeLifeCycleState;
+    ("production" !== process.env.NODE_ENV ? invariant(
+      this.isMounted() ||
+        compositeLifeCycleState === CompositeLifeCycle.MOUNTING,
+      'forceUpdate(...): Can only force an update on mounted or mounting ' +
+        'components.'
+    ) : invariant(this.isMounted() ||
+      compositeLifeCycleState === CompositeLifeCycle.MOUNTING));
+    ("production" !== process.env.NODE_ENV ? invariant(
+      compositeLifeCycleState !== CompositeLifeCycle.RECEIVING_STATE &&
+      compositeLifeCycleState !== CompositeLifeCycle.UNMOUNTING,
+      'forceUpdate(...): Cannot force an update while unmounting component ' +
+      'or during an existing state transition (such as within `render`).'
+    ) : invariant(compositeLifeCycleState !== CompositeLifeCycle.RECEIVING_STATE &&
+    compositeLifeCycleState !== CompositeLifeCycle.UNMOUNTING));
+    this._pendingForceUpdate = true;
+    ReactUpdates.enqueueUpdate(this, callback);
+  },
+
+  /**
+   * @private
+   */
+  _renderValidatedComponent: ReactPerf.measure(
+    'ReactCompositeComponent',
+    '_renderValidatedComponent',
+    function() {
+      var renderedComponent;
+      var previousContext = ReactContext.current;
+      ReactContext.current = this._processChildContext(this._currentContext);
+      ReactCurrentOwner.current = this;
+      try {
+        renderedComponent = this.render();
+      } finally {
+        ReactContext.current = previousContext;
+        ReactCurrentOwner.current = null;
+      }
+      ("production" !== process.env.NODE_ENV ? invariant(
+        ReactComponent.isValidComponent(renderedComponent),
+        '%s.render(): A valid ReactComponent must be returned. You may have ' +
+          'returned null, undefined, an array, or some other invalid object.',
+        this.constructor.displayName || 'ReactCompositeComponent'
+      ) : invariant(ReactComponent.isValidComponent(renderedComponent)));
+      return renderedComponent;
+    }
+  ),
+
+  /**
+   * @private
+   */
+  _bindAutoBindMethods: function() {
+    for (var autoBindKey in this.__reactAutoBindMap) {
+      if (!this.__reactAutoBindMap.hasOwnProperty(autoBindKey)) {
+        continue;
+      }
+      var method = this.__reactAutoBindMap[autoBindKey];
+      this[autoBindKey] = this._bindAutoBindMethod(ReactErrorUtils.guard(
+        method,
+        this.constructor.displayName + '.' + autoBindKey
+      ));
+    }
+  },
+
+  /**
+   * Binds a method to the component.
+   *
+   * @param {function} method Method to be bound.
+   * @private
+   */
+  _bindAutoBindMethod: function(method) {
+    var component = this;
+    var boundMethod = function() {
+      return method.apply(component, arguments);
+    };
+    if ("production" !== process.env.NODE_ENV) {
+      boundMethod.__reactBoundContext = component;
+      boundMethod.__reactBoundMethod = method;
+      boundMethod.__reactBoundArguments = null;
+      var componentName = component.constructor.displayName;
+      var _bind = boundMethod.bind;
+      boundMethod.bind = function(newThis ) {var args=Array.prototype.slice.call(arguments,1);
+        // User is trying to bind() an autobound method; we effectively will
+        // ignore the value of "this" that the user is trying to use, so
+        // let's warn.
+        if (newThis !== component && newThis !== null) {
+          monitorCodeUse('react_bind_warning', { component: componentName });
+          console.warn(
+            'bind(): React component methods may only be bound to the ' +
+            'component instance. See ' + componentName
+          );
+        } else if (!args.length) {
+          monitorCodeUse('react_bind_warning', { component: componentName });
+          console.warn(
+            'bind(): You are binding a component method to the component. ' +
+            'React does this for you automatically in a high-performance ' +
+            'way, so you can safely remove this call. See ' + componentName
+          );
+          return boundMethod;
+        }
+        var reboundMethod = _bind.apply(boundMethod, arguments);
+        reboundMethod.__reactBoundContext = component;
+        reboundMethod.__reactBoundMethod = method;
+        reboundMethod.__reactBoundArguments = args;
+        return reboundMethod;
+      };
+    }
+    return boundMethod;
+  }
+};
+
+var ReactCompositeComponentBase = function() {};
+mixInto(ReactCompositeComponentBase, ReactComponent.Mixin);
+mixInto(ReactCompositeComponentBase, ReactOwner.Mixin);
+mixInto(ReactCompositeComponentBase, ReactPropTransferer.Mixin);
+mixInto(ReactCompositeComponentBase, ReactCompositeComponentMixin);
+
+/**
+ * Checks if a value is a valid component constructor.
+ *
+ * @param {*}
+ * @return {boolean}
+ * @public
+ */
+function isValidClass(componentClass) {
+  return componentClass instanceof Function &&
+         'componentConstructor' in componentClass &&
+         componentClass.componentConstructor instanceof Function;
+}
+/**
+ * Module for creating composite components.
+ *
+ * @class ReactCompositeComponent
+ * @extends ReactComponent
+ * @extends ReactOwner
+ * @extends ReactPropTransferer
+ */
+var ReactCompositeComponent = {
+
+  LifeCycle: CompositeLifeCycle,
+
+  Base: ReactCompositeComponentBase,
+
+  /**
+   * Creates a composite component class given a class specification.
+   *
+   * @param {object} spec Class specification (which must define `render`).
+   * @return {function} Component constructor function.
+   * @public
+   */
+  createClass: function(spec) {
+    var Constructor = function() {};
+    Constructor.prototype = new ReactCompositeComponentBase();
+    Constructor.prototype.constructor = Constructor;
+
+    var DescriptorConstructor = Constructor;
+
+    var ConvenienceConstructor = function(props, children) {
+      var descriptor = new DescriptorConstructor();
+      descriptor.construct.apply(descriptor, arguments);
+      return descriptor;
+    };
+    ConvenienceConstructor.componentConstructor = Constructor;
+    Constructor.ConvenienceConstructor = ConvenienceConstructor;
+    ConvenienceConstructor.originalSpec = spec;
+
+    injectedMixins.forEach(
+      mixSpecIntoComponent.bind(null, ConvenienceConstructor)
+    );
+
+    mixSpecIntoComponent(ConvenienceConstructor, spec);
+
+    ("production" !== process.env.NODE_ENV ? invariant(
+      Constructor.prototype.render,
+      'createClass(...): Class specification must implement a `render` method.'
+    ) : invariant(Constructor.prototype.render));
+
+    if ("production" !== process.env.NODE_ENV) {
+      if (Constructor.prototype.componentShouldUpdate) {
+        monitorCodeUse(
+          'react_component_should_update_warning',
+          { component: spec.displayName }
+        );
+        console.warn(
+          (spec.displayName || 'A component') + ' has a method called ' +
+          'componentShouldUpdate(). Did you mean shouldComponentUpdate()? ' +
+          'The name is phrased as a question because the function is ' +
+          'expected to return a value.'
+         );
+      }
+    }
+
+    // Expose the convience constructor on the prototype so that it can be
+    // easily accessed on descriptors. E.g. <Foo />.type === Foo.type and for
+    // static methods like <Foo />.type.staticMethod();
+    // This should not be named constructor since this may not be the function
+    // that created the descriptor, and it may not even be a constructor.
+    ConvenienceConstructor.type = Constructor;
+    Constructor.prototype.type = Constructor;
+
+    // Reduce time spent doing lookups by setting these on the prototype.
+    for (var methodName in ReactCompositeComponentInterface) {
+      if (!Constructor.prototype[methodName]) {
+        Constructor.prototype[methodName] = null;
+      }
+    }
+
+    if ("production" !== process.env.NODE_ENV) {
+      // In DEV the convenience constructor generates a proxy to another
+      // instance around it to warn about access to properties on the
+      // descriptor.
+      DescriptorConstructor = createDescriptorProxy(Constructor);
+    }
+
+    return ConvenienceConstructor;
+  },
+
+  isValidClass: isValidClass,
+
+  injection: {
+    injectMixin: function(mixin) {
+      injectedMixins.push(mixin);
+    }
+  }
+};
+
+module.exports = ReactCompositeComponent;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactCompositeComponent.js","/node_modules/react/lib")
+},{"./ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","./ReactContext":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactContext.js","./ReactCurrentOwner":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCurrentOwner.js","./ReactErrorUtils":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactErrorUtils.js","./ReactOwner":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactOwner.js","./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./ReactPropTransferer":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTransferer.js","./ReactPropTypeLocationNames":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypeLocationNames.js","./ReactPropTypeLocations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypeLocations.js","./ReactUpdates":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactUpdates.js","./instantiateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/instantiateReactComponent.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./keyMirror":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyMirror.js","./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","./monitorCodeUse":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/monitorCodeUse.js","./objMap":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/objMap.js","./shouldUpdateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/shouldUpdateReactComponent.js","./warning":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/warning.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactContext.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactContext
+ */
+
+"use strict";
+
+var merge = require("./merge");
+
+/**
+ * Keeps track of the current context.
+ *
+ * The context is automatically passed down the component ownership hierarchy
+ * and is accessible via `this.context` on ReactCompositeComponents.
+ */
+var ReactContext = {
+
+  /**
+   * @internal
+   * @type {object}
+   */
+  current: {},
+
+  /**
+   * Temporarily extends the current context while executing scopedCallback.
+   *
+   * A typical use case might look like
+   *
+   *  render: function() {
+   *    var children = ReactContext.withContext({foo: 'foo'} () => (
+   *
+   *    ));
+   *    return <div>{children}</div>;
+   *  }
+   *
+   * @param {object} newContext New context to merge into the existing context
+   * @param {function} scopedCallback Callback to run with the new context
+   * @return {ReactComponent|array<ReactComponent>}
+   */
+  withContext: function(newContext, scopedCallback) {
+    var result;
+    var previousContext = ReactContext.current;
+    ReactContext.current = merge(previousContext, newContext);
+    try {
+      result = scopedCallback();
+    } finally {
+      ReactContext.current = previousContext;
+    }
+    return result;
+  }
+
+};
+
+module.exports = ReactContext;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactContext.js","/node_modules/react/lib")
+},{"./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCurrentOwner.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -11079,7 +9877,218 @@ var ReactCurrentOwner = {
 module.exports = ReactCurrentOwner;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactCurrentOwner.js","/node_modules/react/lib")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactDOM
+ * @typechecks static-only
+ */
+
+"use strict";
+
+var ReactDOMComponent = require("./ReactDOMComponent");
+
+var mergeInto = require("./mergeInto");
+var objMapKeyVal = require("./objMapKeyVal");
+
+/**
+ * Creates a new React class that is idempotent and capable of containing other
+ * React components. It accepts event listeners and DOM properties that are
+ * valid according to `DOMProperty`.
+ *
+ *  - Event listeners: `onClick`, `onMouseDown`, etc.
+ *  - DOM properties: `className`, `name`, `title`, etc.
+ *
+ * The `style` property functions differently from the DOM API. It accepts an
+ * object mapping of style properties to values.
+ *
+ * @param {string} tag Tag name (e.g. `div`).
+ * @param {boolean} omitClose True if the close tag should be omitted.
+ * @private
+ */
+function createDOMComponentClass(tag, omitClose) {
+  var Constructor = function() {};
+  Constructor.prototype = new ReactDOMComponent(tag, omitClose);
+  Constructor.prototype.constructor = Constructor;
+  Constructor.displayName = tag;
+
+  var ConvenienceConstructor = function(props, children) {
+    var instance = new Constructor();
+    instance.construct.apply(instance, arguments);
+    return instance;
+  };
+
+  // Expose the constructor on the ConvenienceConstructor and prototype so that
+  // it can be easily easily accessed on descriptors.
+  // E.g. <div />.type === div.type
+  ConvenienceConstructor.type = Constructor;
+  Constructor.prototype.type = Constructor;
+
+  Constructor.ConvenienceConstructor = ConvenienceConstructor;
+  ConvenienceConstructor.componentConstructor = Constructor;
+  return ConvenienceConstructor;
+}
+
+/**
+ * Creates a mapping from supported HTML tags to `ReactDOMComponent` classes.
+ * This is also accessible via `React.DOM`.
+ *
+ * @public
+ */
+var ReactDOM = objMapKeyVal({
+  a: false,
+  abbr: false,
+  address: false,
+  area: true,
+  article: false,
+  aside: false,
+  audio: false,
+  b: false,
+  base: true,
+  bdi: false,
+  bdo: false,
+  big: false,
+  blockquote: false,
+  body: false,
+  br: true,
+  button: false,
+  canvas: false,
+  caption: false,
+  cite: false,
+  code: false,
+  col: true,
+  colgroup: false,
+  data: false,
+  datalist: false,
+  dd: false,
+  del: false,
+  details: false,
+  dfn: false,
+  div: false,
+  dl: false,
+  dt: false,
+  em: false,
+  embed: true,
+  fieldset: false,
+  figcaption: false,
+  figure: false,
+  footer: false,
+  form: false, // NOTE: Injected, see `ReactDOMForm`.
+  h1: false,
+  h2: false,
+  h3: false,
+  h4: false,
+  h5: false,
+  h6: false,
+  head: false,
+  header: false,
+  hr: true,
+  html: false,
+  i: false,
+  iframe: false,
+  img: true,
+  input: true,
+  ins: false,
+  kbd: false,
+  keygen: true,
+  label: false,
+  legend: false,
+  li: false,
+  link: true,
+  main: false,
+  map: false,
+  mark: false,
+  menu: false,
+  menuitem: false, // NOTE: Close tag should be omitted, but causes problems.
+  meta: true,
+  meter: false,
+  nav: false,
+  noscript: false,
+  object: false,
+  ol: false,
+  optgroup: false,
+  option: false,
+  output: false,
+  p: false,
+  param: true,
+  pre: false,
+  progress: false,
+  q: false,
+  rp: false,
+  rt: false,
+  ruby: false,
+  s: false,
+  samp: false,
+  script: false,
+  section: false,
+  select: false,
+  small: false,
+  source: true,
+  span: false,
+  strong: false,
+  style: false,
+  sub: false,
+  summary: false,
+  sup: false,
+  table: false,
+  tbody: false,
+  td: false,
+  textarea: false, // NOTE: Injected, see `ReactDOMTextarea`.
+  tfoot: false,
+  th: false,
+  thead: false,
+  time: false,
+  title: false,
+  tr: false,
+  track: true,
+  u: false,
+  ul: false,
+  'var': false,
+  video: false,
+  wbr: true,
+
+  // SVG
+  circle: false,
+  defs: false,
+  g: false,
+  line: false,
+  linearGradient: false,
+  path: false,
+  polygon: false,
+  polyline: false,
+  radialGradient: false,
+  rect: false,
+  stop: false,
+  svg: false,
+  text: false
+}, createDOMComponentClass);
+
+var injection = {
+  injectComponentClasses: function(componentClasses) {
+    mergeInto(ReactDOM, componentClasses);
+  }
+};
+
+ReactDOM.injection = injection;
+
+module.exports = ReactDOM;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactDOM.js","/node_modules/react/lib")
+},{"./ReactDOMComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js","./mergeInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mergeInto.js","./objMapKeyVal":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/objMapKeyVal.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -11499,7 +10508,48 @@ mixInto(ReactDOMComponent, ReactBrowserComponentMixin);
 module.exports = ReactDOMComponent;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactDOMComponent.js","/node_modules/react/lib")
-},{"./CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","./DOMProperty":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMProperty.js","./DOMPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMPropertyOperations.js","./ReactBrowserComponentMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js","./ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","./ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","./ReactMount":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js","./ReactMultiChild":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMultiChild.js","./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./escapeTextForBrowser":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/escapeTextForBrowser.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./keyOf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyOf.js","./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js":[function(require,module,exports){
+},{"./CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","./DOMProperty":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMProperty.js","./DOMPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMPropertyOperations.js","./ReactBrowserComponentMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js","./ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","./ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","./ReactMount":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js","./ReactMultiChild":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMultiChild.js","./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./escapeTextForBrowser":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/escapeTextForBrowser.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./keyOf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyOf.js","./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactErrorUtils.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactErrorUtils
+ * @typechecks
+ */
+
+"use strict";
+
+var ReactErrorUtils = {
+  /**
+   * Creates a guarded version of a function. This is supposed to make debugging
+   * of event handlers easier. To aid debugging with the browser's debugger,
+   * this currently simply returns the original function.
+   *
+   * @param {function} func Function to be executed
+   * @param {string} name The name of the guard
+   * @return {function}
+   */
+  guard: function(func, name) {
+    return func;
+  }
+};
+
+module.exports = ReactErrorUtils;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactErrorUtils.js","/node_modules/react/lib")
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -12245,64 +11295,7 @@ var ReactInstanceHandles = {
 module.exports = ReactInstanceHandles;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactInstanceHandles.js","/node_modules/react/lib")
-},{"./ReactRootIndex":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactRootIndex.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMarkupChecksum.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule ReactMarkupChecksum
- */
-
-"use strict";
-
-var adler32 = require("./adler32");
-
-var ReactMarkupChecksum = {
-  CHECKSUM_ATTR_NAME: 'data-react-checksum',
-
-  /**
-   * @param {string} markup Markup string
-   * @return {string} Markup string with checksum attribute attached
-   */
-  addChecksumToMarkup: function(markup) {
-    var checksum = adler32(markup);
-    return markup.replace(
-      '>',
-      ' ' + ReactMarkupChecksum.CHECKSUM_ATTR_NAME + '="' + checksum + '">'
-    );
-  },
-
-  /**
-   * @param {string} markup to use
-   * @param {DOMElement} element root React element
-   * @returns {boolean} whether or not the markup is the same
-   */
-  canReuseMarkup: function(markup, element) {
-    var existingChecksum = element.getAttribute(
-      ReactMarkupChecksum.CHECKSUM_ATTR_NAME
-    );
-    existingChecksum = existingChecksum && parseInt(existingChecksum, 10);
-    var markupChecksum = adler32(markup);
-    return markupChecksum === existingChecksum;
-  }
-};
-
-module.exports = ReactMarkupChecksum;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactMarkupChecksum.js","/node_modules/react/lib")
-},{"./adler32":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/adler32.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js":[function(require,module,exports){
+},{"./ReactRootIndex":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactRootIndex.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -12955,106 +11948,7 @@ var ReactMount = {
 module.exports = ReactMount;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactMount.js","/node_modules/react/lib")
-},{"./DOMProperty":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMProperty.js","./ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","./ReactInstanceHandles":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactInstanceHandles.js","./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./containsNode":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js","./getReactRootElementInContainer":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/getReactRootElementInContainer.js","./instantiateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/instantiateReactComponent.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./shouldUpdateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/shouldUpdateReactComponent.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMountReady.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule ReactMountReady
- */
-
-"use strict";
-
-var PooledClass = require("./PooledClass");
-
-var mixInto = require("./mixInto");
-
-/**
- * A specialized pseudo-event module to help keep track of components waiting to
- * be notified when their DOM representations are available for use.
- *
- * This implements `PooledClass`, so you should never need to instantiate this.
- * Instead, use `ReactMountReady.getPooled()`.
- *
- * @param {?array<function>} initialCollection
- * @class ReactMountReady
- * @implements PooledClass
- * @internal
- */
-function ReactMountReady(initialCollection) {
-  this._queue = initialCollection || null;
-}
-
-mixInto(ReactMountReady, {
-
-  /**
-   * Enqueues a callback to be invoked when `notifyAll` is invoked. This is used
-   * to enqueue calls to `componentDidMount` and `componentDidUpdate`.
-   *
-   * @param {ReactComponent} component Component being rendered.
-   * @param {function(DOMElement)} callback Invoked when `notifyAll` is invoked.
-   * @internal
-   */
-  enqueue: function(component, callback) {
-    this._queue = this._queue || [];
-    this._queue.push({component: component, callback: callback});
-  },
-
-  /**
-   * Invokes all enqueued callbacks and clears the queue. This is invoked after
-   * the DOM representation of a component has been created or updated.
-   *
-   * @internal
-   */
-  notifyAll: function() {
-    var queue = this._queue;
-    if (queue) {
-      this._queue = null;
-      for (var i = 0, l = queue.length; i < l; i++) {
-        var component = queue[i].component;
-        var callback = queue[i].callback;
-        callback.call(component);
-      }
-      queue.length = 0;
-    }
-  },
-
-  /**
-   * Resets the internal queue.
-   *
-   * @internal
-   */
-  reset: function() {
-    this._queue = null;
-  },
-
-  /**
-   * `PooledClass` looks for this.
-   */
-  destructor: function() {
-    this.reset();
-  }
-
-});
-
-PooledClass.addPoolingTo(ReactMountReady);
-
-module.exports = ReactMountReady;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactMountReady.js","/node_modules/react/lib")
-},{"./PooledClass":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMultiChild.js":[function(require,module,exports){
+},{"./DOMProperty":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMProperty.js","./ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","./ReactInstanceHandles":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactInstanceHandles.js","./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./containsNode":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js","./getReactRootElementInContainer":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/getReactRootElementInContainer.js","./instantiateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/instantiateReactComponent.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./shouldUpdateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/shouldUpdateReactComponent.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMultiChild.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -13784,7 +12678,7 @@ function _noMeasure(objName, fnName, func) {
 module.exports = ReactPerf;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactPerf.js","/node_modules/react/lib")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPutListenerQueue.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTransferer.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -13801,55 +12695,572 @@ module.exports = ReactPerf;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @providesModule ReactPutListenerQueue
+ * @providesModule ReactPropTransferer
  */
 
 "use strict";
 
-var PooledClass = require("./PooledClass");
-var ReactEventEmitter = require("./ReactEventEmitter");
+var emptyFunction = require("./emptyFunction");
+var invariant = require("./invariant");
+var joinClasses = require("./joinClasses");
+var merge = require("./merge");
 
-var mixInto = require("./mixInto");
-
-function ReactPutListenerQueue() {
-  this.listenersToPut = [];
+/**
+ * Creates a transfer strategy that will merge prop values using the supplied
+ * `mergeStrategy`. If a prop was previously unset, this just sets it.
+ *
+ * @param {function} mergeStrategy
+ * @return {function}
+ */
+function createTransferStrategy(mergeStrategy) {
+  return function(props, key, value) {
+    if (!props.hasOwnProperty(key)) {
+      props[key] = value;
+    } else {
+      props[key] = mergeStrategy(props[key], value);
+    }
+  };
 }
 
-mixInto(ReactPutListenerQueue, {
-  enqueuePutListener: function(rootNodeID, propKey, propValue) {
-    this.listenersToPut.push({
-      rootNodeID: rootNodeID,
-      propKey: propKey,
-      propValue: propValue
-    });
-  },
+/**
+ * Transfer strategies dictate how props are transferred by `transferPropsTo`.
+ * NOTE: if you add any more exceptions to this list you should be sure to
+ * update `cloneWithProps()` accordingly.
+ */
+var TransferStrategies = {
+  /**
+   * Never transfer `children`.
+   */
+  children: emptyFunction,
+  /**
+   * Transfer the `className` prop by merging them.
+   */
+  className: createTransferStrategy(joinClasses),
+  /**
+   * Never transfer the `key` prop.
+   */
+  key: emptyFunction,
+  /**
+   * Never transfer the `ref` prop.
+   */
+  ref: emptyFunction,
+  /**
+   * Transfer the `style` prop (which is an object) by merging them.
+   */
+  style: createTransferStrategy(merge)
+};
 
-  putListeners: function() {
-    for (var i = 0; i < this.listenersToPut.length; i++) {
-      var listenerToPut = this.listenersToPut[i];
-      ReactEventEmitter.putListener(
-        listenerToPut.rootNodeID,
-        listenerToPut.propKey,
-        listenerToPut.propValue
-      );
+/**
+ * ReactPropTransferer are capable of transferring props to another component
+ * using a `transferPropsTo` method.
+ *
+ * @class ReactPropTransferer
+ */
+var ReactPropTransferer = {
+
+  TransferStrategies: TransferStrategies,
+
+  /**
+   * Merge two props objects using TransferStrategies.
+   *
+   * @param {object} oldProps original props (they take precedence)
+   * @param {object} newProps new props to merge in
+   * @return {object} a new object containing both sets of props merged.
+   */
+  mergeProps: function(oldProps, newProps) {
+    var props = merge(oldProps);
+
+    for (var thisKey in newProps) {
+      if (!newProps.hasOwnProperty(thisKey)) {
+        continue;
+      }
+
+      var transferStrategy = TransferStrategies[thisKey];
+
+      if (transferStrategy && TransferStrategies.hasOwnProperty(thisKey)) {
+        transferStrategy(props, thisKey, newProps[thisKey]);
+      } else if (!props.hasOwnProperty(thisKey)) {
+        props[thisKey] = newProps[thisKey];
+      }
     }
+
+    return props;
   },
 
-  reset: function() {
-    this.listenersToPut.length = 0;
-  },
+  /**
+   * @lends {ReactPropTransferer.prototype}
+   */
+  Mixin: {
 
-  destructor: function() {
-    this.reset();
+    /**
+     * Transfer props from this component to a target component.
+     *
+     * Props that do not have an explicit transfer strategy will be transferred
+     * only if the target component does not already have the prop set.
+     *
+     * This is usually used to pass down props to a returned root component.
+     *
+     * @param {ReactComponent} component Component receiving the properties.
+     * @return {ReactComponent} The supplied `component`.
+     * @final
+     * @protected
+     */
+    transferPropsTo: function(component) {
+      ("production" !== process.env.NODE_ENV ? invariant(
+        component._owner === this,
+        '%s: You can\'t call transferPropsTo() on a component that you ' +
+        'don\'t own, %s. This usually means you are calling ' +
+        'transferPropsTo() on a component passed in as props or children.',
+        this.constructor.displayName,
+        component.constructor.displayName
+      ) : invariant(component._owner === this));
+
+      component.props = ReactPropTransferer.mergeProps(
+        component.props,
+        this.props
+      );
+
+      return component;
+    }
+
   }
+};
+
+module.exports = ReactPropTransferer;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactPropTransferer.js","/node_modules/react/lib")
+},{"./emptyFunction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/emptyFunction.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","./joinClasses":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/joinClasses.js","./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypeLocationNames.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactPropTypeLocationNames
+ */
+
+"use strict";
+
+var ReactPropTypeLocationNames = {};
+
+if ("production" !== process.env.NODE_ENV) {
+  ReactPropTypeLocationNames = {
+    prop: 'prop',
+    context: 'context',
+    childContext: 'child context'
+  };
+}
+
+module.exports = ReactPropTypeLocationNames;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactPropTypeLocationNames.js","/node_modules/react/lib")
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypeLocations.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactPropTypeLocations
+ */
+
+"use strict";
+
+var keyMirror = require("./keyMirror");
+
+var ReactPropTypeLocations = keyMirror({
+  prop: null,
+  context: null,
+  childContext: null
 });
 
-PooledClass.addPoolingTo(ReactPutListenerQueue);
+module.exports = ReactPropTypeLocations;
 
-module.exports = ReactPutListenerQueue;
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactPropTypeLocations.js","/node_modules/react/lib")
+},{"./keyMirror":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyMirror.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactPropTypes
+ */
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactPutListenerQueue.js","/node_modules/react/lib")
-},{"./PooledClass":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js","./ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactRootIndex.js":[function(require,module,exports){
+"use strict";
+
+var ReactComponent = require("./ReactComponent");
+var ReactPropTypeLocationNames = require("./ReactPropTypeLocationNames");
+
+var warning = require("./warning");
+var createObjectFrom = require("./createObjectFrom");
+
+/**
+ * Collection of methods that allow declaration and validation of props that are
+ * supplied to React components. Example usage:
+ *
+ *   var Props = require('ReactPropTypes');
+ *   var MyArticle = React.createClass({
+ *     propTypes: {
+ *       // An optional string prop named "description".
+ *       description: Props.string,
+ *
+ *       // A required enum prop named "category".
+ *       category: Props.oneOf(['News','Photos']).isRequired,
+ *
+ *       // A prop named "dialog" that requires an instance of Dialog.
+ *       dialog: Props.instanceOf(Dialog).isRequired
+ *     },
+ *     render: function() { ... }
+ *   });
+ *
+ * A more formal specification of how these methods are used:
+ *
+ *   type := array|bool|func|object|number|string|oneOf([...])|instanceOf(...)
+ *   decl := ReactPropTypes.{type}(.isRequired)?
+ *
+ * Each and every declaration produces a function with the same signature. This
+ * allows the creation of custom validation functions. For example:
+ *
+ *   var Props = require('ReactPropTypes');
+ *   var MyLink = React.createClass({
+ *     propTypes: {
+ *       // An optional string or URI prop named "href".
+ *       href: function(props, propName, componentName) {
+ *         var propValue = props[propName];
+ *         warning(
+ *           propValue == null ||
+ *           typeof propValue === 'string' ||
+ *           propValue instanceof URI,
+ *           'Invalid `%s` supplied to `%s`, expected string or URI.',
+ *           propName,
+ *           componentName
+ *         );
+ *       }
+ *     },
+ *     render: function() { ... }
+ *   });
+ *
+ * @internal
+ */
+var Props = {
+
+  array: createPrimitiveTypeChecker('array'),
+  bool: createPrimitiveTypeChecker('boolean'),
+  func: createPrimitiveTypeChecker('function'),
+  number: createPrimitiveTypeChecker('number'),
+  object: createPrimitiveTypeChecker('object'),
+  string: createPrimitiveTypeChecker('string'),
+
+  shape: createShapeTypeChecker,
+  oneOf: createEnumTypeChecker,
+  oneOfType: createUnionTypeChecker,
+  arrayOf: createArrayOfTypeChecker,
+
+  instanceOf: createInstanceTypeChecker,
+
+  renderable: createRenderableTypeChecker(),
+
+  component: createComponentTypeChecker(),
+
+  any: createAnyTypeChecker()
+};
+
+var ANONYMOUS = '<<anonymous>>';
+
+function isRenderable(propValue) {
+  switch(typeof propValue) {
+    case 'number':
+    case 'string':
+      return true;
+    case 'object':
+      if (Array.isArray(propValue)) {
+        return propValue.every(isRenderable);
+      }
+      if (ReactComponent.isValidComponent(propValue)) {
+        return true;
+      }
+      for (var k in propValue) {
+        if (!isRenderable(propValue[k])) {
+          return false;
+        }
+      }
+      return true;
+    default:
+      return false;
+  }
+}
+
+// Equivalent of typeof but with special handling for arrays
+function getPropType(propValue) {
+  var propType = typeof propValue;
+  if (propType === 'object' && Array.isArray(propValue)) {
+    return 'array';
+  }
+  return propType;
+}
+
+function createAnyTypeChecker() {
+  function validateAnyType(
+    shouldWarn, propValue, propName, componentName, location
+  ) {
+    return true; // is always valid
+  }
+  return createChainableTypeChecker(validateAnyType);
+}
+
+function createPrimitiveTypeChecker(expectedType) {
+  function validatePrimitiveType(
+    shouldWarn, propValue, propName, componentName, location
+  ) {
+    var propType = getPropType(propValue);
+    var isValid = propType === expectedType;
+    if (shouldWarn) {
+      ("production" !== process.env.NODE_ENV ? warning(
+        isValid,
+        'Invalid %s `%s` of type `%s` supplied to `%s`, expected `%s`.',
+        ReactPropTypeLocationNames[location],
+        propName,
+        propType,
+        componentName,
+        expectedType
+      ) : null);
+    }
+    return isValid;
+  }
+  return createChainableTypeChecker(validatePrimitiveType);
+}
+
+function createEnumTypeChecker(expectedValues) {
+  var expectedEnum = createObjectFrom(expectedValues);
+  function validateEnumType(
+    shouldWarn, propValue, propName, componentName, location
+  ) {
+    var isValid = expectedEnum[propValue];
+    if (shouldWarn) {
+      ("production" !== process.env.NODE_ENV ? warning(
+        isValid,
+        'Invalid %s `%s` supplied to `%s`, expected one of %s.',
+        ReactPropTypeLocationNames[location],
+        propName,
+        componentName,
+        JSON.stringify(Object.keys(expectedEnum))
+      ) : null);
+    }
+    return isValid;
+  }
+  return createChainableTypeChecker(validateEnumType);
+}
+
+function createShapeTypeChecker(shapeTypes) {
+  function validateShapeType(
+    shouldWarn, propValue, propName, componentName, location
+  ) {
+    var propType = getPropType(propValue);
+    var isValid = propType === 'object';
+    if (isValid) {
+      for (var key in shapeTypes) {
+        var checker = shapeTypes[key];
+        if (checker && !checker(propValue, key, componentName, location)) {
+          return false;
+        }
+      }
+    }
+    if (shouldWarn) {
+      ("production" !== process.env.NODE_ENV ? warning(
+        isValid,
+        'Invalid %s `%s` of type `%s` supplied to `%s`, expected `object`.',
+        ReactPropTypeLocationNames[location],
+        propName,
+        propType,
+        componentName
+      ) : null);
+    }
+    return isValid;
+  }
+  return createChainableTypeChecker(validateShapeType);
+}
+
+function createInstanceTypeChecker(expectedClass) {
+  function validateInstanceType(
+    shouldWarn, propValue, propName, componentName, location
+  ) {
+    var isValid = propValue instanceof expectedClass;
+    if (shouldWarn) {
+      ("production" !== process.env.NODE_ENV ? warning(
+        isValid,
+        'Invalid %s `%s` supplied to `%s`, expected instance of `%s`.',
+        ReactPropTypeLocationNames[location],
+        propName,
+        componentName,
+        expectedClass.name || ANONYMOUS
+      ) : null);
+    }
+    return isValid;
+  }
+  return createChainableTypeChecker(validateInstanceType);
+}
+
+function createArrayOfTypeChecker(propTypeChecker) {
+  function validateArrayType(
+    shouldWarn, propValue, propName, componentName, location
+  ) {
+    var isValid = Array.isArray(propValue);
+    if (isValid) {
+      for (var i = 0; i < propValue.length; i++) {
+        if (!propTypeChecker(propValue, i, componentName, location)) {
+          return false;
+        }
+      }
+    }
+    if (shouldWarn) {
+      ("production" !== process.env.NODE_ENV ? warning(
+        isValid,
+        'Invalid %s `%s` supplied to `%s`, expected an array.',
+        ReactPropTypeLocationNames[location],
+        propName,
+        componentName
+      ) : null);
+    }
+    return isValid;
+  }
+  return createChainableTypeChecker(validateArrayType);
+}
+
+function createRenderableTypeChecker() {
+  function validateRenderableType(
+    shouldWarn, propValue, propName, componentName, location
+  ) {
+    var isValid = isRenderable(propValue);
+    if (shouldWarn) {
+      ("production" !== process.env.NODE_ENV ? warning(
+        isValid,
+        'Invalid %s `%s` supplied to `%s`, expected a renderable prop.',
+        ReactPropTypeLocationNames[location],
+        propName,
+        componentName
+      ) : null);
+    }
+    return isValid;
+  }
+  return createChainableTypeChecker(validateRenderableType);
+}
+
+function createComponentTypeChecker() {
+  function validateComponentType(
+    shouldWarn, propValue, propName, componentName, location
+  ) {
+    var isValid = ReactComponent.isValidComponent(propValue);
+    if (shouldWarn) {
+      ("production" !== process.env.NODE_ENV ? warning(
+        isValid,
+        'Invalid %s `%s` supplied to `%s`, expected a React component.',
+        ReactPropTypeLocationNames[location],
+        propName,
+        componentName
+      ) : null);
+    }
+    return isValid;
+  }
+  return createChainableTypeChecker(validateComponentType);
+}
+
+function createUnionTypeChecker(arrayOfValidators) {
+  return function(props, propName, componentName, location) {
+    var isValid = false;
+    for (var ii = 0; ii < arrayOfValidators.length; ii++) {
+      var validate = arrayOfValidators[ii];
+      if (typeof validate.weak === 'function') {
+        validate = validate.weak;
+      }
+      if (validate(props, propName, componentName, location)) {
+        isValid = true;
+        break;
+      }
+    }
+    ("production" !== process.env.NODE_ENV ? warning(
+      isValid,
+      'Invalid %s `%s` supplied to `%s`.',
+      ReactPropTypeLocationNames[location],
+      propName,
+      componentName || ANONYMOUS
+    ) : null);
+    return isValid;
+  };
+}
+
+function createChainableTypeChecker(validate) {
+  function checkType(
+    isRequired, shouldWarn, props, propName, componentName, location
+  ) {
+    var propValue = props[propName];
+    if (propValue != null) {
+      // Only validate if there is a value to check.
+      return validate(
+        shouldWarn,
+        propValue,
+        propName,
+        componentName || ANONYMOUS,
+        location
+      );
+    } else {
+      var isValid = !isRequired;
+      if (shouldWarn) {
+        ("production" !== process.env.NODE_ENV ? warning(
+          isValid,
+          'Required %s `%s` was not specified in `%s`.',
+          ReactPropTypeLocationNames[location],
+          propName,
+          componentName || ANONYMOUS
+        ) : null);
+      }
+      return isValid;
+    }
+  }
+
+  var checker = checkType.bind(null, false, true);
+  checker.weak = checkType.bind(null, false, false);
+  checker.isRequired = checkType.bind(null, true, true);
+  checker.weak.isRequired = checkType.bind(null, true, false);
+  checker.isRequired.weak = checker.weak.isRequired;
+
+  return checker;
+}
+
+module.exports = Props;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactPropTypes.js","/node_modules/react/lib")
+},{"./ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","./ReactPropTypeLocationNames":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypeLocationNames.js","./createObjectFrom":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/createObjectFrom.js","./warning":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/warning.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactRootIndex.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -13889,220 +13300,7 @@ var ReactRootIndex = {
 module.exports = ReactRootIndex;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactRootIndex.js","/node_modules/react/lib")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactServerRendering.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @typechecks static-only
- * @providesModule ReactServerRendering
- */
-"use strict";
-
-var ReactComponent = require("./ReactComponent");
-var ReactInstanceHandles = require("./ReactInstanceHandles");
-var ReactMarkupChecksum = require("./ReactMarkupChecksum");
-var ReactServerRenderingTransaction =
-  require("./ReactServerRenderingTransaction");
-
-var instantiateReactComponent = require("./instantiateReactComponent");
-var invariant = require("./invariant");
-
-/**
- * @param {ReactComponent} component
- * @return {string} the HTML markup
- */
-function renderComponentToString(component) {
-  ("production" !== process.env.NODE_ENV ? invariant(
-    ReactComponent.isValidComponent(component),
-    'renderComponentToString(): You must pass a valid ReactComponent.'
-  ) : invariant(ReactComponent.isValidComponent(component)));
-
-  ("production" !== process.env.NODE_ENV ? invariant(
-    !(arguments.length === 2 && typeof arguments[1] === 'function'),
-    'renderComponentToString(): This function became synchronous and now ' +
-    'returns the generated markup. Please remove the second parameter.'
-  ) : invariant(!(arguments.length === 2 && typeof arguments[1] === 'function')));
-
-  var transaction;
-  try {
-    var id = ReactInstanceHandles.createReactRootID();
-    transaction = ReactServerRenderingTransaction.getPooled(false);
-
-    return transaction.perform(function() {
-      var componentInstance = instantiateReactComponent(component);
-      var markup = componentInstance.mountComponent(id, transaction, 0);
-      return ReactMarkupChecksum.addChecksumToMarkup(markup);
-    }, null);
-  } finally {
-    ReactServerRenderingTransaction.release(transaction);
-  }
-}
-
-/**
- * @param {ReactComponent} component
- * @return {string} the HTML markup, without the extra React ID and checksum
-* (for generating static pages)
- */
-function renderComponentToStaticMarkup(component) {
-  ("production" !== process.env.NODE_ENV ? invariant(
-    ReactComponent.isValidComponent(component),
-    'renderComponentToStaticMarkup(): You must pass a valid ReactComponent.'
-  ) : invariant(ReactComponent.isValidComponent(component)));
-
-  var transaction;
-  try {
-    var id = ReactInstanceHandles.createReactRootID();
-    transaction = ReactServerRenderingTransaction.getPooled(true);
-
-    return transaction.perform(function() {
-      var componentInstance = instantiateReactComponent(component);
-      return componentInstance.mountComponent(id, transaction, 0);
-    }, null);
-  } finally {
-    ReactServerRenderingTransaction.release(transaction);
-  }
-}
-
-module.exports = {
-  renderComponentToString: renderComponentToString,
-  renderComponentToStaticMarkup: renderComponentToStaticMarkup
-};
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactServerRendering.js","/node_modules/react/lib")
-},{"./ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","./ReactInstanceHandles":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactInstanceHandles.js","./ReactMarkupChecksum":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMarkupChecksum.js","./ReactServerRenderingTransaction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactServerRenderingTransaction.js","./instantiateReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/instantiateReactComponent.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactServerRenderingTransaction.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Copyright 2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule ReactServerRenderingTransaction
- * @typechecks
- */
-
-"use strict";
-
-var PooledClass = require("./PooledClass");
-var ReactMountReady = require("./ReactMountReady");
-var ReactPutListenerQueue = require("./ReactPutListenerQueue");
-var Transaction = require("./Transaction");
-
-var emptyFunction = require("./emptyFunction");
-var mixInto = require("./mixInto");
-
-/**
- * Provides a `ReactMountReady` queue for collecting `onDOMReady` callbacks
- * during the performing of the transaction.
- */
-var ON_DOM_READY_QUEUEING = {
-  /**
-   * Initializes the internal `onDOMReady` queue.
-   */
-  initialize: function() {
-    this.reactMountReady.reset();
-  },
-
-  close: emptyFunction
-};
-
-var PUT_LISTENER_QUEUEING = {
-  initialize: function() {
-    this.putListenerQueue.reset();
-  },
-
-  close: emptyFunction
-};
-
-/**
- * Executed within the scope of the `Transaction` instance. Consider these as
- * being member methods, but with an implied ordering while being isolated from
- * each other.
- */
-var TRANSACTION_WRAPPERS = [
-  PUT_LISTENER_QUEUEING,
-  ON_DOM_READY_QUEUEING
-];
-
-/**
- * @class ReactServerRenderingTransaction
- * @param {boolean} renderToStaticMarkup
- */
-function ReactServerRenderingTransaction(renderToStaticMarkup) {
-  this.reinitializeTransaction();
-  this.renderToStaticMarkup = renderToStaticMarkup;
-  this.reactMountReady = ReactMountReady.getPooled(null);
-  this.putListenerQueue = ReactPutListenerQueue.getPooled();
-}
-
-var Mixin = {
-  /**
-   * @see Transaction
-   * @abstract
-   * @final
-   * @return {array} Empty list of operation wrap proceedures.
-   */
-  getTransactionWrappers: function() {
-    return TRANSACTION_WRAPPERS;
-  },
-
-  /**
-   * @return {object} The queue to collect `onDOMReady` callbacks with.
-   *   TODO: convert to ReactMountReady
-   */
-  getReactMountReady: function() {
-    return this.reactMountReady;
-  },
-
-  getPutListenerQueue: function() {
-    return this.putListenerQueue;
-  },
-
-  /**
-   * `PooledClass` looks for this, and will invoke this before allowing this
-   * instance to be resused.
-   */
-  destructor: function() {
-    ReactMountReady.release(this.reactMountReady);
-    this.reactMountReady = null;
-
-    ReactPutListenerQueue.release(this.putListenerQueue);
-    this.putListenerQueue = null;
-  }
-};
-
-
-mixInto(ReactServerRenderingTransaction, Transaction.Mixin);
-mixInto(ReactServerRenderingTransaction, Mixin);
-
-PooledClass.addPoolingTo(ReactServerRenderingTransaction);
-
-module.exports = ReactServerRenderingTransaction;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactServerRenderingTransaction.js","/node_modules/react/lib")
-},{"./PooledClass":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js","./ReactMountReady":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMountReady.js","./ReactPutListenerQueue":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPutListenerQueue.js","./Transaction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/Transaction.js","./emptyFunction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/emptyFunction.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactTextComponent.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactTextComponent.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -14379,287 +13577,7 @@ var ReactUpdates = {
 module.exports = ReactUpdates;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/ReactUpdates.js","/node_modules/react/lib")
-},{"./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/Transaction.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule Transaction
- */
-
-"use strict";
-
-var invariant = require("./invariant");
-
-/**
- * `Transaction` creates a black box that is able to wrap any method such that
- * certain invariants are maintained before and after the method is invoked
- * (Even if an exception is thrown while invoking the wrapped method). Whoever
- * instantiates a transaction can provide enforcers of the invariants at
- * creation time. The `Transaction` class itself will supply one additional
- * automatic invariant for you - the invariant that any transaction instance
- * should not be run while it is already being run. You would typically create a
- * single instance of a `Transaction` for reuse multiple times, that potentially
- * is used to wrap several different methods. Wrappers are extremely simple -
- * they only require implementing two methods.
- *
- * <pre>
- *                       wrappers (injected at creation time)
- *                                      +        +
- *                                      |        |
- *                    +-----------------|--------|--------------+
- *                    |                 v        |              |
- *                    |      +---------------+   |              |
- *                    |   +--|    wrapper1   |---|----+         |
- *                    |   |  +---------------+   v    |         |
- *                    |   |          +-------------+  |         |
- *                    |   |     +----|   wrapper2  |--------+   |
- *                    |   |     |    +-------------+  |     |   |
- *                    |   |     |                     |     |   |
- *                    |   v     v                     v     v   | wrapper
- *                    | +---+ +---+   +---------+   +---+ +---+ | invariants
- * perform(anyMethod) | |   | |   |   |         |   |   | |   | | maintained
- * +----------------->|-|---|-|---|-->|anyMethod|---|---|-|---|-|-------->
- *                    | |   | |   |   |         |   |   | |   | |
- *                    | |   | |   |   |         |   |   | |   | |
- *                    | |   | |   |   |         |   |   | |   | |
- *                    | +---+ +---+   +---------+   +---+ +---+ |
- *                    |  initialize                    close    |
- *                    +-----------------------------------------+
- * </pre>
- *
- * Bonus:
- * - Reports timing metrics by method name and wrapper index.
- *
- * Use cases:
- * - Preserving the input selection ranges before/after reconciliation.
- *   Restoring selection even in the event of an unexpected error.
- * - Deactivating events while rearranging the DOM, preventing blurs/focuses,
- *   while guaranteeing that afterwards, the event system is reactivated.
- * - Flushing a queue of collected DOM mutations to the main UI thread after a
- *   reconciliation takes place in a worker thread.
- * - Invoking any collected `componentDidUpdate` callbacks after rendering new
- *   content.
- * - (Future use case): Wrapping particular flushes of the `ReactWorker` queue
- *   to preserve the `scrollTop` (an automatic scroll aware DOM).
- * - (Future use case): Layout calculations before and after DOM upates.
- *
- * Transactional plugin API:
- * - A module that has an `initialize` method that returns any precomputation.
- * - and a `close` method that accepts the precomputation. `close` is invoked
- *   when the wrapped process is completed, or has failed.
- *
- * @param {Array<TransactionalWrapper>} transactionWrapper Wrapper modules
- * that implement `initialize` and `close`.
- * @return {Transaction} Single transaction for reuse in thread.
- *
- * @class Transaction
- */
-var Mixin = {
-  /**
-   * Sets up this instance so that it is prepared for collecting metrics. Does
-   * so such that this setup method may be used on an instance that is already
-   * initialized, in a way that does not consume additional memory upon reuse.
-   * That can be useful if you decide to make your subclass of this mixin a
-   * "PooledClass".
-   */
-  reinitializeTransaction: function() {
-    this.transactionWrappers = this.getTransactionWrappers();
-    if (!this.wrapperInitData) {
-      this.wrapperInitData = [];
-    } else {
-      this.wrapperInitData.length = 0;
-    }
-    if (!this.timingMetrics) {
-      this.timingMetrics = {};
-    }
-    this.timingMetrics.methodInvocationTime = 0;
-    if (!this.timingMetrics.wrapperInitTimes) {
-      this.timingMetrics.wrapperInitTimes = [];
-    } else {
-      this.timingMetrics.wrapperInitTimes.length = 0;
-    }
-    if (!this.timingMetrics.wrapperCloseTimes) {
-      this.timingMetrics.wrapperCloseTimes = [];
-    } else {
-      this.timingMetrics.wrapperCloseTimes.length = 0;
-    }
-    this._isInTransaction = false;
-  },
-
-  _isInTransaction: false,
-
-  /**
-   * @abstract
-   * @return {Array<TransactionWrapper>} Array of transaction wrappers.
-   */
-  getTransactionWrappers: null,
-
-  isInTransaction: function() {
-    return !!this._isInTransaction;
-  },
-
-  /**
-   * Executes the function within a safety window. Use this for the top level
-   * methods that result in large amounts of computation/mutations that would
-   * need to be safety checked.
-   *
-   * @param {function} method Member of scope to call.
-   * @param {Object} scope Scope to invoke from.
-   * @param {Object?=} args... Arguments to pass to the method (optional).
-   *                           Helps prevent need to bind in many cases.
-   * @return Return value from `method`.
-   */
-  perform: function(method, scope, a, b, c, d, e, f) {
-    ("production" !== process.env.NODE_ENV ? invariant(
-      !this.isInTransaction(),
-      'Transaction.perform(...): Cannot initialize a transaction when there ' +
-      'is already an outstanding transaction.'
-    ) : invariant(!this.isInTransaction()));
-    var memberStart = Date.now();
-    var errorThrown;
-    var ret;
-    try {
-      this._isInTransaction = true;
-      // Catching errors makes debugging more difficult, so we start with
-      // errorThrown set to true before setting it to false after calling
-      // close -- if it's still set to true in the finally block, it means
-      // one of these calls threw.
-      errorThrown = true;
-      this.initializeAll(0);
-      ret = method.call(scope, a, b, c, d, e, f);
-      errorThrown = false;
-    } finally {
-      var memberEnd = Date.now();
-      this.methodInvocationTime += (memberEnd - memberStart);
-      try {
-        if (errorThrown) {
-          // If `method` throws, prefer to show that stack trace over any thrown
-          // by invoking `closeAll`.
-          try {
-            this.closeAll(0);
-          } catch (err) {
-          }
-        } else {
-          // Since `method` didn't throw, we don't want to silence the exception
-          // here.
-          this.closeAll(0);
-        }
-      } finally {
-        this._isInTransaction = false;
-      }
-    }
-    return ret;
-  },
-
-  initializeAll: function(startIndex) {
-    var transactionWrappers = this.transactionWrappers;
-    var wrapperInitTimes = this.timingMetrics.wrapperInitTimes;
-    for (var i = startIndex; i < transactionWrappers.length; i++) {
-      var initStart = Date.now();
-      var wrapper = transactionWrappers[i];
-      try {
-        // Catching errors makes debugging more difficult, so we start with the
-        // OBSERVED_ERROR state before overwriting it with the real return value
-        // of initialize -- if it's still set to OBSERVED_ERROR in the finally
-        // block, it means wrapper.initialize threw.
-        this.wrapperInitData[i] = Transaction.OBSERVED_ERROR;
-        this.wrapperInitData[i] = wrapper.initialize ?
-          wrapper.initialize.call(this) :
-          null;
-      } finally {
-        var curInitTime = wrapperInitTimes[i];
-        var initEnd = Date.now();
-        wrapperInitTimes[i] = (curInitTime || 0) + (initEnd - initStart);
-
-        if (this.wrapperInitData[i] === Transaction.OBSERVED_ERROR) {
-          // The initializer for wrapper i threw an error; initialize the
-          // remaining wrappers but silence any exceptions from them to ensure
-          // that the first error is the one to bubble up.
-          try {
-            this.initializeAll(i + 1);
-          } catch (err) {
-          }
-        }
-      }
-    }
-  },
-
-  /**
-   * Invokes each of `this.transactionWrappers.close[i]` functions, passing into
-   * them the respective return values of `this.transactionWrappers.init[i]`
-   * (`close`rs that correspond to initializers that failed will not be
-   * invoked).
-   */
-  closeAll: function(startIndex) {
-    ("production" !== process.env.NODE_ENV ? invariant(
-      this.isInTransaction(),
-      'Transaction.closeAll(): Cannot close transaction when none are open.'
-    ) : invariant(this.isInTransaction()));
-    var transactionWrappers = this.transactionWrappers;
-    var wrapperCloseTimes = this.timingMetrics.wrapperCloseTimes;
-    for (var i = startIndex; i < transactionWrappers.length; i++) {
-      var wrapper = transactionWrappers[i];
-      var closeStart = Date.now();
-      var initData = this.wrapperInitData[i];
-      var errorThrown;
-      try {
-        // Catching errors makes debugging more difficult, so we start with
-        // errorThrown set to true before setting it to false after calling
-        // close -- if it's still set to true in the finally block, it means
-        // wrapper.close threw.
-        errorThrown = true;
-        if (initData !== Transaction.OBSERVED_ERROR) {
-          wrapper.close && wrapper.close.call(this, initData);
-        }
-        errorThrown = false;
-      } finally {
-        var closeEnd = Date.now();
-        var curCloseTime = wrapperCloseTimes[i];
-        wrapperCloseTimes[i] = (curCloseTime || 0) + (closeEnd - closeStart);
-
-        if (errorThrown) {
-          // The closer for wrapper i threw an error; close the remaining
-          // wrappers but silence any exceptions from them to ensure that the
-          // first error is the one to bubble up.
-          try {
-            this.closeAll(i + 1);
-          } catch (e) {
-          }
-        }
-      }
-    }
-    this.wrapperInitData.length = 0;
-  }
-};
-
-var Transaction = {
-
-  Mixin: Mixin,
-
-  /**
-   * Token to look for to determine if an error occured.
-   */
-  OBSERVED_ERROR: {}
-
-};
-
-module.exports = Transaction;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/Transaction.js","/node_modules/react/lib")
-},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ViewportMetrics.js":[function(require,module,exports){
+},{"./ReactPerf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPerf.js","./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ViewportMetrics.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -14758,50 +13676,7 @@ function accumulate(current, next) {
 module.exports = accumulate;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/accumulate.js","/node_modules/react/lib")
-},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/adler32.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/**
- * Copyright 2013-2014 Facebook, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * @providesModule adler32
- */
-
-/* jslint bitwise:true */
-
-"use strict";
-
-var MOD = 65521;
-
-// This is a clean-room implementation of adler32 designed for detecting
-// if markup is not what we expect it to be. It does not need to be
-// cryptographically strong, only reasonable good at detecting if markup
-// generated on the server is different than that on the client.
-function adler32(data) {
-  var a = 1;
-  var b = 0;
-  for (var i = 0; i < data.length; i++) {
-    a = (a + data.charCodeAt(i)) % MOD;
-    b = (b + a) % MOD;
-  }
-  return a | (b << 16);
-}
-
-module.exports = adler32;
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/adler32.js","/node_modules/react/lib")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js":[function(require,module,exports){
+},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -14912,6 +13787,71 @@ function copyProperties(obj, a, b, c, d, e, f) {
 module.exports = copyProperties;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/copyProperties.js","/node_modules/react/lib")
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/createObjectFrom.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule createObjectFrom
+ */
+
+/**
+ * Construct an object from an array of keys
+ * and optionally specified value or list of values.
+ *
+ *  >>> createObjectFrom(['a','b','c']);
+ *  {a: true, b: true, c: true}
+ *
+ *  >>> createObjectFrom(['a','b','c'], false);
+ *  {a: false, b: false, c: false}
+ *
+ *  >>> createObjectFrom(['a','b','c'], 'monkey');
+ *  {c:'monkey', b:'monkey' c:'monkey'}
+ *
+ *  >>> createObjectFrom(['a','b','c'], [1,2,3]);
+ *  {a: 1, b: 2, c: 3}
+ *
+ *  >>> createObjectFrom(['women', 'men'], [true, false]);
+ *  {women: true, men: false}
+ *
+ * @param   Array   list of keys
+ * @param   mixed   optional value or value array.  defaults true.
+ * @returns object
+ */
+function createObjectFrom(keys, values /* = true */) {
+  if ("production" !== process.env.NODE_ENV) {
+    if (!Array.isArray(keys)) {
+      throw new TypeError('Must pass an array of keys.');
+    }
+  }
+
+  var object = {};
+  var isArray = Array.isArray(values);
+  if (typeof values == 'undefined') {
+    values = true;
+  }
+
+  for (var ii = keys.length; ii--;) {
+    object[keys[ii]] = isArray ? values[ii] : values;
+  }
+  return object;
+}
+
+module.exports = createObjectFrom;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/createObjectFrom.js","/node_modules/react/lib")
 },{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/dangerousStyleValue.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
@@ -15620,7 +14560,55 @@ function isTextNode(object) {
 module.exports = isTextNode;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/isTextNode.js","/node_modules/react/lib")
-},{"./isNode":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/isNode.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyMirror.js":[function(require,module,exports){
+},{"./isNode":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/isNode.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/joinClasses.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule joinClasses
+ * @typechecks static-only
+ */
+
+"use strict";
+
+/**
+ * Combines multiple className strings into one.
+ * http://jsperf.com/joinclasses-args-vs-array
+ *
+ * @param {...?string} classes
+ * @return {string}
+ */
+function joinClasses(className/*, ... */) {
+  if (!className) {
+    className = '';
+  }
+  var nextClass;
+  var argLength = arguments.length;
+  if (argLength > 1) {
+    for (var ii = 1; ii < argLength; ii++) {
+      nextClass = arguments[ii];
+      nextClass && (className += ' ' + nextClass);
+    }
+  }
+  return className;
+}
+
+module.exports = joinClasses;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/joinClasses.js","/node_modules/react/lib")
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyMirror.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -16079,7 +15067,109 @@ function monitorCodeUse(eventName, data) {
 module.exports = monitorCodeUse;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/monitorCodeUse.js","/node_modules/react/lib")
-},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/shouldUpdateReactComponent.js":[function(require,module,exports){
+},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/objMap.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule objMap
+ */
+
+"use strict";
+
+/**
+ * For each key/value pair, invokes callback func and constructs a resulting
+ * object which contains, for every key in obj, values that are the result of
+ * of invoking the function:
+ *
+ *   func(value, key, iteration)
+ *
+ * @param {?object} obj Object to map keys over
+ * @param {function} func Invoked for each key/val pair.
+ * @param {?*} context
+ * @return {?object} Result of mapping or null if obj is falsey
+ */
+function objMap(obj, func, context) {
+  if (!obj) {
+    return null;
+  }
+  var i = 0;
+  var ret = {};
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      ret[key] = func.call(context, obj[key], key, i++);
+    }
+  }
+  return ret;
+}
+
+module.exports = objMap;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/objMap.js","/node_modules/react/lib")
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/objMapKeyVal.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule objMapKeyVal
+ */
+
+"use strict";
+
+/**
+ * Behaves the same as `objMap` but invokes func with the key first, and value
+ * second. Use `objMap` unless you need this special case.
+ * Invokes func as:
+ *
+ *   func(key, value, iteration)
+ *
+ * @param {?object} obj Object to map keys over
+ * @param {!function} func Invoked for each key/val pair.
+ * @param {?*} context
+ * @return {?object} Result of mapping or null if obj is falsey
+ */
+function objMapKeyVal(obj, func, context) {
+  if (!obj) {
+    return null;
+  }
+  var i = 0;
+  var ret = {};
+  for (var key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      ret[key] = func.call(context, key, obj[key], i++);
+    }
+  }
+  return ret;
+}
+
+module.exports = objMapKeyVal;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/objMapKeyVal.js","/node_modules/react/lib")
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/shouldUpdateReactComponent.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -16390,608 +15480,118 @@ if ("production" !== process.env.NODE_ENV) {
 module.exports = warning;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/lib/warning.js","/node_modules/react/lib")
-},{"./emptyFunction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/emptyFunction.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/src/components/core/Base.js":[function(require,module,exports){
+},{"./emptyFunction":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/emptyFunction.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
-var omit = require('lodash.omit');
-var ReactComponent = require('react/lib/ReactComponent');
-var ReactDOMComponent = require('react/lib/ReactDOMComponent');
-var ReactBrowserComponentMixin = require('react/lib/ReactBrowserComponentMixin');
-var ReactEventEmitter = require('react/lib/ReactEventEmitter');
-var ReactMount = require('react/lib/ReactMount');
-var ReactServerRendering = require('react/lib/ReactServerRendering');
-
-var createComponent = require('../../createComponent');
-var Surface = require('famous/core/Surface');
-
-var registrationNameModules = ReactEventEmitter.registrationNameModules;
-var renderComponentToString = ReactServerRendering.renderComponentToString;
-
-// This is a mixin for components with multiple children
-// This is internal, you don't need to use this
-
-var ELEMENT_NODE_TYPE = 1;
-function putListener(id, registrationName, listener, transaction) {
-  var container = ReactMount.findReactContainerForID(id);
-  if (container) {
-    var doc = container.nodeType === ELEMENT_NODE_TYPE ?
-      container.ownerDocument :
-      container;
-    ReactEventEmitter.listenTo(registrationName, doc);
-  }
-  transaction.getPutListenerQueue().enqueuePutListener(
-    id,
-    registrationName,
-    listener
-  );
-}
-
-function addChain(chain, node){
-  if (!node.props || !node.props.children) {
-    return chain;
-  }
-
-  var children = node.props.children;
-  if (children && !Array.isArray(children)) {
-    children = [children];
-  }
-  children.forEach(function(child){
-    var childNode = ensureFamousNode(child);
-    var nextChain = chain.add(childNode);
-    addChain(nextChain, child);
-  });
-
-  return chain;
-}
-
-// grab or create a famous node from
-// any famous or react renderable
-function ensureFamousNode(childNode) {
-  if (childNode.getFamous) {
-    return childNode.getFamous();
-  }
-
-  if (childNode._owner && !childNode._isFamous) {
-    // TODO: do this as needed
-    // this throws an error on the second time
-    // for maintaining a ref
-    childNode = renderComponentToString(childNode);
-  }
-
-  // react string
-  if (typeof childNode === 'string') {
-    return new Surface({
-      size: [true, true],
-      content: childNode
-    });
-  }
-
-  return childNode;
-}
-
-var BaseMixin = {
-  _isFamous: true,
-
-  getDOMNode: function() {
-    var famousEl = this.getFamous();
-
-    // unmounted or root el
-    if (!famousEl) {
-      return ReactBrowserComponentMixin.getDOMNode.call(this, arguments);
-    }
-
-    // context
-    if (famousEl.container) {
-      return famousEl.container;
-    }
-    // surface
-    return famousEl._element;
-  },
-
-  getFamous: function() {
-    return this.node;
-  },
-
-  mountComponent: function(rootID, transaction, mountDepth) {
-    ReactComponent.Mixin.mountComponent.apply(this, arguments);
-    transaction.getReactMountReady().enqueue(this, this.componentDidMount);
-  },
-
-  componentDidMount: function() {
-    if (!this.props.children) {
-      return;
-    }
-    var transaction = ReactComponent.ReactReconcileTransaction.getPooled();
-    transaction.perform(
-      this.mountAndInjectChildren,
-      this,
-      this.props.children,
-      transaction
-    );
-    ReactComponent.ReactReconcileTransaction.release(transaction);
-  },
-
-  receiveComponent: function(nextComponent, transaction) {
-    if (nextComponent === this) {
-      // Since props and context are immutable after the component is
-      // mounted, we can do a cheap identity compare here to determine
-      // if this is a superfluous reconcile.
-      return;
-    }
-
-    ReactComponent.Mixin.receiveComponent.apply(this, arguments);
-
-    var props = nextComponent.props;
-    this.applyNodeProps(this.props, props, transaction);
-    this.props = props;
-  },
-
-  applyNodeProps: function(oldProps, props, transaction) {
-    var propKeys = Object.keys(props);
-    if (propKeys.length === 0) {
-      return;
-    }
-    var noChangeProps = propKeys.filter(function(k){
-      return props[k] === oldProps[k];
-    });
-
-    props = omit(props, noChangeProps);
-    propKeys = Object.keys(props);
-    if (propKeys.length === 0) {
-      return;
-    }
-
-    if (this.formatProps) {
-      props = this.formatProps(props, oldProps);
-    }
-
-    // wire up event listeners
-    // TODO: remove old ones from oldProps
-    // TODO: move this to a different fn?
-    // TODO: route context events through here? they dont have transaction, only surfaces
-    if (transaction) {
-      propKeys.filter(function(k){
-        return !!registrationNameModules[k] && props[k] != null;
-      })
-      .forEach(function(k){
-        putListener(this._rootNodeID, k, props[k], transaction);
-      }, this);
-    }
-
-    // call custom component logic
-    if (this.setOptions) {
-      this.setOptions(props, transaction);
-    }
-  },
-
-  /**
-   * Moves a child component to the supplied index.
-   *
-   * @param {ReactComponent} child Component to move.
-   * @param {number} toIndex Destination index of the element.
-   * @protected
-   */
-  moveChild: function(child, toIndex) {
-    // Famous doesn't let you move nodes around
-    return;
-  },
-
-  /**
-   * Creates a child component.
-   *
-   * @param {ReactComponent} child Component to create.
-   * @param {object} childNode ART node to insert.
-   * @protected
-   */
-  createChild: function(child, childNode) {
-    childNode = ensureFamousNode(childNode);
-
-    // childNode is a famous node now
-    child._mountImage = childNode;
-    var famousNode = this.getFamous();
-
-    // modifier, copy their children to us
-    if (childNode._modifier) {
-      var chain = famousNode.add(childNode);
-      addChain(chain, child);
-    } else {
-      // surface
-      famousNode.add(childNode);
-    }
-  },
-
-  /**
-   * Removes a child component.
-   *
-   * @param {ReactComponent} child Child to remove.
-   * @protected
-   */
-  removeChild: function(child) {
-    child._mountImage.eject();
-    child._mountImage = null;
-  },
-
-  /**
-   * Override to bypass batch updating because it is not necessary.
-   *
-   * @param {?object} nextChildren.
-   * @param {ReactReconcileTransaction} transaction
-   * @internal
-   * @override {ReactMultiChild.Mixin.updateChildren}
-   */
-  updateChildren: function(nextChildren, transaction) {
-    this._mostRecentlyPlacedChild = null;
-    this._updateChildren(nextChildren, transaction);
-  },
-
-  // Shorthands
-  mountAndInjectChildren: function(children, transaction) {
-    var mountedImages = this.mountChildren(children, transaction);
-    // Each mount image corresponds to one of the flattened children
-    Object.keys(this._renderedChildren).forEach(function(k, idx){
-      this.createChild(this._renderedChildren[k], mountedImages[idx]);
-    }, this);
-  }
-};
-
-var Base = createComponent('Base', ReactDOMComponent, BaseMixin);
-Base.Mixin = BaseMixin;
-
-module.exports = Base;
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/core/Base.js","/src/components/core")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/Surface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Surface.js","lodash.omit":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js","react/lib/ReactBrowserComponentMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js","react/lib/ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","react/lib/ReactDOMComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js","react/lib/ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js","react/lib/ReactMount":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactMount.js","react/lib/ReactServerRendering":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactServerRendering.js"}],"/Users/contra/Projects/famous/famous-react/src/components/core/Context.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var ReactComponent = require('react/lib/ReactComponent');
-var DOMPropertyOperations = require('react/lib/DOMPropertyOperations');
-var ReactDOMComponent = require('react/lib/ReactDOMComponent');
-var ReactBrowserComponentMixin = require('react/lib/ReactBrowserComponentMixin');
-var ReactEventEmitter = require('react/lib/ReactEventEmitter');
-var Engine = require('famous/core/Engine');
-
-var createComponent = require('../../createComponent');
-var Base = require('./Base');
-
-// Root node for an application
-// Equivalent of engine.createContext()
-var BLANK_PROPS = {};
-
-var ContextMixin = {
-  // TODO: get react to render html nodes instead
-  // of strings so this can use Renderable under the hood
-  mountComponent: function(rootID, transaction, mountDepth) {
-    this._tagOpen = '<div';
-    this._tagClose = '</div>';
-    this.tagName = 'DIV';
-
-    Base.Mixin.mountComponent.apply(this, arguments);
-
-    return (
-      this._createOpenTagMarkupAndPutListeners(transaction) +
-      this._tagClose
-    );
-  },
-
-  componentDidMount: function() {
-    this.node = Engine.createContext(this.getDOMNode());
-    Base.Mixin.componentDidMount.apply(this, arguments);
-    this.applyNodeProps(BLANK_PROPS, this.props);
-  },
-
-  setOptions: function(props) {
-    var famousNode = this.getFamous();
-    var hasSize = (typeof props.width !== 'undefined' || typeof props.height !== 'undefined');
-    if (famousNode.setSize && hasSize) {
-      famousNode.setSize([props.width, props.height]);
-    }
-  }
-};
-
-var Context = createComponent('Context', Base, ContextMixin);
-Context.Mixin = ContextMixin;
-
-module.exports = Context;
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/core/Context.js","/src/components/core")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","./Base":"/Users/contra/Projects/famous/famous-react/src/components/core/Base.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","react/lib/DOMPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMPropertyOperations.js","react/lib/ReactBrowserComponentMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js","react/lib/ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","react/lib/ReactDOMComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js","react/lib/ReactEventEmitter":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitter.js"}],"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var omit = require('lodash.omit');
-var ReactComponent = require('react/lib/ReactComponent');
-var ReactDOMComponent = require('react/lib/ReactDOMComponent');
-var createComponent = require('../../createComponent');
-var Base = require('./Base');
-
-// Used for comparison during mounting to avoid a lot of null checks
-var BLANK_PROPS = {};
-
-var reserved = [
-  // react props
-  'height', 'width', 'className', 'style', 'children',
-  // overriden by react props
-  'content', 'size', 'classes', 'properties',
-  // standard react props
-  'ref', 'key'
-];
+var ElementOutput = require('famous/core/ElementOutput');
+var StateModifier = require('famous/modifiers/StateModifier');
+var PropTypes = require('react/lib/ReactPropTypes');
 
 var RenderableMixin = {
-  construct: function(props) {
-    ReactDOMComponent.prototype.construct.apply(this, arguments);
-    this.node = this.createFamousNode();
+  displayName: 'Renderable',
+  propTypes: {
+    height: PropTypes.number,
+    width: PropTypes.number,
+    transform: PropTypes.arrayOf(PropTypes.number),
+    origin: PropTypes.arrayOf(PropTypes.number),
+    align: PropTypes.arrayOf(PropTypes.number)
   },
-
-  mountComponent: function(rootID, transaction, mountDepth) {
-    Base.Mixin.mountComponent.apply(this, arguments);
-
-    // write id so react events work
-    this.node.on('deploy', function(){
-      this._currentTarget.setAttribute('data-reactid', rootID);
-    });
-
-    this.applyNodeProps(BLANK_PROPS, this.props, transaction);
-    return this.getFamous();
+  componentDidMount: function(){
+    var el = this.getDOMNode();
+    this.famous = new ElementOutput(el);
+    this.modifier = new StateModifier();
+    this.componentWillReceiveProps(this.props);
   },
-  setOptions: function(props, transaction) {
-    var famousNode = this.getFamous();
-    var hasSize = (typeof props.width !== 'undefined' || typeof props.height !== 'undefined');
-    if (famousNode.setSize && hasSize) {
-      famousNode.setSize([props.width, props.height]);
-    }
-
-    if (famousNode.setClasses && typeof props.className === 'string') {
-      famousNode.setClasses(props.className.split(' '));
-    }
-
-    if (famousNode.setProperties && typeof props.style === 'object') {
-      famousNode.setProperties(props.style);
-    }
-
-    if (famousNode.setContent && props.children) {
-      famousNode.setContent(props.children);
-    }
-
-    if (famousNode.setOptions) {
-      var filteredProps = omit(props, reserved);
-      famousNode.setOptions(filteredProps);
-    }
+  componentWillReceiveProps: function(props){
+    applyPropsToModifer(props, this.modifier);
+    this.modifier.modify(this.famous);
+    this.famous.commit(this.modifier._modifier._output);
   }
 };
 
-var Renderable = createComponent('Renderable', Base, RenderableMixin);
-Renderable.Mixin = RenderableMixin;
+function applyPropsToModifer(props, mod){
+  // TODO: reset if null
 
-module.exports = Renderable;
+  if (props.transform) {
+    mod.setTransform(props.transform, true);
+  }
+  if (typeof props.opacity !== 'undefined') {
+    mod.setOpacity(props.opacity, true);
+  }
+  if (props.origin) {
+    mod.setOrigin(props.origin, true);
+  }
+  if (props.align) {
+    mod.setAlign(props.align, true);
+  }
+
+  if (typeof props.width !== 'undefined' || typeof props.height === 'undefined') {
+    mod.setSize([props.width, props.height], true);
+  }
+}
+
+module.exports = RenderableMixin;
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/core/Renderable.js","/src/components/core")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","./Base":"/Users/contra/Projects/famous/famous-react/src/components/core/Base.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","lodash.omit":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js","react/lib/ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","react/lib/ReactDOMComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js"}],"/Users/contra/Projects/famous/famous-react/src/components/modifiers/State.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Canvas.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
-var ReactDOMComponent = require('react/lib/ReactDOMComponent');
-var StateModifier = require('famous/modifiers/StateModifier');
-var createComponent = require('../../createComponent');
-var Base = require('../core/Base');
-
-var StateModifierMixin = {
-  construct: function(){
-    ReactDOMComponent.prototype.construct.apply(this, arguments);
-    this.node = this.createFamousNode();
-  },
-  mountComponent: function(rootID, transaction, mountDepth) {
-    Base.Mixin.mountComponent.apply(this, arguments);
-
-    this.applyNodeProps({}, this.props, transaction);
-    return this.getFamous();
-  },
-
-  createFamousNode: function() {
-    return new StateModifier();
-  },
-
-  createChild: function(){},
-
-  receiveComponent: function(nextComponent, transaction) {
-    if (nextComponent === this) {
-      // Since props and context are immutable after the component is
-      // mounted, we can do a cheap identity compare here to determine
-      // if this is a superfluous reconcile.
-      return;
-    }
-
-    var props = nextComponent.props;
-    this.applyNodeProps(this.props, props, transaction);
-    this.props = props;
-  },
-
-  setOptions: function(props) {
-    var famousNode = this.getFamous();
-
-    // TODO: transforms should be a component
-    // with start and end events
-    // also you need to be able to specify a transition
-    if (typeof props.transform !== 'undefined') {
-      famousNode.setTransform(props.transform, {curve: 'easeInOut', duration: 5000});
-    }
-
-    if (typeof props.opacity !== 'undefined') {
-      famousNode.setOpacity(props.opacity);
-    }
-
-    if (typeof props.origin !== 'undefined') {
-      famousNode.setOrigin(props.origin);
-    }
-
-    if (typeof props.align !== 'undefined') {
-      famousNode.setAlign(props.align);
-    }
-
-    var hasSize = (typeof props.width !== 'undefined' || typeof props.height !== 'undefined');
-    if (famousNode.setSize && hasSize) {
-      famousNode.setSize([props.width, props.height]);
-    }
-  }
-};
-
-module.exports = createComponent('StateModifier', Base, StateModifierMixin);
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/modifiers/State.js","/src/components/modifiers")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","../core/Base":"/Users/contra/Projects/famous/famous-react/src/components/core/Base.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/ReactDOMComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOMComponent.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Canvas.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var CanvasSurface = require('famous/Surfaces/CanvasSurface');
-var createComponent = require('../../createComponent');
+var createClass = require('react/lib/ReactCompositeComponent').createClass;
+var DOM = require('react/lib/ReactDOM');
 var Renderable = require('../core/Renderable');
 
 var CanvasMixin = {
-  createFamousNode: function() {
-    return new CanvasSurface();
-  },
-
-  setOptions: function(props) {
-    Renderable.Mixin.setOptions.apply(this, arguments);
-    if (typeof props.width !== 'undefined' || typeof props.height !== 'undefined') {
-      this.getFamous().setSize([props.width, props.height], [props.width, props.height]);
-    }
+  type: 'Canvas',
+  mixins: [Renderable],
+  render: function(){
+    return this.transferPropsTo(DOM.canvas());
   }
 };
 
-module.exports = createComponent('Canvas', Renderable, CanvasMixin);
+module.exports = createClass(CanvasMixin);
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/surfaces/Canvas.js","/src/components/surfaces")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/Surfaces/CanvasSurface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/Surfaces/CanvasSurface.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Container.js":[function(require,module,exports){
+},{"../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Image.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
-var ContainerSurface = require('famous/Surfaces/ContainerSurface');
-var createComponent = require('../../createComponent');
-var Renderable = require('../core/Renderable');
-
-var ContainerMixin = {
-  createFamousNode: function() {
-    return new ContainerSurface();
-  }
-};
-
-module.exports = createComponent('Container', Renderable, ContainerMixin);
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/surfaces/Container.js","/src/components/surfaces")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/Surfaces/ContainerSurface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/Surfaces/ContainerSurface.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Image.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var ImageSurface = require('famous/Surfaces/ImageSurface');
-var createComponent = require('../../createComponent');
+var createClass = require('react/lib/ReactCompositeComponent').createClass;
+var DOM = require('react/lib/ReactDOM');
 var Renderable = require('../core/Renderable');
 
 var ImageMixin = {
-  createFamousNode: function() {
-    return new ImageSurface();
-  },
-  formatProps: function(props, oldProps) {
-    if (typeof props.src === 'string') {
-      props.children = props.src;
-      delete props.src;
-    }
-    return props;
+  type: 'Image',
+  mixins: [Renderable],
+  render: function(){
+    return this.transferPropsTo(DOM.img());
   }
 };
 
-module.exports = createComponent('Image', Renderable, ImageMixin);
+module.exports = createClass(ImageMixin);
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/surfaces/Image.js","/src/components/surfaces")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/Surfaces/ImageSurface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/Surfaces/ImageSurface.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Video.js":[function(require,module,exports){
+},{"../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Video.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
-var VideoSurface = require('famous/Surfaces/VideoSurface');
-var createComponent = require('../../createComponent');
+var createClass = require('react/lib/ReactCompositeComponent').createClass;
+var DOM = require('react/lib/ReactDOM');
 var Renderable = require('../core/Renderable');
 
 var VideoMixin = {
-  createFamousNode: function() {
-    return new VideoSurface();
-  },
-  formatProps: function(props, oldProps) {
-    if (typeof props.autoPlay === 'boolean') {
-      props.autoplay = props.autoPlay;
-      delete props.autoPlay;
-    }
-    if (typeof props.src === 'string') {
-      props.children = props.src;
-      delete props.src;
-    }
-    return props;
+  type: 'Video',
+  mixins: [Renderable],
+  render: function(){
+    return this.transferPropsTo(DOM.video());
   }
 };
 
-module.exports = createComponent('Image', Renderable, VideoMixin);
+module.exports = createClass(VideoMixin);
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/surfaces/Video.js","/src/components/surfaces")
-},{"../../createComponent":"/Users/contra/Projects/famous/famous-react/src/createComponent.js","../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/Surfaces/VideoSurface":"/Users/contra/Projects/famous/famous-react/node_modules/famous/Surfaces/VideoSurface.js"}],"/Users/contra/Projects/famous/famous-react/src/createComponent.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var mixInto = require('react/lib/mixInto');
-
-module.exports = function (name) {
-  var Component = function() {
-    /*
-    for (var i = 1, l = args.length; i < l; i++) {
-      if (typeof args[i] === 'function') {
-        args[i].call(this, arguments);
-      }
-    }
-    */
-  };
-
-  // mix in all arguments after 1
-  for (var i = 1, l = arguments.length; i < l; i++) {
-    // a component
-    if (arguments[i].type) {
-      mixInto(Component, arguments[i].type.prototype);
-    // a class
-    } else if(arguments[i].prototype) {
-      mixInto(Component, arguments[i].prototype);
-    // an object
-    } else {
-      mixInto(Component, arguments[i]);
-    }
-  }
-
-  // this allows people to call as a fn
-  var ConvenienceConstructor = function() {
-    // TODO: apply arguments to the constructor
-    var inst = new Component();
-
-    // react classes have a .construct
-    if (inst.construct) {
-      inst.construct.apply(inst, arguments);
-    }
-    return inst;
-  };
-
-  // some meta info
-
-  // displayName
-  Component.displayName = name;
-  Component.prototype.displayName = name;
-  ConvenienceConstructor.displayName = name;
-  ConvenienceConstructor.prototype.displayName = name;
-  
-  // type
-  Component.type = Component;
-  Component.prototype.type = Component;
-  ConvenienceConstructor.type = Component;
-  ConvenienceConstructor.prototype.type = Component;
-
-  return ConvenienceConstructor;
-};
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/createComponent.js","/src")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","react/lib/mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js"}],"/Users/contra/Projects/famous/famous-react/src/hook.js":[function(require,module,exports){
+},{"../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/hook.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
@@ -16999,6 +15599,7 @@ var Engine = require('famous/core/Engine');
 var ReactUpdates = require('react/lib/ReactUpdates');
 
 // Put React on famo.us's tick
+/*
 var FamousBatchingStrategy = {
   isBatchingUpdates: true,
   batchedUpdates: function(cb, a, b) {
@@ -17008,9 +15609,9 @@ var FamousBatchingStrategy = {
 
 ReactUpdates.injection.injectBatchingStrategy(FamousBatchingStrategy);
 Engine.on('prerender', ReactUpdates.flushBatchedUpdates.bind(ReactUpdates));
+*/
 
 module.exports = Engine;
-
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/hook.js","/src")
 },{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","react/lib/ReactUpdates":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactUpdates.js"}]},{},["./src/index.js"])("./src/index.js")
 });

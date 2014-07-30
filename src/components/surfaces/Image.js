@@ -1,20 +1,15 @@
 'use strict';
 
-var ImageSurface = require('famous/Surfaces/ImageSurface');
-var createComponent = require('../../createComponent');
+var createClass = require('react/lib/ReactCompositeComponent').createClass;
+var DOM = require('react/lib/ReactDOM');
 var Renderable = require('../core/Renderable');
 
 var ImageMixin = {
-  createFamousNode: function() {
-    return new ImageSurface();
-  },
-  formatProps: function(props, oldProps) {
-    if (typeof props.src === 'string') {
-      props.children = props.src;
-      delete props.src;
-    }
-    return props;
+  type: 'Image',
+  mixins: [Renderable],
+  render: function(){
+    return this.transferPropsTo(DOM.img());
   }
 };
 
-module.exports = createComponent('Image', Renderable, ImageMixin);
+module.exports = createClass(ImageMixin);

@@ -1,20 +1,15 @@
 'use strict';
 
-var CanvasSurface = require('famous/Surfaces/CanvasSurface');
-var createComponent = require('../../createComponent');
+var createClass = require('react/lib/ReactCompositeComponent').createClass;
+var DOM = require('react/lib/ReactDOM');
 var Renderable = require('../core/Renderable');
 
 var CanvasMixin = {
-  createFamousNode: function() {
-    return new CanvasSurface();
-  },
-
-  setOptions: function(props) {
-    Renderable.Mixin.setOptions.apply(this, arguments);
-    if (typeof props.width !== 'undefined' || typeof props.height !== 'undefined') {
-      this.getFamous().setSize([props.width, props.height], [props.width, props.height]);
-    }
+  type: 'Canvas',
+  mixins: [Renderable],
+  render: function(){
+    return this.transferPropsTo(DOM.canvas());
   }
 };
 
-module.exports = createComponent('Canvas', Renderable, CanvasMixin);
+module.exports = createClass(CanvasMixin);
