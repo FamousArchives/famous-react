@@ -4,39 +4,30 @@
 
 'use strict';
 
-var Timer = require('famous/utilities/Timer');
 var Transform = require('famous/core/Transform');
 var React = require('react');
+
 var FamousReact = require('../../../src');
+var DOM = FamousReact.DOM;
 
-var FamousTimerMixin = {
-  componentWillMount: function() {
-    this._famousTimers = [];
-  },
-
-  setInterval: function() {
-    this._famousTimers.push(
-      Timer.setInterval.apply(Timer, arguments)
-    );
-  },
-
-  componentWillUnmount: function() {
-    this._famousTimers.forEach(Timer.clear.bind(Timer));
-  }
-};
+console.log(DOM);
 
 var App = React.createClass({
-  mixins: [FamousTimerMixin],
   displayName: 'demo',
+  //mixins: [FamousReact.Mixin],
 
   getInitialState: function() {
-    return {famous: true};
+    return {
+      famous: true
+    };
   },
   componentDidMount: function() {
-    this.setInterval(this.toggle, 1000);
+    setInterval(this.toggle, 1000);
   },
   toggle: function() {
-    this.setState({famous: !this.state.famous});
+    this.setState({
+      famous: !this.state.famous
+    });
   },
 
   contextClick: function() {
@@ -70,14 +61,14 @@ var App = React.createClass({
     var translateX = this.state.famous ? 0 : 200;
     var transform = Transform.translate(0, translateX, 0);
 
-    var header = React.DOM.div({
+    var header = DOM.div({
       ref: 'header',
       key: 'header',
       className: 'buddy',
       onClick: this.headerClick
     }, headerText);
 
-    var img = FamousReact.surfaces.Image({
+    var img = DOM.img({
       ref: 'img',
       key: 'img',
       height: 200,
@@ -88,7 +79,7 @@ var App = React.createClass({
       onClick: this.imageClick
     });
 
-    var vid = FamousReact.surfaces.Video({
+    var vid = DOM.video({
       ref: 'vid',
       key: 'vid',
       height: 200,
@@ -97,18 +88,18 @@ var App = React.createClass({
       autoPlay: true,
       transform: transform,
       className: 'vid-sup',
-      src: 'http://html5demos.com/assets/dizzy.mp4',
+      src: './dizzy.mp4',
       onClick: this.videoClick
     });
 
-    var canvas = FamousReact.surfaces.Canvas({
+    var canvas = DOM.canvas({
       ref: 'canvas',
       key: 'canvas',
       height: 200,
       width: 200
     });
 
-    return React.DOM.div({
+    return DOM.div({
       ref: 'container',
       key: 'container',
       className: 'ctx-sup',
@@ -118,7 +109,7 @@ var App = React.createClass({
 });
 React.renderComponent(App(), document.body);
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/samples/sandbox/src/index.js","/samples/sandbox/src")
-},{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/utilities/Timer":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Timer.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js":[function(require,module,exports){
+},{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /*!
  * The buffer module from node.js, for the browser.
@@ -5821,210 +5812,7 @@ TweenTransition.customCurve = function customCurve(v1, v2) {
 
 module.exports = TweenTransition;
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/transitions/TweenTransition.js","/node_modules/famous/transitions")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Timer.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: mark@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-// TODO fix func-style
-/*eslint func-style: [0, "declaration"] */
-
-/**
- * An internal library to reproduce javascript time-based scheduling.
- *   Using standard javascript setTimeout methods can have a negative performance impact
- *   when combined with the Famous rendering process, so instead require Timer and call
- *   Timer.setTimeout, Timer.setInterval, etc.
- *
- * @class Timer
- * @constructor
- */
-var FamousEngine = require('../core/Engine');
-
-var _event  = 'prerender';
-
-var getTime = (window.performance) ?
-    function() {
-        return window.performance.now();
-    }
-    : function() {
-        return Date.now();
-    };
-
-/**
- * Add a function to be run on every prerender
- *
- * @method addTimerFunction
- *
- * @param {function} fn function to be run every prerender
- *
- * @return {function} function passed in as parameter
- */
-function addTimerFunction(fn) {
-    FamousEngine.on(_event, fn);
-    return fn;
-}
-
-/**
- * Wraps a function to be invoked after a certain amount of time.
- *  After a set duration has passed, it executes the function and
- *  removes it as a listener to 'prerender'.
- *
- * @method setTimeout
- *
- * @param {function} fn function to be run after a specified duration
- * @param {number} duration milliseconds from now to execute the function
- *
- * @return {function} function passed in as parameter
- */
-function setTimeout(fn, duration) {
-    var t = getTime();
-    var callback = function() {
-        var t2 = getTime();
-        if (t2 - t >= duration) {
-            fn.apply(this, arguments);
-            FamousEngine.removeListener(_event, callback);
-        }
-    };
-    return addTimerFunction(callback);
-}
-
-/**
- * Wraps a function to be invoked after a certain amount of time.
- *  After a set duration has passed, it executes the function and
- *  resets the execution time.
- *
- * @method setInterval
- *
- * @param {function} fn function to be run after a specified duration
- * @param {number} duration interval to execute function in milliseconds
- *
- * @return {function} function passed in as parameter
- */
-function setInterval(fn, duration) {
-    var t = getTime();
-    var callback = function() {
-        var t2 = getTime();
-        if (t2 - t >= duration) {
-            fn.apply(this, arguments);
-            t = getTime();
-        }
-    };
-    return addTimerFunction(callback);
-}
-
-/**
- * Wraps a function to be invoked after a certain amount of prerender ticks.
- *  Similar use to setTimeout but tied to the engine's run speed.
- *
- * @method after
- *
- * @param {function} fn function to be run after a specified amount of ticks
- * @param {number} numTicks number of prerender frames to wait
- *
- * @return {function} function passed in as parameter
- */
-function after(fn, numTicks) {
-    if (numTicks === undefined) return undefined;
-    var callback = function() {
-        numTicks--;
-        if (numTicks <= 0) { //in case numTicks is fraction or negative
-            fn.apply(this, arguments);
-            clear(callback);
-        }
-    };
-    return addTimerFunction(callback);
-}
-
-/**
- * Wraps a function to be continually invoked after a certain amount of prerender ticks.
- *  Similar use to setInterval but tied to the engine's run speed.
- *
- * @method every
- *
- * @param {function} fn function to be run after a specified amount of ticks
- * @param {number} numTicks number of prerender frames to wait
- *
- * @return {function} function passed in as parameter
- */
-function every(fn, numTicks) {
-    numTicks = numTicks || 1;
-    var initial = numTicks;
-    var callback = function() {
-        numTicks--;
-        if (numTicks <= 0) { //in case numTicks is fraction or negative
-            fn.apply(this, arguments);
-            numTicks = initial;
-        }
-    };
-    return addTimerFunction(callback);
-}
-
-/**
- * Remove a function that gets called every prerender
- *
- * @method clear
- *
- * @param {function} fn event linstener
- */
-function clear(fn) {
-    FamousEngine.removeListener(_event, fn);
-}
-
-/**
- * Executes a function after a certain amount of time. Makes sure
- *  the function is not run multiple times.
- *
- * @method debounce
- *
- * @param {function} func function to run after certain amount of time
- * @param {number} wait amount of time
- *
- * @return {function} function that is not able to debounce
- */
-function debounce(func, wait) {
-    var timeout;
-    var ctx;
-    var timestamp;
-    var result;
-    var args;
-    return function() {
-        ctx = this;
-        args = arguments;
-        timestamp = getTime();
-
-        var fn = function() {
-            var last = getTime - timestamp;
-
-            if (last < wait) {
-                timeout = setTimeout(fn, wait - last);
-            } else {
-                timeout = null;
-                result = func.apply(ctx, args);
-            }
-        };
-
-        clear(timeout);
-        timeout = setTimeout(fn, wait);
-
-        return result;
-    };
-}
-
-module.exports = {
-    setTimeout : setTimeout,
-    setInterval : setInterval,
-    debounce : debounce,
-    after : after,
-    every : every,
-    clear : clear
-};
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/famous/utilities/Timer.js","/node_modules/famous/utilities")
-},{"../core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Utility.js":[function(require,module,exports){
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Utility.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24892,7 +24680,36 @@ module.exports = warning;
 module.exports = require('./lib/React');
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/node_modules/react/react.js","/node_modules/react")
-},{"./lib/React":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/React.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js":[function(require,module,exports){
+},{"./lib/React":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/React.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}],"/Users/contra/Projects/famous/famous-react/src/DOM.js":[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+'use strict';
+
+var createClass = require('react/lib/ReactCompositeComponent').createClass;
+var DOM = require('react/lib/ReactDOM');
+var Renderable = require('./Renderable');
+
+var output = {};
+Object.keys(DOM).forEach(function(type){
+  output[type] = createWrapper(type);
+});
+
+function createWrapper(type){
+  var ctor = createClass({
+    displayName: type,
+    mixins: [Renderable],
+    render: function(){
+      var el = DOM[type](this.props, this.props.children);
+      return el;
+    }
+  });
+
+  return ctor;
+}
+
+module.exports = output;
+
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/DOM.js","/src")
+},{"./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/Renderable.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
@@ -24902,7 +24719,6 @@ var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
 
 var RenderableMixin = {
-  displayName: 'Renderable',
   propTypes: {
     height: PropTypes.number,
     width: PropTypes.number,
@@ -24910,7 +24726,7 @@ var RenderableMixin = {
     origin: PropTypes.arrayOf(PropTypes.number),
     align: PropTypes.arrayOf(PropTypes.number)
   },
-  _commitModifier: function(){
+  tick: function(){
     this.modifier.modify(this.famous);
     this.famous.commit(this.modifier._modifier._output);
   },
@@ -24919,18 +24735,21 @@ var RenderableMixin = {
     this.famous = new ElementOutput(el);
     this.modifier = new StateModifier();
     this.componentWillReceiveProps(this.props);
-    this._commitModifier();
-    Engine.on('prerender', this._commitModifier);
+    this.tick();
+    Engine.on('prerender', this.tick);
+  },
+  componentDidUnmount: function(){
+    Engine.removeListener('prerender', this.tick);
   },
   componentWillReceiveProps: function(props){
     applyPropsToModifer(props, this.modifier);
-    this._commitModifier();
+    this.tick();
   }
 };
 
 function applyPropsToModifer(props, mod){
   // TODO: reset if null
-
+  // TODO: specify transitions in a tuple
   if (props.transform) {
     mod.setTransform(props.transform, true);
   }
@@ -24951,105 +24770,20 @@ function applyPropsToModifer(props, mod){
 
 module.exports = RenderableMixin;
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/core/Renderable.js","/src/components/core")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Canvas.js":[function(require,module,exports){
+}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/Renderable.js","/src")
+},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/index.js":[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 'use strict';
 
-var createClass = require('react/lib/ReactCompositeComponent').createClass;
-var DOM = require('react/lib/ReactDOM');
-var Renderable = require('../core/Renderable');
+var DOM = require('./DOM');
+var Renderable = require('./Renderable');
 
-var CanvasMixin = {
-  type: 'Canvas',
-  mixins: [Renderable],
-  render: function(){
-    return this.transferPropsTo(DOM.canvas());
-  }
-};
-
-module.exports = createClass(CanvasMixin);
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/surfaces/Canvas.js","/src/components/surfaces")
-},{"../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Image.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var createClass = require('react/lib/ReactCompositeComponent').createClass;
-var DOM = require('react/lib/ReactDOM');
-var Renderable = require('../core/Renderable');
-
-var ImageMixin = {
-  type: 'Image',
-  mixins: [Renderable],
-  render: function(){
-    return this.transferPropsTo(DOM.img());
-  }
-};
-
-module.exports = createClass(ImageMixin);
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/surfaces/Image.js","/src/components/surfaces")
-},{"../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Video.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var createClass = require('react/lib/ReactCompositeComponent').createClass;
-var DOM = require('react/lib/ReactDOM');
-var Renderable = require('../core/Renderable');
-
-var VideoMixin = {
-  type: 'Video',
-  mixins: [Renderable],
-  render: function(){
-    return this.transferPropsTo(DOM.video());
-  }
-};
-
-module.exports = createClass(VideoMixin);
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/components/surfaces/Video.js","/src/components/surfaces")
-},{"../core/Renderable":"/Users/contra/Projects/famous/famous-react/src/components/core/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/hook.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var Engine = require('famous/core/Engine');
-var ReactUpdates = require('react/lib/ReactUpdates');
-
-// Put React on famo.us's tick
-/*
-var FamousBatchingStrategy = {
-  isBatchingUpdates: true,
-  batchedUpdates: function(cb, a, b) {
-    cb(a, b);
-  }
-};
-
-ReactUpdates.injection.injectBatchingStrategy(FamousBatchingStrategy);
-Engine.on('prerender', ReactUpdates.flushBatchedUpdates.bind(ReactUpdates));
-*/
-
-module.exports = Engine;
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/hook.js","/src")
-},{"_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","react/lib/ReactUpdates":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactUpdates.js"}],"/Users/contra/Projects/famous/famous-react/src/index.js":[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-'use strict';
-
-var hook = require('./hook');
-var ImageSurface = require('./components/surfaces/Image');
-var VideoSurface = require('./components/surfaces/Video');
-var CanvasSurface = require('./components/surfaces/Canvas');
-
-// TODO: require-dir this
 module.exports = {
-  surfaces: {
-    Image: ImageSurface,
-    Video: VideoSurface,
-    Canvas: CanvasSurface
-  }
+  Mixin: Renderable,
+  DOM: DOM
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/src/index.js","/src")
-},{"./components/surfaces/Canvas":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Canvas.js","./components/surfaces/Image":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Image.js","./components/surfaces/Video":"/Users/contra/Projects/famous/famous-react/src/components/surfaces/Video.js","./hook":"/Users/contra/Projects/famous/famous-react/src/hook.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}]},{},["./samples/sandbox/src/index.js"])("./samples/sandbox/src/index.js")
+},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js","buffer":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/buffer/index.js"}]},{},["./samples/sandbox/src/index.js"])("./samples/sandbox/src/index.js")
 });
 
 

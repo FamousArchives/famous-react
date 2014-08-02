@@ -2,39 +2,30 @@
 
 'use strict';
 
-var Timer = require('famous/utilities/Timer');
 var Transform = require('famous/core/Transform');
 var React = require('react');
+
 var FamousReact = require('../../../src');
+var DOM = FamousReact.DOM;
 
-var FamousTimerMixin = {
-  componentWillMount: function() {
-    this._famousTimers = [];
-  },
-
-  setInterval: function() {
-    this._famousTimers.push(
-      Timer.setInterval.apply(Timer, arguments)
-    );
-  },
-
-  componentWillUnmount: function() {
-    this._famousTimers.forEach(Timer.clear.bind(Timer));
-  }
-};
+console.log(DOM);
 
 var App = React.createClass({
-  mixins: [FamousTimerMixin],
   displayName: 'demo',
+  //mixins: [FamousReact.Mixin],
 
   getInitialState: function() {
-    return {famous: true};
+    return {
+      famous: true
+    };
   },
   componentDidMount: function() {
-    this.setInterval(this.toggle, 1000);
+    setInterval(this.toggle, 1000);
   },
   toggle: function() {
-    this.setState({famous: !this.state.famous});
+    this.setState({
+      famous: !this.state.famous
+    });
   },
 
   contextClick: function() {
@@ -68,14 +59,14 @@ var App = React.createClass({
     var translateX = this.state.famous ? 0 : 200;
     var transform = Transform.translate(0, translateX, 0);
 
-    var header = React.DOM.div({
+    var header = DOM.div({
       ref: 'header',
       key: 'header',
       className: 'buddy',
       onClick: this.headerClick
     }, headerText);
 
-    var img = FamousReact.surfaces.Image({
+    var img = DOM.img({
       ref: 'img',
       key: 'img',
       height: 200,
@@ -86,7 +77,7 @@ var App = React.createClass({
       onClick: this.imageClick
     });
 
-    var vid = FamousReact.surfaces.Video({
+    var vid = DOM.video({
       ref: 'vid',
       key: 'vid',
       height: 200,
@@ -95,18 +86,18 @@ var App = React.createClass({
       autoPlay: true,
       transform: transform,
       className: 'vid-sup',
-      src: 'http://html5demos.com/assets/dizzy.mp4',
+      src: './dizzy.mp4',
       onClick: this.videoClick
     });
 
-    var canvas = FamousReact.surfaces.Canvas({
+    var canvas = DOM.canvas({
       ref: 'canvas',
       key: 'canvas',
       height: 200,
       width: 200
     });
 
-    return React.DOM.div({
+    return DOM.div({
       ref: 'container',
       key: 'container',
       className: 'ctx-sup',

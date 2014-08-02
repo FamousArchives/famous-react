@@ -6,7 +6,6 @@ var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
 
 var RenderableMixin = {
-  displayName: 'Renderable',
   propTypes: {
     height: PropTypes.number,
     width: PropTypes.number,
@@ -14,7 +13,7 @@ var RenderableMixin = {
     origin: PropTypes.arrayOf(PropTypes.number),
     align: PropTypes.arrayOf(PropTypes.number)
   },
-  _commitModifier: function(){
+  tick: function(){
     this.modifier.modify(this.famous);
     this.famous.commit(this.modifier._modifier._output);
   },
@@ -23,18 +22,21 @@ var RenderableMixin = {
     this.famous = new ElementOutput(el);
     this.modifier = new StateModifier();
     this.componentWillReceiveProps(this.props);
-    this._commitModifier();
-    Engine.on('prerender', this._commitModifier);
+    this.tick();
+    Engine.on('prerender', this.tick);
+  },
+  componentDidUnmount: function(){
+    Engine.removeListener('prerender', this.tick);
   },
   componentWillReceiveProps: function(props){
     applyPropsToModifer(props, this.modifier);
-    this._commitModifier();
+    this.tick();
   }
 };
 
 function applyPropsToModifer(props, mod){
   // TODO: reset if null
-
+  // TODO: specify transitions in a tuple
   if (props.transform) {
     mod.setTransform(props.transform, true);
   }
