@@ -34,24 +34,41 @@ var RenderableMixin = {
   }
 };
 
-function applyPropsToModifer(props, mod){
-  // TODO: reset if null
-  // TODO: specify transitions in a tuple
-  if (props.transform) {
-    mod.setTransform(props.transform, true);
+function getTransitionValue(val) {
+  // config
+  if (typeof val === 'object' && !Array.isArray(val)) {
+    return val;
   }
-  if (typeof props.opacity !== 'undefined') {
-    mod.setOpacity(props.opacity, true);
+  // primitive
+  return {
+    value: val,
+    transition: true
+  };
+}
+
+function applyPropsToModifer(props, mod) {
+  var transform = getTransitionValue(props.transform);
+  var opacity = getTransitionValue(props.opacity);
+  var origin = getTransitionValue(props.origin);
+  var align = getTransitionValue(props.align);
+  // TODO: size transition but we have two fields?
+  var size = getTransitionValue([props.width, props.height]);
+  
+  if (transform.value) {
+    mod.setTransform(transform.value, transform.transition);
   }
-  if (props.origin) {
-    mod.setOrigin(props.origin, true);
+  if (opacity.value) {
+    mod.setOpacity(opacity.value, opacity.transition);
   }
-  if (props.align) {
-    mod.setAlign(props.align, true);
+  if (origin.value) {
+    mod.setOrigin(origin.value, origin.transition);
   }
 
-  if (typeof props.width !== 'undefined' || typeof props.height === 'undefined') {
-    mod.setSize([props.width, props.height], true);
+  if (align.value) {
+    mod.setAlign(align.value, align.transition);
+  }
+  if (size.value) {
+    mod.setSize(size.value, size.transition);
   }
 }
 

@@ -8,8 +8,6 @@ var React = require('react');
 var FamousReact = require('../../../src');
 var DOM = FamousReact.DOM;
 
-console.log(DOM);
-
 var App = React.createClass({
   displayName: 'demo',
   //mixins: [FamousReact.Mixin],
@@ -71,7 +69,10 @@ var App = React.createClass({
       key: 'img',
       height: 200,
       width: 200,
-      opacity: 0.5,
+      opacity: {
+        value: 0.5,
+        transition: null
+      },
       className: 'img-sup',
       src: imageUrl,
       onClick: this.imageClick
