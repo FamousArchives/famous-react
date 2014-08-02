@@ -1,5 +1,6 @@
 'use strict';
 
+var Engine = require('famous/core/Engine');
 var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
@@ -13,16 +14,21 @@ var RenderableMixin = {
     origin: PropTypes.arrayOf(PropTypes.number),
     align: PropTypes.arrayOf(PropTypes.number)
   },
+  _commitModifier: function(){
+    this.modifier.modify(this.famous);
+    this.famous.commit(this.modifier._modifier._output);
+  },
   componentDidMount: function(){
     var el = this.getDOMNode();
     this.famous = new ElementOutput(el);
     this.modifier = new StateModifier();
     this.componentWillReceiveProps(this.props);
+    this._commitModifier();
+    Engine.on('prerender', this._commitModifier);
   },
   componentWillReceiveProps: function(props){
     applyPropsToModifer(props, this.modifier);
-    this.modifier.modify(this.famous);
-    this.famous.commit(this.modifier._modifier._output);
+    this._commitModifier();
   }
 };
 

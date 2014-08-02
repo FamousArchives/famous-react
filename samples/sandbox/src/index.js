@@ -3,9 +3,9 @@
 'use strict';
 
 var Timer = require('famous/utilities/Timer');
+var Transform = require('famous/core/Transform');
 var React = require('react');
 var FamousReact = require('../../../src');
-var Transform = require('famous/core/Transform');
 
 var FamousTimerMixin = {
   componentWillMount: function() {
