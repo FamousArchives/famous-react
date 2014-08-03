@@ -10,11 +10,26 @@ var merge = require('react/lib/merge');
 var getStyleUpdates = require('./getStyleUpdates');
 var applyPropsToModifer = require('./applyPropsToModifer');
 
+// TODO: implement render nodes and trees
+
 var RenderableMixin = {
   propTypes: {
-    transform: PropTypes.arrayOf(PropTypes.number),
-    origin: PropTypes.arrayOf(PropTypes.number),
-    align: PropTypes.arrayOf(PropTypes.number)
+    opacity: PropTypes.oneOfType([
+      PropTypes.number,
+      PropTypes.object
+    ]),
+    transform: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.object
+    ]),
+    origin: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.object
+    ]),
+    align: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.object
+    ]),
   },
   tick: function(){
     // calculate the new styles
@@ -30,6 +45,7 @@ var RenderableMixin = {
     // so we only update when stuff changes
     var lastStyle = this._famous.element.previousStyle;
     var nextStyle = this._famous.element.style;
+
     var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
     if (styleUpdates) {
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);

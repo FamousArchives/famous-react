@@ -3,10 +3,14 @@
 'use strict';
 
 var Transform = require('famous/core/Transform');
+var Transitionable = require('famous/transitions/Transitionable');
+var SpringTransition = require('famous/transitions/SpringTransition');
 var React = require('react');
 
 var FamousReact = require('../../../src');
 var DOM = FamousReact.DOM;
+
+Transitionable.registerMethod('spring', SpringTransition);
 
 var App = React.createClass({
   displayName: 'demo',
@@ -43,7 +47,10 @@ var App = React.createClass({
     var translateX = this.state.famous ? 0 : 200;
     var transform = Transform.translate(0, translateX, 0);
     var header = DOM.div({
-      key: 'header'
+      ref: 'header',
+      key: 'header',
+      origin: [0.5, 0.5],
+      align: [0, 1],
     }, headerText);
 
     var img = DOM.img({
@@ -68,7 +75,16 @@ var App = React.createClass({
       muted: true,
       loop: true,
       autoPlay: true,
-      transform: transform,
+      style: {
+        backgroundColor: '#111111'
+      },
+      transform: {
+        value: transform,
+        transition: {
+          method: 'spring',
+          period: 500
+        }
+      },
       className: 'vid-sup',
       src: './dizzy.mp4',
       onClick: this.videoClick
@@ -78,7 +94,10 @@ var App = React.createClass({
       ref: 'canvas',
       key: 'canvas',
       height: 200,
-      width: 200
+      width: 200,
+      style: {
+        backgroundColor: '#0074D9'
+      }
     });
 
     return DOM.div(null, [img, vid, canvas, header]);

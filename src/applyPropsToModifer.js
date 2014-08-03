@@ -5,7 +5,7 @@ function getTransitionValue(val) {
   if (typeof val === 'object' && !Array.isArray(val)) {
     return val;
   }
-  // primitive
+  // primitive, use auto transition
   return {
     value: val,
     transition: true
