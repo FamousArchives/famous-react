@@ -60,8 +60,7 @@ gulp.task('js', function(cb){
     .pipe(cached('js'))
     .pipe(sourcemaps.init({loadMaps: true}))
     .pipe(sourcemaps.write('.'))
-    .pipe(gulp.dest('dist'))
-    .pipe(lr());
+    .pipe(gulp.dest('dist'));
 
   var lintStream = gulp.src(paths.js)
     .pipe(jshint())

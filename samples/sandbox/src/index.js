@@ -45,22 +45,27 @@ var App = React.createClass({
 
   render: function() {
     var imageUrl = this.state.famous ? 'famous_logo.png' : 'react_logo.png';
-    var headerText = this.state.famous ? 'Hello Famous' : 'Hello React';
     var translateX = this.state.famous ? 0 : 200;
     var transformX = Transform.translate(0, translateX, 0);
     var translateY = this.state.famous ? 200 : 0;
     var transformY = Transform.translate(translateY, 0, 0);
 
-    var header = DOM.div({
-      ref: 'header',
-      key: 'header',
-      height: 200,
-      width: 200,
-      align: {
-        value: [0.5, 0.5],
-        transition: null
+    var centeredBlock = DOM.span({
+      height: 20,
+      width: 20,
+      align: [0.5, 0.5],
+      origin: [0.5, 0.5],
+      style: {
+        backgroundColor: '#111111'
       }
-    }, headerText);
+    });
+
+    var centered = DOM.span({
+      ref: 'centered',
+      key: 'centered',
+      height: 200,
+      width: 200
+    }, centeredBlock);
 
     var img = DOM.img({
       ref: 'img',
@@ -106,6 +111,8 @@ var App = React.createClass({
     });
 
     return DOM.div({
+      height: 200,
+      width: 600,
       transform: {
         value: transformY,
         transition: {
@@ -113,7 +120,7 @@ var App = React.createClass({
           period: 500
         }
       }
-    }, [img, vid, canvas, header]);
+    }, [img, vid, canvas, centered]);
   }
 });
 React.renderComponent(App(), document.body);

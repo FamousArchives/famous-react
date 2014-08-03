@@ -18189,10 +18189,10 @@ var RenderableMixin = {
     // attach our modifier to our famous node
     this._famous.modifier = new StateModifier();
 
-    // register with parent node
-    var owner = this._descriptor._owner;
-    if (owner) {
-      owner._famous.node.add(this._famous.node);
+    // register with parent
+    // TODO: fix this
+    if (this._owner) {
+      this._owner._famous.node.add(this._famous.node);
     }
   },
 
