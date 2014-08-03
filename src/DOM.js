@@ -2,7 +2,15 @@
 
 var createClass = require('react/lib/ReactCompositeComponent').createClass;
 var DOM = require('react/lib/ReactDOM');
+var omit = require('lodash.omit');
 var Renderable = require('./Renderable');
+
+var famousProps = [
+  'opacity',
+  'transform',
+  'origin',
+  'align'
+];
 
 var output = {};
 Object.keys(DOM).forEach(function(type){
@@ -14,12 +22,17 @@ function createWrapper(type){
     displayName: type,
     mixins: [Renderable],
     render: function(){
-      var el = DOM[type](this.props, this.props.children);
+      var filteredProps = filter(this.props);
+      var el = DOM[type](filteredProps, this.props.children);
       return el;
     }
   });
 
   return ctor;
+}
+
+function filter(props) {
+  return omit(props, famousProps);
 }
 
 module.exports = output;

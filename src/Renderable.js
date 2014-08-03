@@ -4,72 +4,65 @@ var Engine = require('famous/core/Engine');
 var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
+var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
+var merge = require('react/lib/merge');
+
+var getStyleUpdates = require('./getStyleUpdates');
+var applyPropsToModifer = require('./applyPropsToModifer');
 
 var RenderableMixin = {
   propTypes: {
-    height: PropTypes.number,
-    width: PropTypes.number,
     transform: PropTypes.arrayOf(PropTypes.number),
     origin: PropTypes.arrayOf(PropTypes.number),
     align: PropTypes.arrayOf(PropTypes.number)
   },
   tick: function(){
-    this.modifier.modify(this.famous);
-    this.famous.commit(this.modifier._modifier._output);
+    this._famous.modifier.modify(this._famous.node);
+    this._famous.node.commit(this._famous.modifier._modifier._output);
+    var lastStyle = this._famous.element.previousStyle;
+    var nextStyle = this._famous.element.style;
+
+    var styleUpdates = getStyleUpdates(lastStyle, nextStyle);
+    if (styleUpdates) {
+      CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
+      this._famous.element.previousStyle = merge(nextStyle);
+    }
   },
-  componentDidMount: function(){
-    var el = this.getDOMNode();
-    this.famous = new ElementOutput(el);
-    this.modifier = new StateModifier();
-    this.componentWillReceiveProps(this.props);
-    this.tick();
-    Engine.on('prerender', this.tick);
+  componentWillMount: function(){
+    this._famous = {};
+
+    // create a fake element that props will go on
+    this._famous.element = {
+      style: {},
+      previousStyle: null
+    };
+
+    // attach famous to this fake element
+    this._famous.node = new ElementOutput();
+    this._famous.node._element = this._famous.element;
+
+    // attach our modifier to our famous node
+    this._famous.modifier = new StateModifier();
   },
-  componentDidUnmount: function(){
+  componentWillUnmount: function(){
+    // halt the animation on our modifier
+    this._famous.modifier.halt();
+
+    // remove our tick from the event loop
     Engine.removeListener('prerender', this.tick);
   },
-  componentWillReceiveProps: function(props){
-    applyPropsToModifer(props, this.modifier);
+  componentDidMount: function(){
+    // add our tick to the event loop
+    Engine.on('prerender', this.tick);
+
+    // update our props for the first time
+    this.componentWillReceiveProps(this.props);
+  },
+
+  componentWillReceiveProps: function(newProps){
+    applyPropsToModifer(newProps, this._famous.modifier);
     this.tick();
   }
 };
-
-function getTransitionValue(val) {
-  // config
-  if (typeof val === 'object' && !Array.isArray(val)) {
-    return val;
-  }
-  // primitive
-  return {
-    value: val,
-    transition: true
-  };
-}
-
-function applyPropsToModifer(props, mod) {
-  var transform = getTransitionValue(props.transform);
-  var opacity = getTransitionValue(props.opacity);
-  var origin = getTransitionValue(props.origin);
-  var align = getTransitionValue(props.align);
-  // TODO: size transition but we have two fields?
-  var size = getTransitionValue([props.width, props.height]);
-  
-  if (transform.value) {
-    mod.setTransform(transform.value, transform.transition);
-  }
-  if (opacity.value) {
-    mod.setOpacity(opacity.value, opacity.transition);
-  }
-  if (origin.value) {
-    mod.setOrigin(origin.value, origin.transition);
-  }
-
-  if (align.value) {
-    mod.setAlign(align.value, align.transition);
-  }
-  if (size.value) {
-    mod.setSize(size.value, size.transition);
-  }
-}
 
 module.exports = RenderableMixin;

@@ -1,5 +1,8 @@
 'use strict';
 
+var http = require('http');
+var path = require('path');
+
 var gulp = require('gulp');
 var jshint = require('gulp-jshint');
 var uglify = require('gulp-uglify');
@@ -14,6 +17,7 @@ var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
 var watchify = require('watchify');
 var browserify = require('browserify');
+var ecstatic = require('ecstatic');
 
 var paths = {
   js: 'src/**/*.js',
@@ -28,8 +32,7 @@ var bundler = watchify(browserify('./src/index.js', {
   packageCache: pkgCache,
   fullPaths: true,
   standalone: 'famous-react',
-  debug: true,
-  insertGlobals: true
+  debug: true
 }));
 
 var sampleBundler = watchify(browserify('./samples/sandbox/src/index.js', {
@@ -37,8 +40,7 @@ var sampleBundler = watchify(browserify('./samples/sandbox/src/index.js', {
   packageCache: pkgCache,
   fullPaths: true,
   standalone: 'sample',
-  debug: true,
-  insertGlobals: true
+  debug: true
 }));
 
 gulp.task('watch', function(){
@@ -86,4 +88,11 @@ gulp.task('samples', function(){
   return merge(staticStream, browserifyStream);
 });
 
-gulp.task('default', ['js', 'samples', 'watch']);
+gulp.task('sample-server', function(cb){
+  var port = process.env.PORT || 9090;
+  var rootFolder = path.join(__dirname, './samples/sandbox/dist');
+  var server = http.createServer(ecstatic({root: rootFolder}));
+  server.listen(port, cb);
+});
+
+gulp.task('default', ['js', 'samples', 'sample-server', 'watch']);

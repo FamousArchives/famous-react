@@ -10,7 +10,7 @@ var DOM = FamousReact.DOM;
 
 var App = React.createClass({
   displayName: 'demo',
-  //mixins: [FamousReact.Mixin],
+  mixins: [FamousReact.Mixin],
 
   getInitialState: function() {
     return {
@@ -26,29 +26,15 @@ var App = React.createClass({
     });
   },
 
-  contextClick: function() {
-    console.log('context clicked');
-    var ctx = this.refs.canvas.getDOMNode().getContext('2d');
-    ctx.fillStyle = 'black';
-    ctx.fillText('context clicked', 100, 100);
-  },
   imageClick: function(e) {
-    e.stopPropagation();
-    console.log('img clicked');
-    var img = this.refs.img.getDOMNode();
-    var ctx = this.refs.canvas.getDOMNode().getContext('2d');
-    ctx.drawImage(img, 0, 0, 200, 200);
+    this.drawImage(this.refs.img.getDOMNode());
   },
   videoClick: function(e) {
-    e.stopPropagation();
-    console.log('video clicked');
-    var vid = this.refs.vid.getDOMNode();
-    var ctx = this.refs.canvas.getDOMNode().getContext('2d');
-    ctx.drawImage(vid, 0, 0, 200, 200);
+    this.drawImage(this.refs.vid.getDOMNode());
   },
-  headerClick: function(e) {
-    e.stopPropagation();
-    console.log('header clicked');
+  drawImage: function(img) {
+    var ctx = this.refs.canvas.getDOMNode().getContext('2d');
+    ctx.drawImage(img, 0, 0, 200, 200);
   },
 
   render: function() {
@@ -56,12 +42,8 @@ var App = React.createClass({
     var headerText = this.state.famous ? 'Hello Famous' : 'Hello React';
     var translateX = this.state.famous ? 0 : 200;
     var transform = Transform.translate(0, translateX, 0);
-
     var header = DOM.div({
-      ref: 'header',
-      key: 'header',
-      className: 'buddy',
-      onClick: this.headerClick
+      key: 'header'
     }, headerText);
 
     var img = DOM.img({
@@ -70,7 +52,7 @@ var App = React.createClass({
       height: 200,
       width: 200,
       opacity: {
-        value: 0.5,
+        value: 0.8,
         transition: null
       },
       className: 'img-sup',
@@ -83,6 +65,7 @@ var App = React.createClass({
       key: 'vid',
       height: 200,
       width: 200,
+      muted: true,
       loop: true,
       autoPlay: true,
       transform: transform,
@@ -98,12 +81,7 @@ var App = React.createClass({
       width: 200
     });
 
-    return DOM.div({
-      ref: 'container',
-      key: 'container',
-      className: 'ctx-sup',
-      onClick: this.contextClick
-    }, [img, vid, canvas, header]);
+    return DOM.div(null, [img, vid, canvas, header]);
   }
 });
 React.renderComponent(App(), document.body);
