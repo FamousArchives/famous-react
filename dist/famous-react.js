@@ -18138,12 +18138,20 @@ var RenderableMixin = {
     align: PropTypes.arrayOf(PropTypes.number)
   },
   tick: function(){
+    // calculate the new styles
     this._famous.modifier.modify(this._famous.node);
     this._famous.node.commit(this._famous.modifier._modifier._output);
+    
+    // no need to touch the dom while unmounted
+    if (!this.isMounted()) {
+      return;
+    }
+
+    // diff our faked element with the last run
+    // so we only update when stuff changes
     var lastStyle = this._famous.element.previousStyle;
     var nextStyle = this._famous.element.style;
-
-    var styleUpdates = getStyleUpdates(lastStyle, nextStyle);
+    var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
     if (styleUpdates) {
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this._famous.element.previousStyle = merge(nextStyle);
@@ -18231,9 +18239,6 @@ module.exports = applyPropsToModifer;
 function getStyleUpdates(lastStyle, nextStyle){
   if (lastStyle === nextStyle) {
     return;
-  }
-  if (!lastStyle) {
-    return nextStyle;
   }
 
   var styleName;

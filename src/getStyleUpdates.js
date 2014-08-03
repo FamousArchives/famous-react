@@ -5,9 +5,6 @@ function getStyleUpdates(lastStyle, nextStyle){
   if (lastStyle === nextStyle) {
     return;
   }
-  if (!lastStyle) {
-    return nextStyle;
-  }
 
   var styleName;
   var styleUpdates;
