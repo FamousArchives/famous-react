@@ -5,12 +5,14 @@
 var Transform = require('famous/core/Transform');
 var Transitionable = require('famous/transitions/Transitionable');
 var SpringTransition = require('famous/transitions/SpringTransition');
+var SnapTransition = require('famous/transitions/SnapTransition');
 var React = require('react');
 
 var FamousReact = require('../../../src');
 var DOM = FamousReact.DOM;
 
 Transitionable.registerMethod('spring', SpringTransition);
+Transitionable.registerMethod('snap', SnapTransition);
 
 var App = React.createClass({
   displayName: 'demo',
@@ -52,7 +54,6 @@ var App = React.createClass({
     var header = DOM.div({
       ref: 'header',
       key: 'header',
-      origin: [0.5, 0.5],
       height: 200,
       width: 200,
       align: {
@@ -85,7 +86,7 @@ var App = React.createClass({
       transform: {
         value: transformX,
         transition: {
-          method: 'spring',
+          method: 'snap',
           period: 500
         }
       },
@@ -105,7 +106,13 @@ var App = React.createClass({
     });
 
     return DOM.div({
-      transform: transformY
+      transform: {
+        value: transformY,
+        transition: {
+          method: 'spring',
+          period: 500
+        }
+      }
     }, [img, vid, canvas, header]);
   }
 });

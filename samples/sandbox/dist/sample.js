@@ -6,12 +6,14 @@
 var Transform = require('famous/core/Transform');
 var Transitionable = require('famous/transitions/Transitionable');
 var SpringTransition = require('famous/transitions/SpringTransition');
+var SnapTransition = require('famous/transitions/SnapTransition');
 var React = require('react');
 
 var FamousReact = require('../../../src');
 var DOM = FamousReact.DOM;
 
 Transitionable.registerMethod('spring', SpringTransition);
+Transitionable.registerMethod('snap', SnapTransition);
 
 var App = React.createClass({
   displayName: 'demo',
@@ -53,7 +55,6 @@ var App = React.createClass({
     var header = DOM.div({
       ref: 'header',
       key: 'header',
-      origin: [0.5, 0.5],
       height: 200,
       width: 200,
       align: {
@@ -86,7 +87,7 @@ var App = React.createClass({
       transform: {
         value: transformX,
         transition: {
-          method: 'spring',
+          method: 'snap',
           period: 500
         }
       },
@@ -106,12 +107,18 @@ var App = React.createClass({
     });
 
     return DOM.div({
-      transform: transformY
+      transform: {
+        value: transformY,
+        transition: {
+          method: 'spring',
+          period: 500
+        }
+      }
     }, [img, vid, canvas, header]);
   }
 });
 React.renderComponent(App(), document.body);
-},{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/transitions/SpringTransition":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js","famous/transitions/Transitionable":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
+},{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/transitions/SnapTransition":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SnapTransition.js","famous/transitions/SpringTransition":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js","famous/transitions/Transitionable":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -4706,7 +4713,283 @@ Particle.prototype.unpipe = function unpipe() {
 };
 
 module.exports = Particle;
-},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js","../../core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../integrators/SymplecticEuler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/integrators/SymplecticEuler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Force.js":[function(require,module,exports){
+},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js","../../core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../integrators/SymplecticEuler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/integrators/SymplecticEuler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Constraint.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var EventHandler = require('../../core/EventHandler');
+
+/**
+ *  Allows for two circular bodies to collide and bounce off each other.
+ *
+ *  @class Constraint
+ *  @constructor
+ *  @uses EventHandler
+ *  @param options {Object}
+ */
+function Constraint() {
+    this.options = this.options || {};
+    this._energy = 0.0;
+    this._eventOutput = null;
+}
+
+/*
+ * Setter for options.
+ *
+ * @method setOptions
+ * @param options {Objects}
+ */
+Constraint.prototype.setOptions = function setOptions(options) {
+    for (var key in options) this.options[key] = options[key];
+};
+
+/**
+ * Adds an impulse to a physics body's velocity due to the constraint
+ *
+ * @method applyConstraint
+ */
+Constraint.prototype.applyConstraint = function applyConstraint() {};
+
+/**
+ * Getter for energy
+ *
+ * @method getEnergy
+ * @return energy {Number}
+ */
+Constraint.prototype.getEnergy = function getEnergy() {
+    return this._energy;
+};
+
+/**
+ * Setter for energy
+ *
+ * @method setEnergy
+ * @param energy {Number}
+ */
+Constraint.prototype.setEnergy = function setEnergy(energy) {
+    this._energy = energy;
+};
+
+function _createEventOutput() {
+    this._eventOutput = new EventHandler();
+    this._eventOutput.bindThis(this);
+    EventHandler.setOutputHandler(this, this._eventOutput);
+}
+
+Constraint.prototype.on = function on() {
+    _createEventOutput.call(this);
+    return this.on.apply(this, arguments);
+};
+Constraint.prototype.addListener = function addListener() {
+    _createEventOutput.call(this);
+    return this.addListener.apply(this, arguments);
+};
+Constraint.prototype.pipe = function pipe() {
+    _createEventOutput.call(this);
+    return this.pipe.apply(this, arguments);
+};
+Constraint.prototype.removeListener = function removeListener() {
+    return this.removeListener.apply(this, arguments);
+};
+Constraint.prototype.unpipe = function unpipe() {
+    return this.unpipe.apply(this, arguments);
+};
+
+module.exports = Constraint;
+},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Snap.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var Constraint = require('./Constraint');
+var Vector = require('../../math/Vector');
+
+/**
+ *  A spring constraint is like a spring force, except that it is always
+ *    numerically stable (even for low periods), at the expense of introducing
+ *    damping (even with dampingRatio set to 0).
+ *
+ *    Use this if you need fast spring-like behavior, e.g., snapping
+ *
+ *  @class Snap
+ *  @constructor
+ *  @extends Constraint
+ *  @param {Options} [options] An object of configurable options.
+ *  @param {Number} [options.period] The amount of time in milliseconds taken for one complete oscillation when there is no damping. Range : [150, Infinity]
+ *  @param {Number} [options.dampingRatio] Additional damping of the spring. Range : [0, 1]. At 0 this spring will still be damped, at 1 the spring will be critically damped (the spring will never oscillate)
+ *  @param {Number} [options.length] The rest length of the spring. Range: [0, Infinity].
+ *  @param {Array} [options.anchor] The location of the spring's anchor, if not another physics body.
+ *
+ */
+function Snap(options) {
+    this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
+    if (options) this.setOptions(options);
+
+    //registers
+    this.pDiff  = new Vector();
+    this.vDiff  = new Vector();
+    this.impulse1 = new Vector();
+    this.impulse2 = new Vector();
+
+    Constraint.call(this);
+}
+
+Snap.prototype = Object.create(Constraint.prototype);
+Snap.prototype.constructor = Snap;
+
+Snap.DEFAULT_OPTIONS = {
+    period        : 300,
+    dampingRatio : 0.1,
+    length : 0,
+    anchor : undefined
+};
+
+/** const */ var pi = Math.PI;
+
+function _calcEnergy(impulse, disp, dt) {
+    return Math.abs(impulse.dot(disp)/dt);
+}
+
+/**
+ * Basic options setter
+ *
+ * @method setOptions
+ * @param options {Objects} options
+ */
+Snap.prototype.setOptions = function setOptions(options) {
+    if (options.anchor !== undefined) {
+        if (options.anchor   instanceof Vector) this.options.anchor = options.anchor;
+        if (options.anchor.position instanceof Vector) this.options.anchor = options.anchor.position;
+        if (options.anchor   instanceof Array)  this.options.anchor = new Vector(options.anchor);
+    }
+    if (options.length !== undefined) this.options.length = options.length;
+    if (options.dampingRatio !== undefined) this.options.dampingRatio = options.dampingRatio;
+    if (options.period !== undefined) this.options.period = options.period;
+};
+
+/**
+ * Set the anchor position
+ *
+ * @method setOptions
+ * @param {Array} v TODO
+ */
+
+Snap.prototype.setAnchor = function setAnchor(v) {
+    if (this.options.anchor !== undefined) this.options.anchor = new Vector();
+    this.options.anchor.set(v);
+};
+
+/**
+ * Calculates energy of spring
+ *
+ * @method getEnergy
+ * @param {Object} target TODO
+ * @param {Object} source TODO
+ * @return energy {Number}
+ */
+Snap.prototype.getEnergy = function getEnergy(target, source) {
+    var options     = this.options;
+    var restLength  = options.length;
+    var anchor      = options.anchor || source.position;
+    var strength    = Math.pow(2 * pi / options.period, 2);
+
+    var dist = anchor.sub(target.position).norm() - restLength;
+
+    return 0.5 * strength * dist * dist;
+};
+
+/**
+ * Adds a spring impulse to a physics body's velocity due to the constraint
+ *
+ * @method applyConstraint
+ * @param targets {Array.Body}  Array of bodies to apply the constraint to
+ * @param source {Body}         The source of the constraint
+ * @param dt {Number}           Delta time
+ */
+Snap.prototype.applyConstraint = function applyConstraint(targets, source, dt) {
+    var options         = this.options;
+    var pDiff        = this.pDiff;
+    var vDiff        = this.vDiff;
+    var impulse1     = this.impulse1;
+    var impulse2     = this.impulse2;
+    var length       = options.length;
+    var anchor       = options.anchor || source.position;
+    var period       = options.period;
+    var dampingRatio = options.dampingRatio;
+
+    for (var i = 0; i < targets.length ; i++) {
+        var target = targets[i];
+
+        var p1 = target.position;
+        var v1 = target.velocity;
+        var m1 = target.mass;
+        var w1 = target.inverseMass;
+
+        pDiff.set(p1.sub(anchor));
+        var dist = pDiff.norm() - length;
+        var effMass;
+
+        if (source) {
+            var w2 = source.inverseMass;
+            var v2 = source.velocity;
+            vDiff.set(v1.sub(v2));
+            effMass = 1/(w1 + w2);
+        }
+        else {
+            vDiff.set(v1);
+            effMass = m1;
+        }
+
+        var gamma;
+        var beta;
+
+        if (this.options.period === 0) {
+            gamma = 0;
+            beta = 1;
+        }
+        else {
+            var k = 4 * effMass * pi * pi / (period * period);
+            var c = 4 * effMass * pi * dampingRatio / period;
+
+            beta  = dt * k / (c + dt * k);
+            gamma = 1 / (c + dt*k);
+        }
+
+        var antiDrift = beta/dt * dist;
+        pDiff.normalize(-antiDrift)
+            .sub(vDiff)
+            .mult(dt / (gamma + dt/effMass))
+            .put(impulse1);
+
+        // var n = new Vector();
+        // n.set(pDiff.normalize());
+        // var lambda = -(n.dot(vDiff) + antiDrift) / (gamma + dt/effMass);
+        // impulse2.set(n.mult(dt*lambda));
+
+        target.applyImpulse(impulse1);
+
+        if (source) {
+            impulse1.mult(-1).put(impulse2);
+            source.applyImpulse(impulse2);
+        }
+
+        this.setEnergy(_calcEnergy(impulse1, pDiff, dt));
+    }
+};
+
+module.exports = Snap;
+},{"../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","./Constraint":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Constraint.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Force.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -5287,7 +5570,274 @@ MultipleTransition.prototype.reset = function reset(startState) {
 };
 
 module.exports = MultipleTransition;
-},{"../utilities/Utility":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Utility.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js":[function(require,module,exports){
+},{"../utilities/Utility":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Utility.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SnapTransition.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var PE = require('../physics/PhysicsEngine');
+var Particle = require('../physics/bodies/Particle');
+var Spring = require('../physics/constraints/Snap');
+var Vector = require('../math/Vector');
+
+/**
+ * SnapTransition is a method of transitioning between two values (numbers,
+ * or arrays of numbers). It is similar to SpringTransition except
+ * the transition can be much faster and always has a damping effect.
+ *
+ * @class SnapTransition
+ * @constructor
+ *
+ * @param [state=0] {Number|Array} Initial state
+ */
+function SnapTransition(state) {
+    state = state || 0;
+
+    this.endState  = new Vector(state);
+    this.initState = new Vector();
+
+    this._dimensions       = 1;
+    this._restTolerance    = 1e-10;
+    this._absRestTolerance = this._restTolerance;
+    this._callback         = undefined;
+
+    this.PE       = new PE();
+    this.particle = new Particle();
+    this.spring   = new Spring({anchor : this.endState});
+
+    this.PE.addBody(this.particle);
+    this.PE.attach(this.spring, this.particle);
+}
+
+SnapTransition.SUPPORTS_MULTIPLE = 3;
+
+/**
+ * @property SnapTransition.DEFAULT_OPTIONS
+ * @type Object
+ * @protected
+ * @static
+ */
+SnapTransition.DEFAULT_OPTIONS = {
+
+    /**
+     * The amount of time in milliseconds taken for one complete oscillation
+     * when there is no damping
+     *    Range : [0, Infinity]
+     *
+     * @attribute period
+     * @type Number
+     * @default 100
+     */
+    period : 100,
+
+    /**
+     * The damping of the snap.
+     *    Range : [0, 1]
+     *
+     * @attribute dampingRatio
+     * @type Number
+     * @default 0.2
+     */
+    dampingRatio : 0.2,
+
+    /**
+     * The initial velocity of the transition.
+     *
+     * @attribute velocity
+     * @type Number|Array
+     * @default 0
+     */
+    velocity : 0
+};
+
+function _getEnergy() {
+    return this.particle.getEnergy() + this.spring.getEnergy(this.particle);
+}
+
+function _setAbsoluteRestTolerance() {
+    var distance = this.endState.sub(this.initState).normSquared();
+    this._absRestTolerance = (distance === 0)
+        ? this._restTolerance
+        : this._restTolerance * distance;
+}
+
+function _setTarget(target) {
+    this.endState.set(target);
+    _setAbsoluteRestTolerance.call(this);
+}
+
+function _wake() {
+    this.PE.wake();
+}
+
+function _sleep() {
+    this.PE.sleep();
+}
+
+function _setParticlePosition(p) {
+    this.particle.position.set(p);
+}
+
+function _setParticleVelocity(v) {
+    this.particle.velocity.set(v);
+}
+
+function _getParticlePosition() {
+    return (this._dimensions === 0)
+        ? this.particle.getPosition1D()
+        : this.particle.getPosition();
+}
+
+function _getParticleVelocity() {
+    return (this._dimensions === 0)
+        ? this.particle.getVelocity1D()
+        : this.particle.getVelocity();
+}
+
+function _setCallback(callback) {
+    this._callback = callback;
+}
+
+function _setupDefinition(definition) {
+    var defaults = SnapTransition.DEFAULT_OPTIONS;
+    if (definition.period === undefined)       definition.period       = defaults.period;
+    if (definition.dampingRatio === undefined) definition.dampingRatio = defaults.dampingRatio;
+    if (definition.velocity === undefined)     definition.velocity     = defaults.velocity;
+
+    //setup spring
+    this.spring.setOptions({
+        period       : definition.period,
+        dampingRatio : definition.dampingRatio
+    });
+
+    //setup particle
+    _setParticleVelocity.call(this, definition.velocity);
+}
+
+function _update() {
+    if (this.PE.isSleeping()) {
+        if (this._callback) {
+            var cb = this._callback;
+            this._callback = undefined;
+            cb();
+        }
+        return;
+    }
+
+    if (_getEnergy.call(this) < this._absRestTolerance) {
+        _setParticlePosition.call(this, this.endState);
+        _setParticleVelocity.call(this, [0,0,0]);
+        _sleep.call(this);
+    }
+}
+
+/**
+ * Resets the state and velocity
+ *
+ * @method reset
+ *
+ * @param state {Number|Array}      State
+ * @param [velocity] {Number|Array} Velocity
+ */
+SnapTransition.prototype.reset = function reset(state, velocity) {
+    this._dimensions = (state instanceof Array)
+        ? state.length
+        : 0;
+
+    this.initState.set(state);
+    _setParticlePosition.call(this, state);
+    _setTarget.call(this, state);
+    if (velocity) _setParticleVelocity.call(this, velocity);
+    _setCallback.call(this, undefined);
+};
+
+/**
+ * Getter for velocity
+ *
+ * @method getVelocity
+ *
+ * @return velocity {Number|Array}
+ */
+SnapTransition.prototype.getVelocity = function getVelocity() {
+    return _getParticleVelocity.call(this);
+};
+
+/**
+ * Setter for velocity
+ *
+ * @method setVelocity
+ *
+ * @return velocity {Number|Array}
+ */
+SnapTransition.prototype.setVelocity = function setVelocity(velocity) {
+    this.call(this, _setParticleVelocity(velocity));
+};
+
+/**
+ * Detects whether a transition is in progress
+ *
+ * @method isActive
+ *
+ * @return {Boolean}
+ */
+SnapTransition.prototype.isActive = function isActive() {
+    return !this.PE.isSleeping();
+};
+
+/**
+ * Halt the transition
+ *
+ * @method halt
+ */
+SnapTransition.prototype.halt = function halt() {
+    this.set(this.get());
+};
+
+/**
+ * Get the current position of the transition
+s     *
+ * @method get
+ *
+ * @return state {Number|Array}
+ */
+SnapTransition.prototype.get = function get() {
+    _update.call(this);
+    return _getParticlePosition.call(this);
+};
+
+/**
+ * Set the end position and transition, with optional callback on completion.
+ *
+ * @method set
+ *
+ * @param state {Number|Array}      Final state
+ * @param [definition] {Object}     Transition definition
+ * @param [callback] {Function}     Callback
+ */
+SnapTransition.prototype.set = function set(state, definition, callback) {
+    if (!definition) {
+        this.reset(state);
+        if (callback) callback();
+        return;
+    }
+
+    this._dimensions = (state instanceof Array)
+        ? state.length
+        : 0;
+
+    _wake.call(this);
+    _setupDefinition.call(this, definition);
+    _setTarget.call(this, state);
+    _setCallback.call(this, callback);
+};
+
+module.exports = SnapTransition;
+},{"../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../physics/PhysicsEngine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/PhysicsEngine.js","../physics/bodies/Particle":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/bodies/Particle.js","../physics/constraints/Snap":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Snap.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
