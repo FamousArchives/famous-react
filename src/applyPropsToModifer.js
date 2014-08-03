@@ -17,7 +17,11 @@ function applyPropsToModifer(props, mod) {
   var opacity = getTransitionValue(props.opacity);
   var origin = getTransitionValue(props.origin);
   var align = getTransitionValue(props.align);
-  
+
+  var width = (typeof props.width === 'undefined' ? true : props.width);
+  var height = (typeof props.height === 'undefined' ? true : props.height);
+  var size = [width, height];
+
   if (typeof transform.value !== 'undefined') {
     mod.setTransform(transform.value, transform.transition);
   }
@@ -30,6 +34,8 @@ function applyPropsToModifer(props, mod) {
   if (typeof align.value !== 'undefined') {
     mod.setAlign(align.value, align.transition);
   }
+
+  mod.setSize(size, null);
 }
 
 module.exports = applyPropsToModifer;

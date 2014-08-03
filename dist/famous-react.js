@@ -18122,6 +18122,7 @@ module.exports = output;
 'use strict';
 
 var Engine = require('famous/core/Engine');
+var RenderNode = require('famous/core/RenderNode');
 var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
@@ -18130,8 +18131,6 @@ var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var applyPropsToModifer = require('./applyPropsToModifer');
-
-// TODO: implement render nodes and trees
 
 var RenderableMixin = {
   propTypes: {
@@ -18183,13 +18182,22 @@ var RenderableMixin = {
     };
 
     // attach famous to this fake element
-    this._famous.node = new ElementOutput();
-    this._famous.node._element = this._famous.element;
+    this._famous.elementOutput = new ElementOutput();
+    this._famous.elementOutput._element = this._famous.element;
+    this._famous.node = new RenderNode(this._famous.elementOutput);
 
     // attach our modifier to our famous node
     this._famous.modifier = new StateModifier();
+
+    // register with parent node
+    var owner = this._descriptor._owner;
+    if (owner) {
+      owner._famous.node.add(this._famous.node);
+    }
   },
+
   componentWillUnmount: function(){
+    // TODO: remove from parent component
     // halt the animation on our modifier
     this._famous.modifier.halt();
 
@@ -18212,7 +18220,7 @@ var RenderableMixin = {
 
 module.exports = RenderableMixin;
 
-},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
+},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
 'use strict';
 
 function getTransitionValue(val) {
@@ -18232,7 +18240,11 @@ function applyPropsToModifer(props, mod) {
   var opacity = getTransitionValue(props.opacity);
   var origin = getTransitionValue(props.origin);
   var align = getTransitionValue(props.align);
-  
+
+  var width = (typeof props.width === 'undefined' ? true : props.width);
+  var height = (typeof props.height === 'undefined' ? true : props.height);
+  var size = [width, height];
+
   if (typeof transform.value !== 'undefined') {
     mod.setTransform(transform.value, transform.transition);
   }
@@ -18245,6 +18257,8 @@ function applyPropsToModifer(props, mod) {
   if (typeof align.value !== 'undefined') {
     mod.setAlign(align.value, align.transition);
   }
+
+  mod.setSize(size, null);
 }
 
 module.exports = applyPropsToModifer;

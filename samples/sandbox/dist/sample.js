@@ -46,12 +46,20 @@ var App = React.createClass({
     var imageUrl = this.state.famous ? 'famous_logo.png' : 'react_logo.png';
     var headerText = this.state.famous ? 'Hello Famous' : 'Hello React';
     var translateX = this.state.famous ? 0 : 200;
-    var transform = Transform.translate(0, translateX, 0);
+    var transformX = Transform.translate(0, translateX, 0);
+    var translateY = this.state.famous ? 200 : 0;
+    var transformY = Transform.translate(translateY, 0, 0);
+
     var header = DOM.div({
       ref: 'header',
       key: 'header',
       origin: [0.5, 0.5],
-      align: [0, 1],
+      height: 200,
+      width: 200,
+      align: {
+        value: [0.5, 0.5],
+        transition: null
+      }
     }, headerText);
 
     var img = DOM.img({
@@ -59,10 +67,6 @@ var App = React.createClass({
       key: 'img',
       height: 200,
       width: 200,
-      opacity: {
-        value: 0.8,
-        transition: null
-      },
       className: 'img-sup',
       src: imageUrl,
       onClick: this.imageClick
@@ -80,7 +84,7 @@ var App = React.createClass({
         backgroundColor: '#111111'
       },
       transform: {
-        value: transform,
+        value: transformX,
         transition: {
           method: 'spring',
           period: 500
@@ -101,7 +105,9 @@ var App = React.createClass({
       }
     });
 
-    return DOM.div(null, [img, vid, canvas, header]);
+    return DOM.div({
+      transform: transformY
+    }, [img, vid, canvas, header]);
   }
 });
 React.renderComponent(App(), document.body);
@@ -28375,6 +28381,7 @@ module.exports = output;
 'use strict';
 
 var Engine = require('famous/core/Engine');
+var RenderNode = require('famous/core/RenderNode');
 var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
@@ -28383,8 +28390,6 @@ var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var applyPropsToModifer = require('./applyPropsToModifer');
-
-// TODO: implement render nodes and trees
 
 var RenderableMixin = {
   propTypes: {
@@ -28436,13 +28441,22 @@ var RenderableMixin = {
     };
 
     // attach famous to this fake element
-    this._famous.node = new ElementOutput();
-    this._famous.node._element = this._famous.element;
+    this._famous.elementOutput = new ElementOutput();
+    this._famous.elementOutput._element = this._famous.element;
+    this._famous.node = new RenderNode(this._famous.elementOutput);
 
     // attach our modifier to our famous node
     this._famous.modifier = new StateModifier();
+
+    // register with parent node
+    var owner = this._descriptor._owner;
+    if (owner) {
+      owner._famous.node.add(this._famous.node);
+    }
   },
+
   componentWillUnmount: function(){
+    // TODO: remove from parent component
     // halt the animation on our modifier
     this._famous.modifier.halt();
 
@@ -28465,7 +28479,7 @@ var RenderableMixin = {
 
 module.exports = RenderableMixin;
 
-},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
+},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
 'use strict';
 
 function getTransitionValue(val) {
@@ -28485,7 +28499,11 @@ function applyPropsToModifer(props, mod) {
   var opacity = getTransitionValue(props.opacity);
   var origin = getTransitionValue(props.origin);
   var align = getTransitionValue(props.align);
-  
+
+  var width = (typeof props.width === 'undefined' ? true : props.width);
+  var height = (typeof props.height === 'undefined' ? true : props.height);
+  var size = [width, height];
+
   if (typeof transform.value !== 'undefined') {
     mod.setTransform(transform.value, transform.transition);
   }
@@ -28498,6 +28516,8 @@ function applyPropsToModifer(props, mod) {
   if (typeof align.value !== 'undefined') {
     mod.setAlign(align.value, align.transition);
   }
+
+  mod.setSize(size, null);
 }
 
 module.exports = applyPropsToModifer;

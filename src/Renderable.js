@@ -1,6 +1,7 @@
 'use strict';
 
 var Engine = require('famous/core/Engine');
+var RenderNode = require('famous/core/RenderNode');
 var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
@@ -9,8 +10,6 @@ var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var applyPropsToModifer = require('./applyPropsToModifer');
-
-// TODO: implement render nodes and trees
 
 var RenderableMixin = {
   propTypes: {
@@ -62,13 +61,22 @@ var RenderableMixin = {
     };
 
     // attach famous to this fake element
-    this._famous.node = new ElementOutput();
-    this._famous.node._element = this._famous.element;
+    this._famous.elementOutput = new ElementOutput();
+    this._famous.elementOutput._element = this._famous.element;
+    this._famous.node = new RenderNode(this._famous.elementOutput);
 
     // attach our modifier to our famous node
     this._famous.modifier = new StateModifier();
+
+    // register with parent node
+    var owner = this._descriptor._owner;
+    if (owner) {
+      owner._famous.node.add(this._famous.node);
+    }
   },
+
   componentWillUnmount: function(){
+    // TODO: remove from parent component
     // halt the animation on our modifier
     this._famous.modifier.halt();
 

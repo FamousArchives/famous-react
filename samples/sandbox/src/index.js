@@ -45,12 +45,20 @@ var App = React.createClass({
     var imageUrl = this.state.famous ? 'famous_logo.png' : 'react_logo.png';
     var headerText = this.state.famous ? 'Hello Famous' : 'Hello React';
     var translateX = this.state.famous ? 0 : 200;
-    var transform = Transform.translate(0, translateX, 0);
+    var transformX = Transform.translate(0, translateX, 0);
+    var translateY = this.state.famous ? 200 : 0;
+    var transformY = Transform.translate(translateY, 0, 0);
+
     var header = DOM.div({
       ref: 'header',
       key: 'header',
       origin: [0.5, 0.5],
-      align: [0, 1],
+      height: 200,
+      width: 200,
+      align: {
+        value: [0.5, 0.5],
+        transition: null
+      }
     }, headerText);
 
     var img = DOM.img({
@@ -58,10 +66,6 @@ var App = React.createClass({
       key: 'img',
       height: 200,
       width: 200,
-      opacity: {
-        value: 0.8,
-        transition: null
-      },
       className: 'img-sup',
       src: imageUrl,
       onClick: this.imageClick
@@ -79,7 +83,7 @@ var App = React.createClass({
         backgroundColor: '#111111'
       },
       transform: {
-        value: transform,
+        value: transformX,
         transition: {
           method: 'spring',
           period: 500
@@ -100,7 +104,9 @@ var App = React.createClass({
       }
     });
 
-    return DOM.div(null, [img, vid, canvas, header]);
+    return DOM.div({
+      transform: transformY
+    }, [img, vid, canvas, header]);
   }
 });
 React.renderComponent(App(), document.body);
