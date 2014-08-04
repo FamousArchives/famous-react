@@ -7,8 +7,10 @@ var Transitionable = require('famous/transitions/Transitionable');
 var SpringTransition = require('famous/transitions/SpringTransition');
 var SnapTransition = require('famous/transitions/SnapTransition');
 var React = require('react');
+window.React = React; // for dev
 
 var FamousReact = require('../../../src');
+var TransitionableValue = FamousReact.Transitionable;
 var DOM = FamousReact.DOM;
 
 Transitionable.registerMethod('spring', SpringTransition);
@@ -51,6 +53,8 @@ var App = React.createClass({
     var transformY = Transform.translate(translateY, 0, 0);
 
     var centeredBlock = DOM.span({
+      ref: 'centered-block',
+      key: 'centered-block',
       height: 20,
       width: 20,
       align: [0.5, 0.5],
@@ -88,13 +92,7 @@ var App = React.createClass({
       style: {
         backgroundColor: '#111111'
       },
-      transform: {
-        value: transformX,
-        transition: {
-          method: 'snap',
-          period: 500
-        }
-      },
+      transform: TransitionableValue(transformX, 'snap'),
       className: 'vid-sup',
       src: './dizzy.mp4',
       onClick: this.videoClick
@@ -113,13 +111,7 @@ var App = React.createClass({
     return DOM.div({
       height: 200,
       width: 600,
-      transform: {
-        value: transformY,
-        transition: {
-          method: 'spring',
-          period: 500
-        }
-      }
+      transform: TransitionableValue(transformY, 'spring'),
     }, [img, vid, canvas, centered]);
   }
 });

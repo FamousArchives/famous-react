@@ -8,8 +8,10 @@ var Transitionable = require('famous/transitions/Transitionable');
 var SpringTransition = require('famous/transitions/SpringTransition');
 var SnapTransition = require('famous/transitions/SnapTransition');
 var React = require('react');
+window.React = React; // for dev
 
 var FamousReact = require('../../../src');
+var TransitionableValue = FamousReact.Transitionable;
 var DOM = FamousReact.DOM;
 
 Transitionable.registerMethod('spring', SpringTransition);
@@ -52,6 +54,8 @@ var App = React.createClass({
     var transformY = Transform.translate(translateY, 0, 0);
 
     var centeredBlock = DOM.span({
+      ref: 'centered-block',
+      key: 'centered-block',
       height: 20,
       width: 20,
       align: [0.5, 0.5],
@@ -89,13 +93,7 @@ var App = React.createClass({
       style: {
         backgroundColor: '#111111'
       },
-      transform: {
-        value: transformX,
-        transition: {
-          method: 'snap',
-          period: 500
-        }
-      },
+      transform: TransitionableValue(transformX, 'snap'),
       className: 'vid-sup',
       src: './dizzy.mp4',
       onClick: this.videoClick
@@ -114,13 +112,7 @@ var App = React.createClass({
     return DOM.div({
       height: 200,
       width: 600,
-      transform: {
-        value: transformY,
-        transition: {
-          method: 'spring',
-          period: 500
-        }
-      }
+      transform: TransitionableValue(transformY, 'spring'),
     }, [img, vid, canvas, centered]);
   }
 });
@@ -28906,7 +28898,9 @@ var famousProps = [
   'opacity',
   'transform',
   'origin',
-  'align'
+  'align',
+  'ref',
+  'key'
 ];
 
 var output = {};
@@ -28916,7 +28910,7 @@ Object.keys(DOM).forEach(function(type){
 
 function createWrapper(type){
   var ctor = createClass({
-    displayName: type,
+    displayName: 'famous-'+type,
     mixins: [Renderable],
     render: function(){
       var filteredProps = filter(this.props);
@@ -29036,7 +29030,22 @@ var RenderableMixin = {
 
 module.exports = RenderableMixin;
 
-},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
+},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
+'use strict';
+
+module.exports = function(value, transition) {
+  if (typeof transition === 'string') {
+    transition = {
+      method: transition
+    };
+  }
+
+  return {
+    value: value,
+    transition: transition
+  };
+};
+},{}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
 'use strict';
 
 function getTransitionValue(val) {
@@ -29117,12 +29126,14 @@ module.exports = getStyleUpdates;
 
 var DOM = require('./DOM');
 var Renderable = require('./Renderable');
+var Transitionable = require('./Transitionable');
 
 module.exports = {
   Mixin: Renderable,
-  DOM: DOM
+  DOM: DOM,
+  Transitionable: Transitionable
 };
-},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js"}]},{},["./samples/sandbox/src/index.js"])("./samples/sandbox/src/index.js")
+},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js"}]},{},["./samples/sandbox/src/index.js"])("./samples/sandbox/src/index.js")
 });
 
 

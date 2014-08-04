@@ -9,7 +9,9 @@ var famousProps = [
   'opacity',
   'transform',
   'origin',
-  'align'
+  'align',
+  'ref',
+  'key'
 ];
 
 var output = {};
@@ -19,7 +21,7 @@ Object.keys(DOM).forEach(function(type){
 
 function createWrapper(type){
   var ctor = createClass({
-    displayName: type,
+    displayName: 'famous-'+type,
     mixins: [Renderable],
     render: function(){
       var filteredProps = filter(this.props);
