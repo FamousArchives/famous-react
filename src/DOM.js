@@ -11,7 +11,9 @@ var famousProps = [
   'origin',
   'align',
   'ref',
-  'key'
+  'key',
+  'height',
+  'width'
 ];
 
 var output = {};
@@ -20,21 +22,27 @@ Object.keys(DOM).forEach(function(type){
 });
 
 function createWrapper(type){
+  var domFn = DOM[type];
+
   var ctor = createClass({
     displayName: 'famous-'+type,
     mixins: [Renderable],
+
     render: function(){
       var filteredProps = filter(this.props);
-      var el = DOM[type](filteredProps, this.props.children);
+      var el = domFn(filteredProps, this.props.children);
       return el;
     }
   });
-
   return ctor;
 }
 
 function filter(props) {
   return omit(props, famousProps);
 }
+
+// to override react dom with our better dom
+// uncomment this and export DOM
+// DOM.injection.injectComponentClasses(output);
 
 module.exports = output;

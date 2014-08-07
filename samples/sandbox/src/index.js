@@ -3,22 +3,15 @@
 'use strict';
 
 var Transform = require('famous/core/Transform');
-var Transitionable = require('famous/transitions/Transitionable');
-var SpringTransition = require('famous/transitions/SpringTransition');
-var SnapTransition = require('famous/transitions/SnapTransition');
 var React = require('react');
 window.React = React; // for dev
 
 var FamousReact = require('../../../src');
-var TransitionableValue = FamousReact.Transitionable;
+var Transitionable = FamousReact.Transitionable;
 var DOM = FamousReact.DOM;
-
-Transitionable.registerMethod('spring', SpringTransition);
-Transitionable.registerMethod('snap', SnapTransition);
 
 var App = React.createClass({
   displayName: 'demo',
-  mixins: [FamousReact.Mixin],
 
   getInitialState: function() {
     return {
@@ -52,23 +45,28 @@ var App = React.createClass({
     var translateY = this.state.famous ? 200 : 0;
     var transformY = Transform.translate(translateY, 0, 0);
 
-    var centeredBlock = DOM.span({
-      ref: 'centered-block',
-      key: 'centered-block',
-      height: 20,
-      width: 20,
+    var centeredBlock = DOM.div({
+      ref: 'centeredBlock',
+      key: 'centeredBlock',
+      height: 50,
+      width: 50,
       align: [0.5, 0.5],
       origin: [0.5, 0.5],
       style: {
-        backgroundColor: '#111111'
+        backgroundColor: '#0074D9'
       }
     });
 
-    var centered = DOM.span({
+    var centered = DOM.div({
       ref: 'centered',
       key: 'centered',
       height: 200,
-      width: 200
+      width: 200,
+      transform: Transitionable(transformX, true),
+      style: {
+        backgroundColor: '#111111',
+        display: 'inline-block'
+      }
     }, centeredBlock);
 
     var img = DOM.img({
@@ -76,7 +74,6 @@ var App = React.createClass({
       key: 'img',
       height: 200,
       width: 200,
-      className: 'img-sup',
       src: imageUrl,
       onClick: this.imageClick
     });
@@ -92,8 +89,7 @@ var App = React.createClass({
       style: {
         backgroundColor: '#111111'
       },
-      transform: TransitionableValue(transformX, 'snap'),
-      className: 'vid-sup',
+      transform: Transitionable(transformX, true),
       src: './dizzy.mp4',
       onClick: this.videoClick
     });
@@ -110,8 +106,8 @@ var App = React.createClass({
 
     return DOM.div({
       height: 200,
-      width: 600,
-      transform: TransitionableValue(transformY, 'spring'),
+      width: 800,
+      transform: Transitionable(transformY, true),
     }, [img, vid, canvas, centered]);
   }
 });

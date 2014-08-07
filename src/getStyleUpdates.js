@@ -1,31 +1,30 @@
 'use strict';
 
-// pulled from ReactDOMComponent and cleaned up
 function getStyleUpdates(lastStyle, nextStyle){
   if (lastStyle === nextStyle) {
     return;
   }
 
-  var styleName;
   var styleUpdates;
 
-  // Unset styles on `lastStyle` but not on `nextStyle`.
-  for (styleName in lastStyle) {
-    if (lastStyle.hasOwnProperty(styleName) &&
-        (!nextStyle || !nextStyle.hasOwnProperty(styleName))) {
-      styleUpdates = styleUpdates || {};
-      styleUpdates[styleName] = '';
+  // unset styles that were removed since lastStyle
+  Object.keys(lastStyle).forEach(function(styleName){
+    if (nextStyle[styleName]) {
+      return;
     }
-  }
+    styleUpdates = styleUpdates || {};
+    styleUpdates[styleName] = '';
+  });
 
-  // Update styles that changed since `lastStyle`.
-  for (styleName in nextStyle) {
-    if (nextStyle.hasOwnProperty(styleName) &&
-        lastStyle[styleName] !== nextStyle[styleName]) {
-      styleUpdates = styleUpdates || {};
-      styleUpdates[styleName] = nextStyle[styleName];
+  // update styles that changed since lastStyle
+  Object.keys(nextStyle).forEach(function(styleName){
+    var nextVal = nextStyle[styleName];
+    if (lastStyle[styleName] === nextVal) {
+      return;
     }
-  }
+    styleUpdates = styleUpdates || {};
+    styleUpdates[styleName] = nextVal;
+  });
 
   return styleUpdates;
 }

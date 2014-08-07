@@ -4,22 +4,15 @@
 'use strict';
 
 var Transform = require('famous/core/Transform');
-var Transitionable = require('famous/transitions/Transitionable');
-var SpringTransition = require('famous/transitions/SpringTransition');
-var SnapTransition = require('famous/transitions/SnapTransition');
 var React = require('react');
 window.React = React; // for dev
 
 var FamousReact = require('../../../src');
-var TransitionableValue = FamousReact.Transitionable;
+var Transitionable = FamousReact.Transitionable;
 var DOM = FamousReact.DOM;
-
-Transitionable.registerMethod('spring', SpringTransition);
-Transitionable.registerMethod('snap', SnapTransition);
 
 var App = React.createClass({
   displayName: 'demo',
-  mixins: [FamousReact.Mixin],
 
   getInitialState: function() {
     return {
@@ -53,23 +46,28 @@ var App = React.createClass({
     var translateY = this.state.famous ? 200 : 0;
     var transformY = Transform.translate(translateY, 0, 0);
 
-    var centeredBlock = DOM.span({
-      ref: 'centered-block',
-      key: 'centered-block',
-      height: 20,
-      width: 20,
+    var centeredBlock = DOM.div({
+      ref: 'centeredBlock',
+      key: 'centeredBlock',
+      height: 50,
+      width: 50,
       align: [0.5, 0.5],
       origin: [0.5, 0.5],
       style: {
-        backgroundColor: '#111111'
+        backgroundColor: '#0074D9'
       }
     });
 
-    var centered = DOM.span({
+    var centered = DOM.div({
       ref: 'centered',
       key: 'centered',
       height: 200,
-      width: 200
+      width: 200,
+      transform: Transitionable(transformX, true),
+      style: {
+        backgroundColor: '#111111',
+        display: 'inline-block'
+      }
     }, centeredBlock);
 
     var img = DOM.img({
@@ -77,7 +75,6 @@ var App = React.createClass({
       key: 'img',
       height: 200,
       width: 200,
-      className: 'img-sup',
       src: imageUrl,
       onClick: this.imageClick
     });
@@ -93,8 +90,7 @@ var App = React.createClass({
       style: {
         backgroundColor: '#111111'
       },
-      transform: TransitionableValue(transformX, 'snap'),
-      className: 'vid-sup',
+      transform: Transitionable(transformX, true),
       src: './dizzy.mp4',
       onClick: this.videoClick
     });
@@ -111,13 +107,13 @@ var App = React.createClass({
 
     return DOM.div({
       height: 200,
-      width: 600,
-      transform: TransitionableValue(transformY, 'spring'),
+      width: 800,
+      transform: Transitionable(transformY, true),
     }, [img, vid, canvas, centered]);
   }
 });
 React.renderComponent(App(), document.body);
-},{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/transitions/SnapTransition":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SnapTransition.js","famous/transitions/SpringTransition":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js","famous/transitions/Transitionable":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
+},{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -729,6 +725,17 @@ var _setOrigin = usePrefix ? function(element, origin) {
     element.style.transformOrigin = _formatCSSOrigin(origin);
 };
 
+var _setSize = function(element, size) {
+  var width = '';
+  var height = '';
+  if (size) {
+    width = (size[0] === true) ? element.clientWidth : size[0] + 'px';
+    height = (size[1] === true) ? element.clientHeight : size[1] + 'px';
+  }
+  element.style.width = width;
+  element.style.height = height;
+};
+
 // Shrink given document element until it is effectively invisible.
 var _setInvisible = usePrefix ? function(element) {
     element.style.webkitTransform = 'scale3d(0.0001,0.0001,0.0001)';
@@ -768,6 +775,7 @@ ElementOutput.prototype.commit = function commit(context) {
     }
 
     if (_xyNotEquals(this._origin, origin)) this._originDirty = true;
+    if (_xyNotEquals(this._size, origin)) this._sizeDirty = true;
     if (Transform.notEquals(this._matrix, matrix)) this._transformDirty = true;
 
     if (this._invisible) {
@@ -786,6 +794,7 @@ ElementOutput.prototype.commit = function commit(context) {
             this._size[0] = size[0];
             this._size[1] = size[1];
             this._sizeDirty = false;
+            _setSize(target, this._size);
         }
 
         if (this._originDirty) {
@@ -801,7 +810,7 @@ ElementOutput.prototype.commit = function commit(context) {
 
         if (!matrix) matrix = Transform.identity;
         this._matrix = matrix;
-        var aaMatrix = this.size ? Transform.thenMove(matrix, [-this._size[0]*origin[0], -this._size[1]*origin[1], 0]) : matrix;
+        var aaMatrix = this._size ? Transform.thenMove(matrix, [-this._size[0]*origin[0], -this._size[1]*origin[1], 0]) : matrix;
         _setMatrix(target, aaMatrix);
         this._transformDirty = false;
     }
@@ -3205,386 +3214,6 @@ Transform.inFront = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1e-3, 1];
 Transform.behind = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -1e-3, 1];
 
 module.exports = Transform;
-},{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-
-
-
-/**
- * Three-element floating point vector.
- *
- * @class Vector
- * @constructor
- *
- * @param {number} x x element value
- * @param {number} y y element value
- * @param {number} z z element value
- */
-function Vector(x,y,z) {
-    if (arguments.length === 1 && x !== undefined) this.set(x);
-    else {
-        this.x = x || 0;
-        this.y = y || 0;
-        this.z = z || 0;
-    }
-    return this;
-}
-
-var _register = new Vector(0,0,0);
-
-/**
- * Add this element-wise to another Vector, element-wise.
- *   Note: This sets the internal result register, so other references to that vector will change.
- *
- * @method add
- * @param {Vector} v addend
- * @return {Vector} vector sum
- */
-Vector.prototype.add = function add(v) {
-    return _setXYZ.call(_register,
-        this.x + v.x,
-        this.y + v.y,
-        this.z + v.z
-    );
-};
-
-/**
- * Subtract another vector from this vector, element-wise.
- *   Note: This sets the internal result register, so other references to that vector will change.
- *
- * @method sub
- * @param {Vector} v subtrahend
- * @return {Vector} vector difference
- */
-Vector.prototype.sub = function sub(v) {
-    return _setXYZ.call(_register,
-        this.x - v.x,
-        this.y - v.y,
-        this.z - v.z
-    );
-};
-
-/**
- * Scale Vector by floating point r.
- *   Note: This sets the internal result register, so other references to that vector will change.
- *
- * @method mult
- *
- * @param {number} r scalar
- * @return {Vector} vector result
- */
-Vector.prototype.mult = function mult(r) {
-    return _setXYZ.call(_register,
-        r * this.x,
-        r * this.y,
-        r * this.z
-    );
-};
-
-/**
- * Scale Vector by floating point 1/r.
- *   Note: This sets the internal result register, so other references to that vector will change.
- *
- * @method div
- *
- * @param {number} r scalar
- * @return {Vector} vector result
- */
-Vector.prototype.div = function div(r) {
-    return this.mult(1 / r);
-};
-
-/**
- * Given another vector v, return cross product (v)x(this).
- *   Note: This sets the internal result register, so other references to that vector will change.
- *
- * @method cross
- * @param {Vector} v Left Hand Vector
- * @return {Vector} vector result
- */
-Vector.prototype.cross = function cross(v) {
-    var x = this.x;
-    var y = this.y;
-    var z = this.z;
-    var vx = v.x;
-    var vy = v.y;
-    var vz = v.z;
-
-    return _setXYZ.call(_register,
-        z * vy - y * vz,
-        x * vz - z * vx,
-        y * vx - x * vy
-    );
-};
-
-/**
- * Component-wise equality test between this and Vector v.
- * @method equals
- * @param {Vector} v vector to compare
- * @return {boolean}
- */
-Vector.prototype.equals = function equals(v) {
-    return (v.x === this.x && v.y === this.y && v.z === this.z);
-};
-
-/**
- * Rotate clockwise around x-axis by theta radians.
- *   Note: This sets the internal result register, so other references to that vector will change.
- * @method rotateX
- * @param {number} theta radians
- * @return {Vector} rotated vector
- */
-Vector.prototype.rotateX = function rotateX(theta) {
-    var x = this.x;
-    var y = this.y;
-    var z = this.z;
-
-    var cosTheta = Math.cos(theta);
-    var sinTheta = Math.sin(theta);
-
-    return _setXYZ.call(_register,
-        x,
-        y * cosTheta - z * sinTheta,
-        y * sinTheta + z * cosTheta
-    );
-};
-
-/**
- * Rotate clockwise around y-axis by theta radians.
- *   Note: This sets the internal result register, so other references to that vector will change.
- * @method rotateY
- * @param {number} theta radians
- * @return {Vector} rotated vector
- */
-Vector.prototype.rotateY = function rotateY(theta) {
-    var x = this.x;
-    var y = this.y;
-    var z = this.z;
-
-    var cosTheta = Math.cos(theta);
-    var sinTheta = Math.sin(theta);
-
-    return _setXYZ.call(_register,
-        z * sinTheta + x * cosTheta,
-        y,
-        z * cosTheta - x * sinTheta
-    );
-};
-
-/**
- * Rotate clockwise around z-axis by theta radians.
- *   Note: This sets the internal result register, so other references to that vector will change.
- * @method rotateZ
- * @param {number} theta radians
- * @return {Vector} rotated vector
- */
-Vector.prototype.rotateZ = function rotateZ(theta) {
-    var x = this.x;
-    var y = this.y;
-    var z = this.z;
-
-    var cosTheta = Math.cos(theta);
-    var sinTheta = Math.sin(theta);
-
-    return _setXYZ.call(_register,
-        x * cosTheta - y * sinTheta,
-        x * sinTheta + y * cosTheta,
-        z
-    );
-};
-
-/**
- * Return dot product of this with a second Vector
- * @method dot
- * @param {Vector} v second vector
- * @return {number} dot product
- */
-Vector.prototype.dot = function dot(v) {
-    return this.x * v.x + this.y * v.y + this.z * v.z;
-};
-
-/**
- * Return squared length of this vector
- * @method normSquared
- * @return {number} squared length
- */
-Vector.prototype.normSquared = function normSquared() {
-    return this.dot(this);
-};
-
-/**
- * Return length of this vector
- * @method norm
- * @return {number} length
- */
-Vector.prototype.norm = function norm() {
-    return Math.sqrt(this.normSquared());
-};
-
-/**
- * Scale Vector to specified length.
- *   If length is less than internal tolerance, set vector to [length, 0, 0].
- *   Note: This sets the internal result register, so other references to that vector will change.
- * @method normalize
- *
- * @param {number} length target length, default 1.0
- * @return {Vector}
- */
-Vector.prototype.normalize = function normalize(length) {
-    if (arguments.length === 0) length = 1;
-    var norm = this.norm();
-
-    if (norm > 1e-7) return _setFromVector.call(_register, this.mult(length / norm));
-    else return _setXYZ.call(_register, length, 0, 0);
-};
-
-/**
- * Make a separate copy of the Vector.
- *
- * @method clone
- *
- * @return {Vector}
- */
-Vector.prototype.clone = function clone() {
-    return new Vector(this);
-};
-
-/**
- * True if and only if every value is 0 (or falsy)
- *
- * @method isZero
- *
- * @return {boolean}
- */
-Vector.prototype.isZero = function isZero() {
-    return !(this.x || this.y || this.z);
-};
-
-function _setXYZ(x,y,z) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
-    return this;
-}
-
-function _setFromArray(v) {
-    return _setXYZ.call(this,v[0],v[1],v[2] || 0);
-}
-
-function _setFromVector(v) {
-    return _setXYZ.call(this, v.x, v.y, v.z);
-}
-
-function _setFromNumber(x) {
-    return _setXYZ.call(this,x,0,0);
-}
-
-/**
- * Set this Vector to the values in the provided Array or Vector.
- *
- * @method set
- * @param {object} v array, Vector, or number
- * @return {Vector} this
- */
-Vector.prototype.set = function set(v) {
-    if (v instanceof Array) return _setFromArray.call(this, v);
-    if (typeof v === 'number') return _setFromNumber.call(this, v);
-    return _setFromVector.call(this, v);
-};
-
-Vector.prototype.setXYZ = function(x,y,z) {
-    return _setXYZ.apply(this, arguments);
-};
-
-Vector.prototype.set1D = function(x) {
-    return _setFromNumber.call(this, x);
-};
-
-/**
- * Put result of last internal register calculation in specified output vector.
- *
- * @method put
- * @param {Vector} v destination vector
- * @return {Vector} destination vector
- */
-
-Vector.prototype.put = function put(v) {
-    if (this === _register) _setFromVector.call(v, _register);
-    else _setFromVector.call(v, this);
-};
-
-/**
- * Set this vector to [0,0,0]
- *
- * @method clear
- */
-Vector.prototype.clear = function clear() {
-    return _setXYZ.call(this,0,0,0);
-};
-
-/**
- * Scale this Vector down to specified "cap" length.
- *   If Vector shorter than cap, or cap is Infinity, do nothing.
- *   Note: This sets the internal result register, so other references to that vector will change.
- *
- * @method cap
- * @return {Vector} capped vector
- */
-Vector.prototype.cap = function cap(cap) {
-    if (cap === Infinity) return _setFromVector.call(_register, this);
-    var norm = this.norm();
-    if (norm > cap) return _setFromVector.call(_register, this.mult(cap / norm));
-    else return _setFromVector.call(_register, this);
-};
-
-/**
- * Return projection of this Vector onto another.
- *   Note: This sets the internal result register, so other references to that vector will change.
- *
- * @method project
- * @param {Vector} n vector to project upon
- * @return {Vector} projected vector
- */
-Vector.prototype.project = function project(n) {
-    return n.mult(this.dot(n));
-};
-
-/**
- * Reflect this Vector across provided vector.
- *   Note: This sets the internal result register, so other references to that vector will change.
- *
- * @method reflectAcross
- * @param {Vector} n vector to reflect across
- * @return {Vector} reflected vector
- */
-Vector.prototype.reflectAcross = function reflectAcross(n) {
-    n.normalize().put(n);
-    return _setFromVector(_register, this.sub(this.project(n).mult(2)));
-};
-
-/**
- * Convert Vector to three-element array.
- *
- * @method get
- * @return {array<number>} three-element array
- */
-Vector.prototype.get = function get() {
-    return [this.x, this.y, this.z];
-};
-
-Vector.prototype.get1D = function() {
-    return this.x;
-};
-
-module.exports = Vector;
 },{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -3849,1651 +3478,7 @@ StateModifier.prototype.modify = function modify(target) {
 };
 
 module.exports = StateModifier;
-},{"../core/Modifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Modifier.js","../core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","../transitions/Transitionable":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js","../transitions/TransitionableTransform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/TransitionableTransform.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/PhysicsEngine.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-var EventHandler = require('../core/EventHandler');
-
-/**
- * The Physics Engine is responsible for mediating Bodies and their
- * interaction with forces and constraints. The Physics Engine handles the
- * logic of adding and removing bodies, updating their state of the over
- * time.
- *
- * @class PhysicsEngine
- * @constructor
- * @param options {Object} options
- */
-function PhysicsEngine(options) {
-    this.options = Object.create(PhysicsEngine.DEFAULT_OPTIONS);
-    if (options) this.setOptions(options);
-
-    this._particles      = [];   //list of managed particles
-    this._bodies         = [];   //list of managed bodies
-    this._agents         = {};   //hash of managed agents
-    this._forces         = [];   //list of IDs of agents that are forces
-    this._constraints    = [];   //list of IDs of agents that are constraints
-
-    this._buffer         = 0.0;
-    this._prevTime       = now();
-    this._isSleeping     = false;
-    this._eventHandler   = null;
-    this._currAgentId    = 0;
-    this._hasBodies      = false;
-}
-
-var TIMESTEP = 17;
-var MIN_TIME_STEP = 1000 / 120;
-var MAX_TIME_STEP = 17;
-
-/**
- * @property PhysicsEngine.DEFAULT_OPTIONS
- * @type Object
- * @protected
- * @static
- */
-PhysicsEngine.DEFAULT_OPTIONS = {
-
-    /**
-     * The number of iterations the engine takes to resolve constraints
-     * @attribute constraintSteps
-     * @type Number
-     */
-    constraintSteps : 1,
-
-    /**
-     * The energy threshold before the Engine stops updating
-     * @attribute sleepTolerance
-     * @type Number
-     */
-    sleepTolerance  : 1e-7
-};
-
-var now = (function() {
-    return Date.now;
-})();
-
-/**
- * Options setter
- * @method setOptions
- * @param options {Object}
- */
-PhysicsEngine.prototype.setOptions = function setOptions(opts) {
-    for (var key in opts) if (this.options[key]) this.options[key] = opts[key];
-};
-
-/**
- * Method to add a physics body to the engine. Necessary to update the
- * body over time.
- *
- * @method addBody
- * @param body {Body}
- * @return body {Body}
- */
-PhysicsEngine.prototype.addBody = function addBody(body) {
-    body._engine = this;
-    if (body.isBody) {
-        this._bodies.push(body);
-        this._hasBodies = true;
-    }
-    else this._particles.push(body);
-    return body;
-};
-
-/**
- * Remove a body from the engine. Detaches body from all forces and
- * constraints.
- *
- * @method removeBody
- * @param body {Body}
- */
-PhysicsEngine.prototype.removeBody = function removeBody(body) {
-    var array = (body.isBody) ? this._bodies : this._particles;
-    var index = array.indexOf(body);
-    if (index > -1) {
-        for (var i = 0; i < Object.keys(this._agents).length; i++) this.detachFrom(i, body);
-        array.splice(index,1);
-    }
-    if (this.getBodies().length === 0) this._hasBodies = false;
-};
-
-function _mapAgentArray(agent) {
-    if (agent.applyForce)      return this._forces;
-    if (agent.applyConstraint) return this._constraints;
-}
-
-function _attachOne(agent, targets, source) {
-    if (targets === undefined) targets = this.getParticlesAndBodies();
-    if (!(targets instanceof Array)) targets = [targets];
-
-    this._agents[this._currAgentId] = {
-        agent   : agent,
-        targets : targets,
-        source  : source
-    };
-
-    _mapAgentArray.call(this, agent).push(this._currAgentId);
-    return this._currAgentId++;
-}
-
-/**
- * Attaches a force or constraint to a Body. Returns an AgentId of the
- * attached agent which can be used to detach the agent.
- *
- * @method attach
- * @param agent {Agent|Array.Agent} A force, constraint, or array of them.
- * @param [targets=All] {Body|Array.Body} The Body or Bodies affected by the agent
- * @param [source] {Body} The source of the agent
- * @return AgentId {Number}
- */
-PhysicsEngine.prototype.attach = function attach(agents, targets, source) {
-    if (agents instanceof Array) {
-        var agentIDs = [];
-        for (var i = 0; i < agents.length; i++)
-            agentIDs[i] = _attachOne.call(this, agents[i], targets, source);
-        return agentIDs;
-    }
-    else return _attachOne.call(this, agents, targets, source);
-};
-
-/**
- * Append a body to the targets of a previously defined physics agent.
- *
- * @method attachTo
- * @param agentID {AgentId} The agentId of a previously defined agent
- * @param target {Body} The Body affected by the agent
- */
-PhysicsEngine.prototype.attachTo = function attachTo(agentID, target) {
-    _getBoundAgent.call(this, agentID).targets.push(target);
-};
-
-/**
- * Undoes PhysicsEngine.attach. Removes an agent and its associated
- * effect on its affected Bodies.
- *
- * @method detach
- * @param agentID {AgentId} The agentId of a previously defined agent
- */
-PhysicsEngine.prototype.detach = function detach(id) {
-    // detach from forces/constraints array
-    var agent = this.getAgent(id);
-    var agentArray = _mapAgentArray.call(this, agent);
-    var index = agentArray.indexOf(id);
-    agentArray.splice(index,1);
-
-    // detach agents array
-    delete this._agents[id];
-};
-
-/**
- * Remove a single Body from a previously defined agent.
- *
- * @method detach
- * @param agentID {AgentId} The agentId of a previously defined agent
- * @param target {Body} The body to remove from the agent
- */
-PhysicsEngine.prototype.detachFrom = function detachFrom(id, target) {
-    var boundAgent = _getBoundAgent.call(this, id);
-    if (boundAgent.source === target) this.detach(id);
-    else {
-        var targets = boundAgent.targets;
-        var index = targets.indexOf(target);
-        if (index > -1) targets.splice(index,1);
-    }
-};
-
-/**
- * A convenience method to give the Physics Engine a clean slate of
- * agents. Preserves all added Body objects.
- *
- * @method detachAll
- */
-PhysicsEngine.prototype.detachAll = function detachAll() {
-    this._agents        = {};
-    this._forces        = [];
-    this._constraints   = [];
-    this._currAgentId   = 0;
-};
-
-function _getBoundAgent(id) {
-    return this._agents[id];
-}
-
-/**
- * Returns the corresponding agent given its agentId.
- *
- * @method getAgent
- * @param id {AgentId}
- */
-PhysicsEngine.prototype.getAgent = function getAgent(id) {
-    return _getBoundAgent.call(this, id).agent;
-};
-
-/**
- * Returns all particles that are currently managed by the Physics Engine.
- *
- * @method getParticles
- * @return particles {Array.Particles}
- */
-PhysicsEngine.prototype.getParticles = function getParticles() {
-    return this._particles;
-};
-
-/**
- * Returns all bodies, except particles, that are currently managed by the Physics Engine.
- *
- * @method getBodies
- * @return bodies {Array.Bodies}
- */
-PhysicsEngine.prototype.getBodies = function getBodies() {
-    return this._bodies;
-};
-
-/**
- * Returns all bodies that are currently managed by the Physics Engine.
- *
- * @method getBodies
- * @return bodies {Array.Bodies}
- */
-PhysicsEngine.prototype.getParticlesAndBodies = function getParticlesAndBodies() {
-    return this.getParticles().concat(this.getBodies());
-};
-
-/**
- * Iterates over every Particle and applies a function whose first
- * argument is the Particle
- *
- * @method forEachParticle
- * @param fn {Function} Function to iterate over
- * @param [dt] {Number} Delta time
- */
-PhysicsEngine.prototype.forEachParticle = function forEachParticle(fn, dt) {
-    var particles = this.getParticles();
-    for (var index = 0, len = particles.length; index < len; index++)
-        fn.call(this, particles[index], dt);
-};
-
-/**
- * Iterates over every Body that isn't a Particle and applies
- * a function whose first argument is the Body
- *
- * @method forEachBody
- * @param fn {Function} Function to iterate over
- * @param [dt] {Number} Delta time
- */
-PhysicsEngine.prototype.forEachBody = function forEachBody(fn, dt) {
-    if (!this._hasBodies) return;
-    var bodies = this.getBodies();
-    for (var index = 0, len = bodies.length; index < len; index++)
-        fn.call(this, bodies[index], dt);
-};
-
-/**
- * Iterates over every Body and applies a function whose first
- * argument is the Body
- *
- * @method forEach
- * @param fn {Function} Function to iterate over
- * @param [dt] {Number} Delta time
- */
-PhysicsEngine.prototype.forEach = function forEach(fn, dt) {
-    this.forEachParticle(fn, dt);
-    this.forEachBody(fn, dt);
-};
-
-function _updateForce(index) {
-    var boundAgent = _getBoundAgent.call(this, this._forces[index]);
-    boundAgent.agent.applyForce(boundAgent.targets, boundAgent.source);
-}
-
-function _updateForces() {
-    for (var index = this._forces.length - 1; index > -1; index--)
-        _updateForce.call(this, index);
-}
-
-function _updateConstraint(index, dt) {
-    var boundAgent = this._agents[this._constraints[index]];
-    return boundAgent.agent.applyConstraint(boundAgent.targets, boundAgent.source, dt);
-}
-
-function _updateConstraints(dt) {
-    var iteration = 0;
-    while (iteration < this.options.constraintSteps) {
-        for (var index = this._constraints.length - 1; index > -1; index--)
-            _updateConstraint.call(this, index, dt);
-        iteration++;
-    }
-}
-
-function _updateVelocities(particle, dt) {
-    particle.integrateVelocity(dt);
-}
-
-function _updateAngularVelocities(body, dt) {
-    body.integrateAngularMomentum(dt);
-    body.updateAngularVelocity();
-}
-
-function _updateOrientations(body, dt) {
-    body.integrateOrientation(dt);
-}
-
-function _updatePositions(particle, dt) {
-    particle.integratePosition(dt);
-    particle.emit('update', particle);
-}
-
-function _integrate(dt) {
-    _updateForces.call(this, dt);
-    this.forEach(_updateVelocities, dt);
-    this.forEachBody(_updateAngularVelocities, dt);
-    _updateConstraints.call(this, dt);
-    this.forEachBody(_updateOrientations, dt);
-    this.forEach(_updatePositions, dt);
-}
-
-function _getEnergyParticles() {
-    var energy = 0.0;
-    var particleEnergy = 0.0;
-    this.forEach(function(particle) {
-        particleEnergy = particle.getEnergy();
-        energy += particleEnergy;
-        if (particleEnergy < particle.sleepTolerance) particle.sleep();
-    });
-    return energy;
-}
-
-function _getEnergyForces() {
-    var energy = 0;
-    for (var index = this._forces.length - 1; index > -1; index--)
-        energy += this._forces[index].getEnergy() || 0.0;
-    return energy;
-}
-
-function _getEnergyConstraints() {
-    var energy = 0;
-    for (var index = this._constraints.length - 1; index > -1; index--)
-        energy += this._constraints[index].getEnergy() || 0.0;
-    return energy;
-}
-
-/**
- * Calculates the kinetic energy of all Body objects and potential energy
- * of all attached agents.
- *
- * TODO: implement.
- * @method getEnergy
- * @return energy {Number}
- */
-PhysicsEngine.prototype.getEnergy = function getEnergy() {
-    return _getEnergyParticles.call(this) + _getEnergyForces.call(this) + _getEnergyConstraints.call(this);
-};
-
-/**
- * Updates all Body objects managed by the physics engine over the
- * time duration since the last time step was called.
- *
- * @method step
- */
-PhysicsEngine.prototype.step = function step() {
-//        if (this.getEnergy() < this.options.sleepTolerance) {
-//            this.sleep();
-//            return;
-//        };
-
-    //set current frame's time
-    var currTime = now();
-
-    //milliseconds elapsed since last frame
-    var dtFrame = currTime - this._prevTime;
-
-    this._prevTime = currTime;
-
-    if (dtFrame < MIN_TIME_STEP) return;
-    if (dtFrame > MAX_TIME_STEP) dtFrame = MAX_TIME_STEP;
-
-    //robust integration
-//        this._buffer += dtFrame;
-//        while (this._buffer > this._timestep){
-//            _integrate.call(this, this._timestep);
-//            this._buffer -= this._timestep;
-//        };
-//        _integrate.call(this, this._buffer);
-//        this._buffer = 0.0;
-    _integrate.call(this, TIMESTEP);
-
-//        this.emit('update', this);
-};
-
-/**
- * Tells whether the Physics Engine is sleeping or awake.
- * @method isSleeping
- * @return {Boolean}
- */
-PhysicsEngine.prototype.isSleeping = function isSleeping() {
-    return this._isSleeping;
-};
-
-/**
- * Stops the Physics Engine from updating. Emits an 'end' event.
- * @method sleep
- */
-PhysicsEngine.prototype.sleep = function sleep() {
-    this.emit('end', this);
-    this._isSleeping = true;
-};
-
-/**
- * Starts the Physics Engine from updating. Emits an 'start' event.
- * @method wake
- */
-PhysicsEngine.prototype.wake = function wake() {
-    this._prevTime = now();
-    this.emit('start', this);
-    this._isSleeping = false;
-};
-
-PhysicsEngine.prototype.emit = function emit(type, data) {
-    if (this._eventHandler === null) return;
-    this._eventHandler.emit(type, data);
-};
-
-PhysicsEngine.prototype.on = function on(event, fn) {
-    if (this._eventHandler === null) this._eventHandler = new EventHandler();
-    this._eventHandler.on(event, fn);
-};
-
-module.exports = PhysicsEngine;
-},{"../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/bodies/Particle.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var Vector = require('../../math/Vector');
-var Transform = require('../../core/Transform');
-var EventHandler = require('../../core/EventHandler');
-var Integrator = require('../integrators/SymplecticEuler');
-
-/**
- * A point body that is controlled by the Physics Engine. A particle has
- *   position and velocity states that are updated by the Physics Engine.
- *   Ultimately, a particle is a _special type of modifier, and can be added to
- *   the Famous render tree like any other modifier.
- *
- * @constructor
- * @class Particle
- * @uses EventHandler
- * @uses Modifier
- * @extensionfor Body
- * @param {Options} [options] An object of configurable options.
- * @param {Array} [options.position] The position of the particle.
- * @param {Array} [options.velocity] The velocity of the particle.
- * @param {Number} [options.mass] The mass of the particle.
- * @param {Hexadecimal} [options.axis] The axis a particle can move along. Can be bitwise ORed e.g., Particle.AXES.X, Particle.AXES.X | Particle.AXES.Y
- *
- */
- function Particle(options) {
-    options = options || {};
-
-    // registers
-    this.position = new Vector();
-    this.velocity = new Vector();
-    this.force    = new Vector();
-
-    var defaults  = Particle.DEFAULT_OPTIONS;
-
-    // set vectors
-    this.setPosition(options.position || defaults.position);
-    this.setVelocity(options.velocity || defaults.velocity);
-    this.force.set(options.force || [0,0,0]);
-
-    // set scalars
-    this.mass = (options.mass !== undefined)
-        ? options.mass
-        : defaults.mass;
-
-    this.axis = (options.axis !== undefined)
-        ? options.axis
-        : defaults.axis;
-
-    this.inverseMass = 1 / this.mass;
-
-    // state variables
-    this._isSleeping     = false;
-    this._engine         = null;
-    this._eventOutput    = null;
-    this._positionGetter = null;
-
-    this.transform = Transform.identity.slice();
-
-    // cached _spec
-    this._spec = {
-        transform : this.transform,
-        target    : null
-    };
-}
-
-Particle.DEFAULT_OPTIONS = {
-    position : [0,0,0],
-    velocity : [0,0,0],
-    mass : 1,
-    axis : undefined
-};
-
-/**
- * Kinetic energy threshold needed to update the body
- *
- * @property SLEEP_TOLERANCE
- * @type Number
- * @static
- * @default 1e-7
- */
-Particle.SLEEP_TOLERANCE = 1e-7;
-
-/**
- * Axes by which a body can translate
- *
- * @property AXES
- * @type Hexadecimal
- * @static
- * @default 1e-7
- */
-Particle.AXES = {
-    X : 0x00, // hexadecimal for 0
-    Y : 0x01, // hexadecimal for 1
-    Z : 0x02  // hexadecimal for 2
-};
-
-// Integrator for updating the particle's state
-// TODO: make this a singleton
-Particle.INTEGRATOR = new Integrator();
-
-//Catalogue of outputted events
-var _events = {
-    start  : 'start',
-    update : 'update',
-    end    : 'end'
-};
-
-// Cached timing function
-var now = (function() {
-    return Date.now;
-})();
-
-/**
- * Stops the particle from updating
- * @method sleep
- */
-Particle.prototype.sleep = function sleep() {
-    if (this._isSleeping) return;
-    this.emit(_events.end, this);
-    this._isSleeping = true;
-};
-
-/**
- * Starts the particle update
- * @method wake
- */
-Particle.prototype.wake = function wake() {
-    if (!this._isSleeping) return;
-    this.emit(_events.start, this);
-    this._isSleeping = false;
-    this._prevTime = now();
-};
-
-/**
- * @attribute isBody
- * @type Boolean
- * @static
- */
-Particle.prototype.isBody = false;
-
-/**
- * Basic setter for position
- * @method getPosition
- * @param position {Array|Vector}
- */
-Particle.prototype.setPosition = function setPosition(position) {
-    this.position.set(position);
-};
-
-/**
- * 1-dimensional setter for position
- * @method setPosition1D
- * @param value {Number}
- */
-Particle.prototype.setPosition1D = function setPosition1D(x) {
-    this.position.x = x;
-};
-
-/**
- * Basic getter function for position
- * @method getPosition
- * @return position {Array}
- */
-Particle.prototype.getPosition = function getPosition() {
-    if (this._positionGetter instanceof Function)
-        this.setPosition(this._positionGetter());
-
-    this._engine.step();
-
-    return this.position.get();
-};
-
-/**
- * 1-dimensional getter for position
- * @method getPosition1D
- * @return value {Number}
- */
-Particle.prototype.getPosition1D = function getPosition1D() {
-    this._engine.step();
-    return this.position.x;
-};
-
-/**
- * Defines the position from outside the Physics Engine
- * @method positionFrom
- * @param positionGetter {Function}
- */
-Particle.prototype.positionFrom = function positionFrom(positionGetter) {
-    this._positionGetter = positionGetter;
-};
-
-/**
- * Basic setter function for velocity Vector
- * @method setVelocity
- * @function
- */
-Particle.prototype.setVelocity = function setVelocity(velocity) {
-    this.velocity.set(velocity);
-    this.wake();
-};
-
-/**
- * 1-dimensional setter for velocity
- * @method setVelocity1D
- * @param velocity {Number}
- */
-Particle.prototype.setVelocity1D = function setVelocity1D(x) {
-    this.velocity.x = x;
-    this.wake();
-};
-
-/**
- * Basic getter function for velocity Vector
- * @method getVelocity
- * @return velocity {Array}
- */
-Particle.prototype.getVelocity = function getVelocity() {
-    return this.velocity.get();
-};
-
-/**
- * 1-dimensional getter for velocity
- * @method getVelocity1D
- * @return velocity {Number}
- */
-Particle.prototype.getVelocity1D = function getVelocity1D() {
-    return this.velocity.x;
-};
-
-/**
- * Basic setter function for mass quantity
- * @method setMass
- * @param mass {Number} mass
- */
-Particle.prototype.setMass = function setMass(mass) {
-    this.mass = mass;
-    this.inverseMass = 1 / mass;
-};
-
-/**
- * Basic getter function for mass quantity
- * @method getMass
- * @return mass {Number}
- */
-Particle.prototype.getMass = function getMass() {
-    return this.mass;
-};
-
-/**
- * Reset position and velocity
- * @method reset
- * @param position {Array|Vector}
- * @param velocity {Array|Vector}
- */
-Particle.prototype.reset = function reset(position, velocity) {
-    this.setPosition(position || [0,0,0]);
-    this.setVelocity(velocity || [0,0,0]);
-};
-
-/**
- * Add force vector to existing internal force Vector
- * @method applyForce
- * @param force {Vector}
- */
-Particle.prototype.applyForce = function applyForce(force) {
-    if (force.isZero()) return;
-    this.force.add(force).put(this.force);
-    this.wake();
-};
-
-/**
- * Add impulse (change in velocity) Vector to this Vector's velocity.
- * @method applyImpulse
- * @param impulse {Vector}
- */
-Particle.prototype.applyImpulse = function applyImpulse(impulse) {
-    if (impulse.isZero()) return;
-    var velocity = this.velocity;
-    velocity.add(impulse.mult(this.inverseMass)).put(velocity);
-};
-
-/**
- * Update a particle's velocity from its force accumulator
- * @method integrateVelocity
- * @param dt {Number} Time differential
- */
-Particle.prototype.integrateVelocity = function integrateVelocity(dt) {
-    Particle.INTEGRATOR.integrateVelocity(this, dt);
-};
-
-/**
- * Update a particle's position from its velocity
- * @method integratePosition
- * @param dt {Number} Time differential
- */
-Particle.prototype.integratePosition = function integratePosition(dt) {
-    Particle.INTEGRATOR.integratePosition(this, dt);
-};
-
-/**
- * Update the position and velocity of the particle
- * @method _integrate
- * @protected
- * @param dt {Number} Time differential
- */
-Particle.prototype._integrate = function _integrate(dt) {
-    this.integrateVelocity(dt);
-    this.integratePosition(dt);
-};
-
-/**
- * Get kinetic energy of the particle.
- * @method getEnergy
- * @function
- */
-Particle.prototype.getEnergy = function getEnergy() {
-    return 0.5 * this.mass * this.velocity.normSquared();
-};
-
-/**
- * Generate transform from the current position state
- * @method getTransform
- * @return Transform {Transform}
- */
-Particle.prototype.getTransform = function getTransform() {
-    this._engine.step();
-
-    var position = this.position;
-    var axis = this.axis;
-    var transform = this.transform;
-
-    if (axis !== undefined) {
-        if (axis & ~Particle.AXES.X) {
-            position.x = 0;
-        }
-        if (axis & ~Particle.AXES.Y) {
-            position.y = 0;
-        }
-        if (axis & ~Particle.AXES.Z) {
-            position.z = 0;
-        }
-    }
-
-    transform[12] = position.x;
-    transform[13] = position.y;
-    transform[14] = position.z;
-
-    return transform;
-};
-
-/**
- * The modify interface of a Modifier
- * @method modify
- * @param target {Spec}
- * @return Spec {Spec}
- */
-Particle.prototype.modify = function modify(target) {
-    var _spec = this._spec;
-    _spec.transform = this.getTransform();
-    _spec.target = target;
-    return _spec;
-};
-
-// private
-function _createEventOutput() {
-    this._eventOutput = new EventHandler();
-    this._eventOutput.bindThis(this);
-    //overrides on/removeListener/pipe/unpipe methods
-    EventHandler.setOutputHandler(this, this._eventOutput);
-}
-
-Particle.prototype.emit = function emit(type, data) {
-    if (!this._eventOutput) return;
-    this._eventOutput.emit(type, data);
-};
-
-Particle.prototype.on = function on() {
-    _createEventOutput.call(this);
-    return this.on.apply(this, arguments);
-};
-Particle.prototype.removeListener = function removeListener() {
-    _createEventOutput.call(this);
-    return this.removeListener.apply(this, arguments);
-};
-Particle.prototype.pipe = function pipe() {
-    _createEventOutput.call(this);
-    return this.pipe.apply(this, arguments);
-};
-Particle.prototype.unpipe = function unpipe() {
-    _createEventOutput.call(this);
-    return this.unpipe.apply(this, arguments);
-};
-
-module.exports = Particle;
-},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js","../../core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../integrators/SymplecticEuler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/integrators/SymplecticEuler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Constraint.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var EventHandler = require('../../core/EventHandler');
-
-/**
- *  Allows for two circular bodies to collide and bounce off each other.
- *
- *  @class Constraint
- *  @constructor
- *  @uses EventHandler
- *  @param options {Object}
- */
-function Constraint() {
-    this.options = this.options || {};
-    this._energy = 0.0;
-    this._eventOutput = null;
-}
-
-/*
- * Setter for options.
- *
- * @method setOptions
- * @param options {Objects}
- */
-Constraint.prototype.setOptions = function setOptions(options) {
-    for (var key in options) this.options[key] = options[key];
-};
-
-/**
- * Adds an impulse to a physics body's velocity due to the constraint
- *
- * @method applyConstraint
- */
-Constraint.prototype.applyConstraint = function applyConstraint() {};
-
-/**
- * Getter for energy
- *
- * @method getEnergy
- * @return energy {Number}
- */
-Constraint.prototype.getEnergy = function getEnergy() {
-    return this._energy;
-};
-
-/**
- * Setter for energy
- *
- * @method setEnergy
- * @param energy {Number}
- */
-Constraint.prototype.setEnergy = function setEnergy(energy) {
-    this._energy = energy;
-};
-
-function _createEventOutput() {
-    this._eventOutput = new EventHandler();
-    this._eventOutput.bindThis(this);
-    EventHandler.setOutputHandler(this, this._eventOutput);
-}
-
-Constraint.prototype.on = function on() {
-    _createEventOutput.call(this);
-    return this.on.apply(this, arguments);
-};
-Constraint.prototype.addListener = function addListener() {
-    _createEventOutput.call(this);
-    return this.addListener.apply(this, arguments);
-};
-Constraint.prototype.pipe = function pipe() {
-    _createEventOutput.call(this);
-    return this.pipe.apply(this, arguments);
-};
-Constraint.prototype.removeListener = function removeListener() {
-    return this.removeListener.apply(this, arguments);
-};
-Constraint.prototype.unpipe = function unpipe() {
-    return this.unpipe.apply(this, arguments);
-};
-
-module.exports = Constraint;
-},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Snap.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var Constraint = require('./Constraint');
-var Vector = require('../../math/Vector');
-
-/**
- *  A spring constraint is like a spring force, except that it is always
- *    numerically stable (even for low periods), at the expense of introducing
- *    damping (even with dampingRatio set to 0).
- *
- *    Use this if you need fast spring-like behavior, e.g., snapping
- *
- *  @class Snap
- *  @constructor
- *  @extends Constraint
- *  @param {Options} [options] An object of configurable options.
- *  @param {Number} [options.period] The amount of time in milliseconds taken for one complete oscillation when there is no damping. Range : [150, Infinity]
- *  @param {Number} [options.dampingRatio] Additional damping of the spring. Range : [0, 1]. At 0 this spring will still be damped, at 1 the spring will be critically damped (the spring will never oscillate)
- *  @param {Number} [options.length] The rest length of the spring. Range: [0, Infinity].
- *  @param {Array} [options.anchor] The location of the spring's anchor, if not another physics body.
- *
- */
-function Snap(options) {
-    this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
-    if (options) this.setOptions(options);
-
-    //registers
-    this.pDiff  = new Vector();
-    this.vDiff  = new Vector();
-    this.impulse1 = new Vector();
-    this.impulse2 = new Vector();
-
-    Constraint.call(this);
-}
-
-Snap.prototype = Object.create(Constraint.prototype);
-Snap.prototype.constructor = Snap;
-
-Snap.DEFAULT_OPTIONS = {
-    period        : 300,
-    dampingRatio : 0.1,
-    length : 0,
-    anchor : undefined
-};
-
-/** const */ var pi = Math.PI;
-
-function _calcEnergy(impulse, disp, dt) {
-    return Math.abs(impulse.dot(disp)/dt);
-}
-
-/**
- * Basic options setter
- *
- * @method setOptions
- * @param options {Objects} options
- */
-Snap.prototype.setOptions = function setOptions(options) {
-    if (options.anchor !== undefined) {
-        if (options.anchor   instanceof Vector) this.options.anchor = options.anchor;
-        if (options.anchor.position instanceof Vector) this.options.anchor = options.anchor.position;
-        if (options.anchor   instanceof Array)  this.options.anchor = new Vector(options.anchor);
-    }
-    if (options.length !== undefined) this.options.length = options.length;
-    if (options.dampingRatio !== undefined) this.options.dampingRatio = options.dampingRatio;
-    if (options.period !== undefined) this.options.period = options.period;
-};
-
-/**
- * Set the anchor position
- *
- * @method setOptions
- * @param {Array} v TODO
- */
-
-Snap.prototype.setAnchor = function setAnchor(v) {
-    if (this.options.anchor !== undefined) this.options.anchor = new Vector();
-    this.options.anchor.set(v);
-};
-
-/**
- * Calculates energy of spring
- *
- * @method getEnergy
- * @param {Object} target TODO
- * @param {Object} source TODO
- * @return energy {Number}
- */
-Snap.prototype.getEnergy = function getEnergy(target, source) {
-    var options     = this.options;
-    var restLength  = options.length;
-    var anchor      = options.anchor || source.position;
-    var strength    = Math.pow(2 * pi / options.period, 2);
-
-    var dist = anchor.sub(target.position).norm() - restLength;
-
-    return 0.5 * strength * dist * dist;
-};
-
-/**
- * Adds a spring impulse to a physics body's velocity due to the constraint
- *
- * @method applyConstraint
- * @param targets {Array.Body}  Array of bodies to apply the constraint to
- * @param source {Body}         The source of the constraint
- * @param dt {Number}           Delta time
- */
-Snap.prototype.applyConstraint = function applyConstraint(targets, source, dt) {
-    var options         = this.options;
-    var pDiff        = this.pDiff;
-    var vDiff        = this.vDiff;
-    var impulse1     = this.impulse1;
-    var impulse2     = this.impulse2;
-    var length       = options.length;
-    var anchor       = options.anchor || source.position;
-    var period       = options.period;
-    var dampingRatio = options.dampingRatio;
-
-    for (var i = 0; i < targets.length ; i++) {
-        var target = targets[i];
-
-        var p1 = target.position;
-        var v1 = target.velocity;
-        var m1 = target.mass;
-        var w1 = target.inverseMass;
-
-        pDiff.set(p1.sub(anchor));
-        var dist = pDiff.norm() - length;
-        var effMass;
-
-        if (source) {
-            var w2 = source.inverseMass;
-            var v2 = source.velocity;
-            vDiff.set(v1.sub(v2));
-            effMass = 1/(w1 + w2);
-        }
-        else {
-            vDiff.set(v1);
-            effMass = m1;
-        }
-
-        var gamma;
-        var beta;
-
-        if (this.options.period === 0) {
-            gamma = 0;
-            beta = 1;
-        }
-        else {
-            var k = 4 * effMass * pi * pi / (period * period);
-            var c = 4 * effMass * pi * dampingRatio / period;
-
-            beta  = dt * k / (c + dt * k);
-            gamma = 1 / (c + dt*k);
-        }
-
-        var antiDrift = beta/dt * dist;
-        pDiff.normalize(-antiDrift)
-            .sub(vDiff)
-            .mult(dt / (gamma + dt/effMass))
-            .put(impulse1);
-
-        // var n = new Vector();
-        // n.set(pDiff.normalize());
-        // var lambda = -(n.dot(vDiff) + antiDrift) / (gamma + dt/effMass);
-        // impulse2.set(n.mult(dt*lambda));
-
-        target.applyImpulse(impulse1);
-
-        if (source) {
-            impulse1.mult(-1).put(impulse2);
-            source.applyImpulse(impulse2);
-        }
-
-        this.setEnergy(_calcEnergy(impulse1, pDiff, dt));
-    }
-};
-
-module.exports = Snap;
-},{"../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","./Constraint":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Constraint.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Force.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var Vector = require('../../math/Vector');
-var EventHandler = require('../../core/EventHandler');
-
-/**
- * Force base class.
- *
- * @class Force
- * @uses EventHandler
- * @constructor
- */
-function Force(force) {
-    this.force = new Vector(force);
-    this._energy = 0.0;
-    this._eventOutput = null;
-}
-
-/**
- * Basic setter for options
- *
- * @method setOptions
- * @param options {Objects}
- */
-Force.prototype.setOptions = function setOptions(options) {
-    for (var key in options) this.options[key] = options[key];
-};
-
-/**
- * Adds a force to a physics body's force accumulator.
- *
- * @method applyForce
- * @param body {Body}
- */
-Force.prototype.applyForce = function applyForce(body) {
-    body.applyForce(this.force);
-};
-
-/**
- * Getter for a force's potential energy.
- *
- * @method getEnergy
- * @return energy {Number}
- */
-Force.prototype.getEnergy = function getEnergy() {
-    return this._energy;
-};
-
-/*
- * Setter for a force's potential energy.
- *
- * @method setEnergy
- * @param energy {Number}
- */
-Force.prototype.setEnergy = function setEnergy(energy) {
-    this._energy = energy;
-};
-
-function _createEventOutput() {
-    this._eventOutput = new EventHandler();
-    this._eventOutput.bindThis(this);
-    EventHandler.setOutputHandler(this, this._eventOutput);
-}
-
-Force.prototype.on = function on() {
-    _createEventOutput.call(this);
-    return this.on.apply(this, arguments);
-};
-Force.prototype.addListener = function addListener() {
-    _createEventOutput.call(this);
-    return this.addListener.apply(this, arguments);
-};
-Force.prototype.pipe = function pipe() {
-    _createEventOutput.call(this);
-    return this.pipe.apply(this, arguments);
-};
-Force.prototype.removeListener = function removeListener() {
-    return this.removeListener.apply(this, arguments);
-};
-Force.prototype.unpipe = function unpipe() {
-    return this.unpipe.apply(this, arguments);
-};
-
-module.exports = Force;
-},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js","../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Spring.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var Force = require('./Force');
-var Vector = require('../../math/Vector');
-
-/**
- *  A force that moves a physics body to a location with a spring motion.
- *    The body can be moved to another physics body, or an anchor point.
- *
- *  @class Spring
- *  @constructor
- *  @extends Force
- *  @param {Object} options options to set on drag
- */
-function Spring(options) {
-    this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
-    if (options) this.setOptions(options);
-
-    //registers
-    this.disp = new Vector(0,0,0);
-
-    _init.call(this);
-    Force.call(this);
-}
-
-Spring.prototype = Object.create(Force.prototype);
-Spring.prototype.constructor = Spring;
-
-/** @const */ var pi = Math.PI;
-
-/**
- * @property Spring.FORCE_FUNCTIONS
- * @type Object
- * @protected
- * @static
- */
-Spring.FORCE_FUNCTIONS = {
-
-    /**
-     * A FENE (Finitely Extensible Nonlinear Elastic) spring force
-     *      see: http://en.wikipedia.org/wiki/FENE
-     * @attribute FENE
-     * @type Function
-     * @param {Number} dist current distance target is from source body
-     * @param {Number} rMax maximum range of influence
-     * @return {Number} unscaled force
-     */
-    FENE : function(dist, rMax) {
-        var rMaxSmall = rMax * .99;
-        var r = Math.max(Math.min(dist, rMaxSmall), -rMaxSmall);
-        return r / (1 - r * r/(rMax * rMax));
-    },
-
-    /**
-     * A Hookean spring force, linear in the displacement
-     *      see: http://en.wikipedia.org/wiki/FENE
-     * @attribute FENE
-     * @type Function
-     * @param {Number} dist current distance target is from source body
-     * @return {Number} unscaled force
-     */
-    HOOK : function(dist) {
-        return dist;
-    }
-};
-
-/**
- * @property Spring.DEFAULT_OPTIONS
- * @type Object
- * @protected
- * @static
- */
-Spring.DEFAULT_OPTIONS = {
-
-    /**
-     * The amount of time in milliseconds taken for one complete oscillation
-     * when there is no damping
-     *    Range : [150, Infinity]
-     * @attribute period
-     * @type Number
-     * @default 300
-     */
-    period        : 300,
-
-    /**
-     * The damping of the spring.
-     *    Range : [0, 1]
-     *    0 = no damping, and the spring will oscillate forever
-     *    1 = critically damped (the spring will never oscillate)
-     * @attribute dampingRatio
-     * @type Number
-     * @default 0.1
-     */
-    dampingRatio : 0.1,
-
-    /**
-     * The rest length of the spring
-     *    Range : [0, Infinity]
-     * @attribute length
-     * @type Number
-     * @default 0
-     */
-    length : 0,
-
-    /**
-     * The maximum length of the spring (for a FENE spring)
-     *    Range : [0, Infinity]
-     * @attribute length
-     * @type Number
-     * @default Infinity
-     */
-    maxLength : Infinity,
-
-    /**
-     * The location of the spring's anchor, if not another physics body
-     *
-     * @attribute anchor
-     * @type Array
-     * @optional
-     */
-    anchor : undefined,
-
-    /**
-     * The type of spring force
-     * @attribute forceFunction
-     * @type Function
-     */
-    forceFunction : Spring.FORCE_FUNCTIONS.HOOK
-};
-
-function _setForceFunction(fn) {
-    this.forceFunction = fn;
-}
-
-function _calcStiffness() {
-    var options = this.options;
-    options.stiffness = Math.pow(2 * pi / options.period, 2);
-}
-
-function _calcDamping() {
-    var options = this.options;
-    options.damping = 4 * pi * options.dampingRatio / options.period;
-}
-
-function _calcEnergy(strength, dist) {
-    return 0.5 * strength * dist * dist;
-}
-
-function _init() {
-    _setForceFunction.call(this, this.options.forceFunction);
-    _calcStiffness.call(this);
-    _calcDamping.call(this);
-}
-
-/**
- * Basic options setter
- *
- * @method setOptions
- * @param options {Objects}
- */
-Spring.prototype.setOptions = function setOptions(options) {
-    if (options.anchor !== undefined) {
-        if (options.anchor.position instanceof Vector) this.options.anchor = options.anchor.position;
-        if (options.anchor   instanceof Vector)  this.options.anchor = options.anchor;
-        if (options.anchor   instanceof Array)  this.options.anchor = new Vector(options.anchor);
-    }
-    if (options.period !== undefined) this.options.period = options.period;
-    if (options.dampingRatio !== undefined) this.options.dampingRatio = options.dampingRatio;
-    if (options.length !== undefined) this.options.length = options.length;
-    if (options.forceFunction !== undefined) this.options.forceFunction = options.forceFunction;
-    if (options.maxLength !== undefined) this.options.maxLength = options.maxLength;
-
-    _init.call(this);
-};
-
-/**
- * Adds a spring force to a physics body's force accumulator.
- *
- * @method applyForce
- * @param targets {Array.Body} Array of bodies to apply force to.
- */
-Spring.prototype.applyForce = function applyForce(targets, source) {
-    var force        = this.force;
-    var disp         = this.disp;
-    var options      = this.options;
-
-    var stiffness    = options.stiffness;
-    var damping      = options.damping;
-    var restLength   = options.length;
-    var lMax         = options.maxLength;
-    var anchor       = options.anchor || source.position;
-
-    for (var i = 0; i < targets.length; i++) {
-        var target = targets[i];
-        var p2 = target.position;
-        var v2 = target.velocity;
-
-        anchor.sub(p2).put(disp);
-        var dist = disp.norm() - restLength;
-
-        if (dist === 0) return;
-
-        //if dampingRatio specified, then override strength and damping
-        var m      = target.mass;
-        stiffness *= m;
-        damping   *= m;
-
-        disp.normalize(stiffness * this.forceFunction(dist, lMax))
-            .put(force);
-
-        if (damping)
-            if (source) force.add(v2.sub(source.velocity).mult(-damping)).put(force);
-            else force.add(v2.mult(-damping)).put(force);
-
-        target.applyForce(force);
-        if (source) source.applyForce(force.mult(-1));
-
-        this.setEnergy(_calcEnergy(stiffness, dist));
-    }
-};
-
-/**
- * Calculates the potential energy of the spring.
- *
- * @method getEnergy
- * @param target {Body}     The physics body attached to the spring
- * @return energy {Number}
- */
-Spring.prototype.getEnergy = function getEnergy(target) {
-    var options        = this.options;
-    var restLength  = options.length;
-    var anchor      = options.anchor;
-    var strength    = options.stiffness;
-
-    var dist = anchor.sub(target.position).norm() - restLength;
-    return 0.5 * strength * dist * dist;
-};
-
-/**
- * Sets the anchor to a new position
- *
- * @method setAnchor
- * @param anchor {Array}    New anchor of the spring
- */
-Spring.prototype.setAnchor = function setAnchor(anchor) {
-    if (!this.options.anchor) this.options.anchor = new Vector();
-    this.options.anchor.set(anchor);
-};
-
-module.exports = Spring;
-},{"../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","./Force":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Force.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/integrators/SymplecticEuler.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var OptionsManager = require('../../core/OptionsManager');
-
-/**
- * Ordinary Differential Equation (ODE) Integrator.
- * Manages updating a physics body's state over time.
- *
- *  p = position, v = velocity, m = mass, f = force, dt = change in time
- *
- *      v <- v + dt * f / m
- *      p <- p + dt * v
- *
- *  q = orientation, w = angular velocity, L = angular momentum
- *
- *      L <- L + dt * t
- *      q <- q + dt/2 * q * w
- *
- * @class SymplecticEuler
- * @constructor
- * @param {Object} options Options to set
- */
-function SymplecticEuler(options) {
-    this.options = Object.create(SymplecticEuler.DEFAULT_OPTIONS);
-    this._optionsManager = new OptionsManager(this.options);
-
-    if (options) this.setOptions(options);
-}
-
-/**
- * @property SymplecticEuler.DEFAULT_OPTIONS
- * @type Object
- * @protected
- * @static
- */
-SymplecticEuler.DEFAULT_OPTIONS = {
-
-    /**
-     * The maximum velocity of a physics body
-     *      Range : [0, Infinity]
-     * @attribute velocityCap
-     * @type Number
-     */
-
-    velocityCap : undefined,
-
-    /**
-     * The maximum angular velocity of a physics body
-     *      Range : [0, Infinity]
-     * @attribute angularVelocityCap
-     * @type Number
-     */
-    angularVelocityCap : undefined
-};
-
-/*
- * Setter for options
- *
- * @method setOptions
- * @param {Object} options
- */
-SymplecticEuler.prototype.setOptions = function setOptions(options) {
-    this._optionsManager.patch(options);
-};
-
-/*
- * Getter for options
- *
- * @method getOptions
- * @return {Object} options
- */
-SymplecticEuler.prototype.getOptions = function getOptions() {
-    return this._optionsManager.value();
-};
-
-/*
- * Updates the velocity of a physics body from its accumulated force.
- *      v <- v + dt * f / m
- *
- * @method integrateVelocity
- * @param {Body} physics body
- * @param {Number} dt delta time
- */
-SymplecticEuler.prototype.integrateVelocity = function integrateVelocity(body, dt) {
-    var v = body.velocity;
-    var w = body.inverseMass;
-    var f = body.force;
-
-    if (f.isZero()) return;
-
-    v.add(f.mult(dt * w)).put(v);
-    f.clear();
-};
-
-/*
- * Updates the position of a physics body from its velocity.
- *      p <- p + dt * v
- *
- * @method integratePosition
- * @param {Body} physics body
- * @param {Number} dt delta time
- */
-SymplecticEuler.prototype.integratePosition = function integratePosition(body, dt) {
-    var p = body.position;
-    var v = body.velocity;
-
-    if (this.options.velocityCap) v.cap(this.options.velocityCap).put(v);
-    p.add(v.mult(dt)).put(p);
-};
-
-/*
- * Updates the angular momentum of a physics body from its accumuled torque.
- *      L <- L + dt * t
- *
- * @method integrateAngularMomentum
- * @param {Body} physics body (except a particle)
- * @param {Number} dt delta time
- */
-SymplecticEuler.prototype.integrateAngularMomentum = function integrateAngularMomentum(body, dt) {
-    var L = body.angularMomentum;
-    var t = body.torque;
-
-    if (t.isZero()) return;
-
-    if (this.options.angularVelocityCap) t.cap(this.options.angularVelocityCap).put(t);
-    L.add(t.mult(dt)).put(L);
-    t.clear();
-};
-
-/*
- * Updates the orientation of a physics body from its angular velocity.
- *      q <- q + dt/2 * q * w
- *
- * @method integrateOrientation
- * @param {Body} physics body (except a particle)
- * @param {Number} dt delta time
- */
-SymplecticEuler.prototype.integrateOrientation = function integrateOrientation(body, dt) {
-    var q = body.orientation;
-    var w = body.angularVelocity;
-
-    if (w.isZero()) return;
-    q.add(q.multiply(w).scalarMultiply(0.5 * dt)).put(q);
-//        q.normalize.put(q);
-};
-
-module.exports = SymplecticEuler;
-},{"../../core/OptionsManager":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/OptionsManager.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/MultipleTransition.js":[function(require,module,exports){
+},{"../core/Modifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Modifier.js","../core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","../transitions/Transitionable":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js","../transitions/TransitionableTransform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/TransitionableTransform.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/MultipleTransition.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -5569,551 +3554,7 @@ MultipleTransition.prototype.reset = function reset(startState) {
 };
 
 module.exports = MultipleTransition;
-},{"../utilities/Utility":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Utility.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SnapTransition.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-var PE = require('../physics/PhysicsEngine');
-var Particle = require('../physics/bodies/Particle');
-var Spring = require('../physics/constraints/Snap');
-var Vector = require('../math/Vector');
-
-/**
- * SnapTransition is a method of transitioning between two values (numbers,
- * or arrays of numbers). It is similar to SpringTransition except
- * the transition can be much faster and always has a damping effect.
- *
- * @class SnapTransition
- * @constructor
- *
- * @param [state=0] {Number|Array} Initial state
- */
-function SnapTransition(state) {
-    state = state || 0;
-
-    this.endState  = new Vector(state);
-    this.initState = new Vector();
-
-    this._dimensions       = 1;
-    this._restTolerance    = 1e-10;
-    this._absRestTolerance = this._restTolerance;
-    this._callback         = undefined;
-
-    this.PE       = new PE();
-    this.particle = new Particle();
-    this.spring   = new Spring({anchor : this.endState});
-
-    this.PE.addBody(this.particle);
-    this.PE.attach(this.spring, this.particle);
-}
-
-SnapTransition.SUPPORTS_MULTIPLE = 3;
-
-/**
- * @property SnapTransition.DEFAULT_OPTIONS
- * @type Object
- * @protected
- * @static
- */
-SnapTransition.DEFAULT_OPTIONS = {
-
-    /**
-     * The amount of time in milliseconds taken for one complete oscillation
-     * when there is no damping
-     *    Range : [0, Infinity]
-     *
-     * @attribute period
-     * @type Number
-     * @default 100
-     */
-    period : 100,
-
-    /**
-     * The damping of the snap.
-     *    Range : [0, 1]
-     *
-     * @attribute dampingRatio
-     * @type Number
-     * @default 0.2
-     */
-    dampingRatio : 0.2,
-
-    /**
-     * The initial velocity of the transition.
-     *
-     * @attribute velocity
-     * @type Number|Array
-     * @default 0
-     */
-    velocity : 0
-};
-
-function _getEnergy() {
-    return this.particle.getEnergy() + this.spring.getEnergy(this.particle);
-}
-
-function _setAbsoluteRestTolerance() {
-    var distance = this.endState.sub(this.initState).normSquared();
-    this._absRestTolerance = (distance === 0)
-        ? this._restTolerance
-        : this._restTolerance * distance;
-}
-
-function _setTarget(target) {
-    this.endState.set(target);
-    _setAbsoluteRestTolerance.call(this);
-}
-
-function _wake() {
-    this.PE.wake();
-}
-
-function _sleep() {
-    this.PE.sleep();
-}
-
-function _setParticlePosition(p) {
-    this.particle.position.set(p);
-}
-
-function _setParticleVelocity(v) {
-    this.particle.velocity.set(v);
-}
-
-function _getParticlePosition() {
-    return (this._dimensions === 0)
-        ? this.particle.getPosition1D()
-        : this.particle.getPosition();
-}
-
-function _getParticleVelocity() {
-    return (this._dimensions === 0)
-        ? this.particle.getVelocity1D()
-        : this.particle.getVelocity();
-}
-
-function _setCallback(callback) {
-    this._callback = callback;
-}
-
-function _setupDefinition(definition) {
-    var defaults = SnapTransition.DEFAULT_OPTIONS;
-    if (definition.period === undefined)       definition.period       = defaults.period;
-    if (definition.dampingRatio === undefined) definition.dampingRatio = defaults.dampingRatio;
-    if (definition.velocity === undefined)     definition.velocity     = defaults.velocity;
-
-    //setup spring
-    this.spring.setOptions({
-        period       : definition.period,
-        dampingRatio : definition.dampingRatio
-    });
-
-    //setup particle
-    _setParticleVelocity.call(this, definition.velocity);
-}
-
-function _update() {
-    if (this.PE.isSleeping()) {
-        if (this._callback) {
-            var cb = this._callback;
-            this._callback = undefined;
-            cb();
-        }
-        return;
-    }
-
-    if (_getEnergy.call(this) < this._absRestTolerance) {
-        _setParticlePosition.call(this, this.endState);
-        _setParticleVelocity.call(this, [0,0,0]);
-        _sleep.call(this);
-    }
-}
-
-/**
- * Resets the state and velocity
- *
- * @method reset
- *
- * @param state {Number|Array}      State
- * @param [velocity] {Number|Array} Velocity
- */
-SnapTransition.prototype.reset = function reset(state, velocity) {
-    this._dimensions = (state instanceof Array)
-        ? state.length
-        : 0;
-
-    this.initState.set(state);
-    _setParticlePosition.call(this, state);
-    _setTarget.call(this, state);
-    if (velocity) _setParticleVelocity.call(this, velocity);
-    _setCallback.call(this, undefined);
-};
-
-/**
- * Getter for velocity
- *
- * @method getVelocity
- *
- * @return velocity {Number|Array}
- */
-SnapTransition.prototype.getVelocity = function getVelocity() {
-    return _getParticleVelocity.call(this);
-};
-
-/**
- * Setter for velocity
- *
- * @method setVelocity
- *
- * @return velocity {Number|Array}
- */
-SnapTransition.prototype.setVelocity = function setVelocity(velocity) {
-    this.call(this, _setParticleVelocity(velocity));
-};
-
-/**
- * Detects whether a transition is in progress
- *
- * @method isActive
- *
- * @return {Boolean}
- */
-SnapTransition.prototype.isActive = function isActive() {
-    return !this.PE.isSleeping();
-};
-
-/**
- * Halt the transition
- *
- * @method halt
- */
-SnapTransition.prototype.halt = function halt() {
-    this.set(this.get());
-};
-
-/**
- * Get the current position of the transition
-s     *
- * @method get
- *
- * @return state {Number|Array}
- */
-SnapTransition.prototype.get = function get() {
-    _update.call(this);
-    return _getParticlePosition.call(this);
-};
-
-/**
- * Set the end position and transition, with optional callback on completion.
- *
- * @method set
- *
- * @param state {Number|Array}      Final state
- * @param [definition] {Object}     Transition definition
- * @param [callback] {Function}     Callback
- */
-SnapTransition.prototype.set = function set(state, definition, callback) {
-    if (!definition) {
-        this.reset(state);
-        if (callback) callback();
-        return;
-    }
-
-    this._dimensions = (state instanceof Array)
-        ? state.length
-        : 0;
-
-    _wake.call(this);
-    _setupDefinition.call(this, definition);
-    _setTarget.call(this, state);
-    _setCallback.call(this, callback);
-};
-
-module.exports = SnapTransition;
-},{"../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../physics/PhysicsEngine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/PhysicsEngine.js","../physics/bodies/Particle":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/bodies/Particle.js","../physics/constraints/Snap":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Snap.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js":[function(require,module,exports){
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- *
- * Owner: david@famo.us
- * @license MPL 2.0
- * @copyright Famous Industries, Inc. 2014
- */
-
-/*global console*/
-
-var PE = require('../physics/PhysicsEngine');
-var Particle = require('../physics/bodies/Particle');
-var Spring = require('../physics/forces/Spring');
-var Vector = require('../math/Vector');
-
-/**
- * SpringTransition is a method of transitioning between two values (numbers,
- * or arrays of numbers) with a bounce. The transition will overshoot the target
- * state depending on the parameters of the transition.
- *
- * @class SpringTransition
- * @constructor
- *
- * @param {Number|Array} [state=0] Initial state
- */
-function SpringTransition(state) {
-    state = state || 0;
-    this.endState  = new Vector(state);
-    this.initState = new Vector();
-
-    this._dimensions       = undefined;
-    this._restTolerance    = 1e-10;
-    this._absRestTolerance = this._restTolerance;
-    this._callback         = undefined;
-
-    this.PE       = new PE();
-    this.spring   = new Spring({anchor : this.endState});
-    this.particle = new Particle();
-
-    this.PE.addBody(this.particle);
-    this.PE.attach(this.spring, this.particle);
-}
-
-SpringTransition.SUPPORTS_MULTIPLE = 3;
-
-/**
- * @property SpringTransition.DEFAULT_OPTIONS
- * @type Object
- * @protected
- * @static
- */
-SpringTransition.DEFAULT_OPTIONS = {
-
-    /**
-     * The amount of time in milliseconds taken for one complete oscillation
-     * when there is no damping
-     *    Range : [0, Infinity]
-     *
-     * @attribute period
-     * @type Number
-     * @default 300
-     */
-    period : 300,
-
-    /**
-     * The damping of the snap.
-     *    Range : [0, 1]
-     *    0 = no damping, and the spring will oscillate forever
-     *    1 = critically damped (the spring will never oscillate)
-     *
-     * @attribute dampingRatio
-     * @type Number
-     * @default 0.5
-     */
-    dampingRatio : 0.5,
-
-    /**
-     * The initial velocity of the transition.
-     *
-     * @attribute velocity
-     * @type Number|Array
-     * @default 0
-     */
-    velocity : 0
-};
-
-function _getEnergy() {
-    return this.particle.getEnergy() + this.spring.getEnergy(this.particle);
-}
-
-function _setParticlePosition(p) {
-    this.particle.setPosition(p);
-}
-
-function _setParticleVelocity(v) {
-    this.particle.setVelocity(v);
-}
-
-function _getParticlePosition() {
-    return (this._dimensions === 0)
-        ? this.particle.getPosition1D()
-        : this.particle.getPosition();
-}
-
-function _getParticleVelocity() {
-    return (this._dimensions === 0)
-        ? this.particle.getVelocity1D()
-        : this.particle.getVelocity();
-}
-
-function _setCallback(callback) {
-    this._callback = callback;
-}
-
-function _wake() {
-    this.PE.wake();
-}
-
-function _sleep() {
-    this.PE.sleep();
-}
-
-function _update() {
-    if (this.PE.isSleeping()) {
-        if (this._callback) {
-            var cb = this._callback;
-            this._callback = undefined;
-            cb();
-        }
-        return;
-    }
-
-    if (_getEnergy.call(this) < this._absRestTolerance) {
-        _setParticlePosition.call(this, this.endState);
-        _setParticleVelocity.call(this, [0,0,0]);
-        _sleep.call(this);
-    }
-}
-
-function _setupDefinition(definition) {
-    // TODO fix no-console error
-    /* eslint no-console: 0 */
-    var defaults = SpringTransition.DEFAULT_OPTIONS;
-    if (definition.period === undefined)       definition.period       = defaults.period;
-    if (definition.dampingRatio === undefined) definition.dampingRatio = defaults.dampingRatio;
-    if (definition.velocity === undefined)     definition.velocity     = defaults.velocity;
-
-    if (definition.period < 150) {
-        definition.period = 150;
-        console.warn('The period of a SpringTransition is capped at 150 ms. Use a SnapTransition for faster transitions');
-    }
-
-    //setup spring
-    this.spring.setOptions({
-        period       : definition.period,
-        dampingRatio : definition.dampingRatio
-    });
-
-    //setup particle
-    _setParticleVelocity.call(this, definition.velocity);
-}
-
-function _setAbsoluteRestTolerance() {
-    var distance = this.endState.sub(this.initState).normSquared();
-    this._absRestTolerance = (distance === 0)
-        ? this._restTolerance
-        : this._restTolerance * distance;
-}
-
-function _setTarget(target) {
-    this.endState.set(target);
-    _setAbsoluteRestTolerance.call(this);
-}
-
-/**
- * Resets the position and velocity
- *
- * @method reset
- *
- * @param {Number|Array.Number} pos positional state
- * @param {Number|Array} vel velocity
- */
-SpringTransition.prototype.reset = function reset(pos, vel) {
-    this._dimensions = (pos instanceof Array)
-        ? pos.length
-        : 0;
-
-    this.initState.set(pos);
-    _setParticlePosition.call(this, pos);
-    _setTarget.call(this, pos);
-    if (vel) _setParticleVelocity.call(this, vel);
-    _setCallback.call(this, undefined);
-};
-
-/**
- * Getter for velocity
- *
- * @method getVelocity
- *
- * @return {Number|Array} velocity
- */
-SpringTransition.prototype.getVelocity = function getVelocity() {
-    return _getParticleVelocity.call(this);
-};
-
-/**
- * Setter for velocity
- *
- * @method setVelocity
- *
- * @return {Number|Array} velocity
- */
-SpringTransition.prototype.setVelocity = function setVelocity(v) {
-    this.call(this, _setParticleVelocity(v));
-};
-
-/**
- * Detects whether a transition is in progress
- *
- * @method isActive
- *
- * @return {Boolean}
- */
-SpringTransition.prototype.isActive = function isActive() {
-    return !this.PE.isSleeping();
-};
-
-/**
- * Halt the transition
- *
- * @method halt
- */
-SpringTransition.prototype.halt = function halt() {
-    this.set(this.get());
-};
-
-/**
- * Get the current position of the transition
- *
- * @method get
- *
- * @return {Number|Array} state
- */
-SpringTransition.prototype.get = function get() {
-    _update.call(this);
-    return _getParticlePosition.call(this);
-};
-
-/**
- * Set the end position and transition, with optional callback on completion.
- *
- * @method set
- *
- * @param  {Number|Array} endState Final state
- * @param {Object}  definition  Transition definition
- * @param  {Function} callback Callback
- */
-SpringTransition.prototype.set = function set(endState, definition, callback) {
-    if (!definition) {
-        this.reset(endState);
-        if (callback) callback();
-        return;
-    }
-
-    this._dimensions = (endState instanceof Array)
-        ? endState.length
-        : 0;
-
-    _wake.call(this);
-    _setupDefinition.call(this, definition);
-    _setTarget.call(this, endState);
-    _setCallback.call(this, callback);
-};
-
-module.exports = SpringTransition;
-},{"../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../physics/PhysicsEngine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/PhysicsEngine.js","../physics/bodies/Particle":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/bodies/Particle.js","../physics/forces/Spring":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Spring.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js":[function(require,module,exports){
+},{"../utilities/Utility":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Utility.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -26008,7 +23449,72 @@ function adler32(data) {
 
 module.exports = adler32;
 
-},{}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js":[function(require,module,exports){
+},{}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/cloneWithProps.js":[function(require,module,exports){
+(function (process){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @typechecks
+ * @providesModule cloneWithProps
+ */
+
+"use strict";
+
+var ReactPropTransferer = require("./ReactPropTransferer");
+
+var keyOf = require("./keyOf");
+var warning = require("./warning");
+
+var CHILDREN_PROP = keyOf({children: null});
+
+/**
+ * Sometimes you want to change the props of a child passed to you. Usually
+ * this is to add a CSS class.
+ *
+ * @param {object} child child component you'd like to clone
+ * @param {object} props props you'd like to modify. They will be merged
+ * as if you used `transferPropsTo()`.
+ * @return {object} a clone of child with props merged in.
+ */
+function cloneWithProps(child, props) {
+  if ("production" !== process.env.NODE_ENV) {
+    ("production" !== process.env.NODE_ENV ? warning(
+      !child.props.ref,
+      'You are calling cloneWithProps() on a child with a ref. This is ' +
+      'dangerous because you\'re creating a new child which will not be ' +
+      'added as a ref to its parent.'
+    ) : null);
+  }
+
+  var newProps = ReactPropTransferer.mergeProps(props, child.props);
+
+  // Use `child.props.children` if it is provided.
+  if (!newProps.hasOwnProperty(CHILDREN_PROP) &&
+      child.props.hasOwnProperty(CHILDREN_PROP)) {
+    newProps.children = child.props.children;
+  }
+
+  // The current API doesn't retain _owner and _context, which is why this
+  // doesn't use ReactDescriptor.cloneAndReplaceProps.
+  return child.constructor(newProps);
+}
+
+module.exports = cloneWithProps;
+
+}).call(this,require('_process'))
+},{"./ReactPropTransferer":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTransferer.js","./keyOf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyOf.js","./warning":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/warning.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js":[function(require,module,exports){
 /**
  * Copyright 2013-2014 Facebook, Inc.
  *
@@ -28900,7 +26406,9 @@ var famousProps = [
   'origin',
   'align',
   'ref',
-  'key'
+  'key',
+  'height',
+  'width'
 ];
 
 var output = {};
@@ -28909,22 +26417,28 @@ Object.keys(DOM).forEach(function(type){
 });
 
 function createWrapper(type){
+  var domFn = DOM[type];
+
   var ctor = createClass({
     displayName: 'famous-'+type,
     mixins: [Renderable],
+
     render: function(){
       var filteredProps = filter(this.props);
-      var el = DOM[type](filteredProps, this.props.children);
+      var el = domFn(filteredProps, this.props.children);
       return el;
     }
   });
-
   return ctor;
 }
 
 function filter(props) {
   return omit(props, famousProps);
 }
+
+// to override react dom with our better dom
+// uncomment this and export DOM
+// DOM.injection.injectComponentClasses(output);
 
 module.exports = output;
 
@@ -28937,13 +26451,22 @@ var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
+var cloneWithProps = require('react/lib/cloneWithProps');
 var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var applyPropsToModifer = require('./applyPropsToModifer');
 
+var perfStyles = {
+  webkitBackfaceVisibility: 'hidden',
+  backfaceVisibility: 'hidden',
+  webkitTransformStyle: 'flat',
+  transformStyle: 'preserve-3d'
+};
+
 var RenderableMixin = {
   propTypes: {
+    _owner: PropTypes.object,
     opacity: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.object
@@ -28956,20 +26479,110 @@ var RenderableMixin = {
       PropTypes.arrayOf(PropTypes.number),
       PropTypes.object
     ]),
+    size: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.arrayOf(PropTypes.bool),
+      PropTypes.object
+    ]),
     align: PropTypes.oneOfType([
       PropTypes.arrayOf(PropTypes.number),
       PropTypes.object
     ]),
   },
-  tick: function(){
-    // calculate the new styles
-    this._famous.modifier.modify(this._famous.node);
-    this._famous.node.commit(this._famous.modifier._modifier._output);
-    
+
+  getDefaultProps: function(){
+    return {
+      style: {}
+    };
+  },
+
+  componentWillMount: function(){
+    // add our tick to the event loop
+    Engine.on('prerender', this._tick);
+    this._createFamous();
+    this.componentWillReceiveProps(this.props);
+    this._tick();
+  },
+
+  componentWillUnmount: function(){
+    // remove our tick from the event loop
+    Engine.removeListener('prerender', this._tick);
+
+    // halt the animation on our modifier
+    this._famous.modifier.halt();
+  },
+
+  componentWillReceiveProps: function(newProps){
+    applyPropsToModifer(newProps, this._famous.modifier);
+
+    newProps.style = merge(newProps.style, perfStyles);
+
+    // modify children if we have them
+    if (!newProps.children) {
+      return;
+    }
+    if (Array.isArray(newProps.children)) {
+      // multi child
+      newProps.children = newProps.children.map(this._attachTo);
+    } else {
+      // single child
+      newProps.children = this._attachTo(newProps.children);
+    }
+  },
+
+  _attachTo: function(child) {
+    child.props._owner = this;
+    return child;
+  },
+
+  _createFamous: function() {
+    this._famous = {};
+
+    // create a fake element that props will go on
+    this._famous.element = {
+      style: {},
+      previousStyle: null
+    };
+
+    // create a modifier
+    this._famous.modifier = new StateModifier();
+
+    // attach famous to this fake element
+    this._famous.elementOutput = new ElementOutput();
+    this._famous.elementOutput._element = this._famous.element;
+
+    // create our nodes
+    this._famous.nodes = {};
+
+    this._famous.isRoot = !this.props._owner;
+
+    // TODO: split align into its own modifier
+    this._famous.nodes.root = new RenderNode(this._famous.modifier);
+    this._famous.nodes.el = this._famous.nodes.root.add(this._famous.elementOutput);
+
+    // register with parent famous RenderNode for spec
+    if (!this._famous.isRoot) {
+      this.props._owner._famous.nodes.root.add(this._famous.nodes.root);
+    } else {
+      console.log(this._famous.nodes.root);
+    }
+  },
+
+  // updates the spec of this node
+  // and all child nodes
+  _renderSpec: function(){
+    var newState = this._famous.nodes.root.render();
+    this._famous.nodes.el.commit(newState);
+  },
+
+  _tick: function(){
     // no need to touch the dom while unmounted
     if (!this.isMounted()) {
       return;
     }
+
+    // calculate the new styles
+    this._renderSpec();
 
     // diff our faked element with the last run
     // so we only update when stuff changes
@@ -28981,59 +26594,19 @@ var RenderableMixin = {
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this._famous.element.previousStyle = merge(nextStyle);
     }
-  },
-  componentWillMount: function(){
-    this._famous = {};
-
-    // create a fake element that props will go on
-    this._famous.element = {
-      style: {},
-      previousStyle: null
-    };
-
-    // attach famous to this fake element
-    this._famous.elementOutput = new ElementOutput();
-    this._famous.elementOutput._element = this._famous.element;
-    this._famous.node = new RenderNode(this._famous.elementOutput);
-
-    // attach our modifier to our famous node
-    this._famous.modifier = new StateModifier();
-
-    // register with parent
-    // TODO: fix this
-    if (this._owner) {
-      this._owner._famous.node.add(this._famous.node);
-    }
-  },
-
-  componentWillUnmount: function(){
-    // TODO: remove from parent component
-    // halt the animation on our modifier
-    this._famous.modifier.halt();
-
-    // remove our tick from the event loop
-    Engine.removeListener('prerender', this.tick);
-  },
-  componentDidMount: function(){
-    // add our tick to the event loop
-    Engine.on('prerender', this.tick);
-
-    // update our props for the first time
-    this.componentWillReceiveProps(this.props);
-  },
-
-  componentWillReceiveProps: function(newProps){
-    applyPropsToModifer(newProps, this._famous.modifier);
-    this.tick();
   }
 };
 
 module.exports = RenderableMixin;
 
-},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
+},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/cloneWithProps":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/cloneWithProps.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
 'use strict';
 
 module.exports = function(value, transition) {
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return value;
+  }
+
   if (typeof transition === 'string') {
     transition = {
       method: transition
@@ -29048,74 +26621,58 @@ module.exports = function(value, transition) {
 },{}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
 'use strict';
 
-function getTransitionValue(val) {
-  // config
-  if (typeof val === 'object' && !Array.isArray(val)) {
-    return val;
-  }
-  // primitive, use auto transition
-  return {
-    value: val,
-    transition: true
-  };
-}
+var Transitionable = require('./Transitionable');
 
 function applyPropsToModifer(props, mod) {
-  var transform = getTransitionValue(props.transform);
-  var opacity = getTransitionValue(props.opacity);
-  var origin = getTransitionValue(props.origin);
-  var align = getTransitionValue(props.align);
-
-  var width = (typeof props.width === 'undefined' ? true : props.width);
-  var height = (typeof props.height === 'undefined' ? true : props.height);
-  var size = [width, height];
-
-  if (typeof transform.value !== 'undefined') {
+  if (typeof props.transform !== 'undefined') {
+    var transform = Transitionable(props.transform);
     mod.setTransform(transform.value, transform.transition);
   }
-  if (typeof opacity.value !== 'undefined') {
+  if (typeof props.opacity !== 'undefined') {
+    var opacity = Transitionable(props.opacity);
     mod.setOpacity(opacity.value, opacity.transition);
   }
-  if (typeof origin.value !== 'undefined') {
+  if (typeof props.origin !== 'undefined') {
+    var origin = Transitionable(props.origin);
     mod.setOrigin(origin.value, origin.transition);
   }
-  if (typeof align.value !== 'undefined') {
+  if (typeof props.align !== 'undefined') {
+    var align = Transitionable(props.align);
     mod.setAlign(align.value, align.transition);
   }
 
-  mod.setSize(size, null);
+  mod.setSize([props.width, props.height]);
 }
 
 module.exports = applyPropsToModifer;
-},{}],"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js":[function(require,module,exports){
+},{"./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js"}],"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js":[function(require,module,exports){
 'use strict';
 
-// pulled from ReactDOMComponent and cleaned up
 function getStyleUpdates(lastStyle, nextStyle){
   if (lastStyle === nextStyle) {
     return;
   }
 
-  var styleName;
   var styleUpdates;
 
-  // Unset styles on `lastStyle` but not on `nextStyle`.
-  for (styleName in lastStyle) {
-    if (lastStyle.hasOwnProperty(styleName) &&
-        (!nextStyle || !nextStyle.hasOwnProperty(styleName))) {
-      styleUpdates = styleUpdates || {};
-      styleUpdates[styleName] = '';
+  // unset styles that were removed since lastStyle
+  Object.keys(lastStyle).forEach(function(styleName){
+    if (nextStyle[styleName]) {
+      return;
     }
-  }
+    styleUpdates = styleUpdates || {};
+    styleUpdates[styleName] = '';
+  });
 
-  // Update styles that changed since `lastStyle`.
-  for (styleName in nextStyle) {
-    if (nextStyle.hasOwnProperty(styleName) &&
-        lastStyle[styleName] !== nextStyle[styleName]) {
-      styleUpdates = styleUpdates || {};
-      styleUpdates[styleName] = nextStyle[styleName];
+  // update styles that changed since lastStyle
+  Object.keys(nextStyle).forEach(function(styleName){
+    var nextVal = nextStyle[styleName];
+    if (lastStyle[styleName] === nextVal) {
+      return;
     }
-  }
+    styleUpdates = styleUpdates || {};
+    styleUpdates[styleName] = nextVal;
+  });
 
   return styleUpdates;
 }

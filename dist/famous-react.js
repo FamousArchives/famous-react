@@ -622,6 +622,17 @@ var _setOrigin = usePrefix ? function(element, origin) {
     element.style.transformOrigin = _formatCSSOrigin(origin);
 };
 
+var _setSize = function(element, size) {
+  var width = '';
+  var height = '';
+  if (size) {
+    width = (size[0] === true) ? element.clientWidth : size[0] + 'px';
+    height = (size[1] === true) ? element.clientHeight : size[1] + 'px';
+  }
+  element.style.width = width;
+  element.style.height = height;
+};
+
 // Shrink given document element until it is effectively invisible.
 var _setInvisible = usePrefix ? function(element) {
     element.style.webkitTransform = 'scale3d(0.0001,0.0001,0.0001)';
@@ -661,6 +672,7 @@ ElementOutput.prototype.commit = function commit(context) {
     }
 
     if (_xyNotEquals(this._origin, origin)) this._originDirty = true;
+    if (_xyNotEquals(this._size, origin)) this._sizeDirty = true;
     if (Transform.notEquals(this._matrix, matrix)) this._transformDirty = true;
 
     if (this._invisible) {
@@ -679,6 +691,7 @@ ElementOutput.prototype.commit = function commit(context) {
             this._size[0] = size[0];
             this._size[1] = size[1];
             this._sizeDirty = false;
+            _setSize(target, this._size);
         }
 
         if (this._originDirty) {
@@ -694,7 +707,7 @@ ElementOutput.prototype.commit = function commit(context) {
 
         if (!matrix) matrix = Transform.identity;
         this._matrix = matrix;
-        var aaMatrix = this.size ? Transform.thenMove(matrix, [-this._size[0]*origin[0], -this._size[1]*origin[1], 0]) : matrix;
+        var aaMatrix = this._size ? Transform.thenMove(matrix, [-this._size[0]*origin[0], -this._size[1]*origin[1], 0]) : matrix;
         _setMatrix(target, aaMatrix);
         this._transformDirty = false;
     }
@@ -16379,7 +16392,72 @@ function accumulate(current, next) {
 module.exports = accumulate;
 
 }).call(this,require('_process'))
-},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js":[function(require,module,exports){
+},{"./invariant":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/invariant.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/cloneWithProps.js":[function(require,module,exports){
+(function (process){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @typechecks
+ * @providesModule cloneWithProps
+ */
+
+"use strict";
+
+var ReactPropTransferer = require("./ReactPropTransferer");
+
+var keyOf = require("./keyOf");
+var warning = require("./warning");
+
+var CHILDREN_PROP = keyOf({children: null});
+
+/**
+ * Sometimes you want to change the props of a child passed to you. Usually
+ * this is to add a CSS class.
+ *
+ * @param {object} child child component you'd like to clone
+ * @param {object} props props you'd like to modify. They will be merged
+ * as if you used `transferPropsTo()`.
+ * @return {object} a clone of child with props merged in.
+ */
+function cloneWithProps(child, props) {
+  if ("production" !== process.env.NODE_ENV) {
+    ("production" !== process.env.NODE_ENV ? warning(
+      !child.props.ref,
+      'You are calling cloneWithProps() on a child with a ref. This is ' +
+      'dangerous because you\'re creating a new child which will not be ' +
+      'added as a ref to its parent.'
+    ) : null);
+  }
+
+  var newProps = ReactPropTransferer.mergeProps(props, child.props);
+
+  // Use `child.props.children` if it is provided.
+  if (!newProps.hasOwnProperty(CHILDREN_PROP) &&
+      child.props.hasOwnProperty(CHILDREN_PROP)) {
+    newProps.children = child.props.children;
+  }
+
+  // The current API doesn't retain _owner and _context, which is why this
+  // doesn't use ReactDescriptor.cloneAndReplaceProps.
+  return child.constructor(newProps);
+}
+
+module.exports = cloneWithProps;
+
+}).call(this,require('_process'))
+},{"./ReactPropTransferer":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTransferer.js","./keyOf":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/keyOf.js","./warning":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/warning.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/containsNode.js":[function(require,module,exports){
 /**
  * Copyright 2013-2014 Facebook, Inc.
  *
@@ -18094,7 +18172,9 @@ var famousProps = [
   'origin',
   'align',
   'ref',
-  'key'
+  'key',
+  'height',
+  'width'
 ];
 
 var output = {};
@@ -18103,22 +18183,28 @@ Object.keys(DOM).forEach(function(type){
 });
 
 function createWrapper(type){
+  var domFn = DOM[type];
+
   var ctor = createClass({
     displayName: 'famous-'+type,
     mixins: [Renderable],
+
     render: function(){
       var filteredProps = filter(this.props);
-      var el = DOM[type](filteredProps, this.props.children);
+      var el = domFn(filteredProps, this.props.children);
       return el;
     }
   });
-
   return ctor;
 }
 
 function filter(props) {
   return omit(props, famousProps);
 }
+
+// to override react dom with our better dom
+// uncomment this and export DOM
+// DOM.injection.injectComponentClasses(output);
 
 module.exports = output;
 
@@ -18131,13 +18217,22 @@ var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
+var cloneWithProps = require('react/lib/cloneWithProps');
 var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var applyPropsToModifer = require('./applyPropsToModifer');
 
+var perfStyles = {
+  webkitBackfaceVisibility: 'hidden',
+  backfaceVisibility: 'hidden',
+  webkitTransformStyle: 'flat',
+  transformStyle: 'preserve-3d'
+};
+
 var RenderableMixin = {
   propTypes: {
+    _owner: PropTypes.object,
     opacity: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.object
@@ -18150,20 +18245,110 @@ var RenderableMixin = {
       PropTypes.arrayOf(PropTypes.number),
       PropTypes.object
     ]),
+    size: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.arrayOf(PropTypes.bool),
+      PropTypes.object
+    ]),
     align: PropTypes.oneOfType([
       PropTypes.arrayOf(PropTypes.number),
       PropTypes.object
     ]),
   },
-  tick: function(){
-    // calculate the new styles
-    this._famous.modifier.modify(this._famous.node);
-    this._famous.node.commit(this._famous.modifier._modifier._output);
-    
+
+  getDefaultProps: function(){
+    return {
+      style: {}
+    };
+  },
+
+  componentWillMount: function(){
+    // add our tick to the event loop
+    Engine.on('prerender', this._tick);
+    this._createFamous();
+    this.componentWillReceiveProps(this.props);
+    this._tick();
+  },
+
+  componentWillUnmount: function(){
+    // remove our tick from the event loop
+    Engine.removeListener('prerender', this._tick);
+
+    // halt the animation on our modifier
+    this._famous.modifier.halt();
+  },
+
+  componentWillReceiveProps: function(newProps){
+    applyPropsToModifer(newProps, this._famous.modifier);
+
+    newProps.style = merge(newProps.style, perfStyles);
+
+    // modify children if we have them
+    if (!newProps.children) {
+      return;
+    }
+    if (Array.isArray(newProps.children)) {
+      // multi child
+      newProps.children = newProps.children.map(this._attachTo);
+    } else {
+      // single child
+      newProps.children = this._attachTo(newProps.children);
+    }
+  },
+
+  _attachTo: function(child) {
+    child.props._owner = this;
+    return child;
+  },
+
+  _createFamous: function() {
+    this._famous = {};
+
+    // create a fake element that props will go on
+    this._famous.element = {
+      style: {},
+      previousStyle: null
+    };
+
+    // create a modifier
+    this._famous.modifier = new StateModifier();
+
+    // attach famous to this fake element
+    this._famous.elementOutput = new ElementOutput();
+    this._famous.elementOutput._element = this._famous.element;
+
+    // create our nodes
+    this._famous.nodes = {};
+
+    this._famous.isRoot = !this.props._owner;
+
+    // TODO: split align into its own modifier
+    this._famous.nodes.root = new RenderNode(this._famous.modifier);
+    this._famous.nodes.el = this._famous.nodes.root.add(this._famous.elementOutput);
+
+    // register with parent famous RenderNode for spec
+    if (!this._famous.isRoot) {
+      this.props._owner._famous.nodes.root.add(this._famous.nodes.root);
+    } else {
+      console.log(this._famous.nodes.root);
+    }
+  },
+
+  // updates the spec of this node
+  // and all child nodes
+  _renderSpec: function(){
+    var newState = this._famous.nodes.root.render();
+    this._famous.nodes.el.commit(newState);
+  },
+
+  _tick: function(){
     // no need to touch the dom while unmounted
     if (!this.isMounted()) {
       return;
     }
+
+    // calculate the new styles
+    this._renderSpec();
 
     // diff our faked element with the last run
     // so we only update when stuff changes
@@ -18175,59 +18360,19 @@ var RenderableMixin = {
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this._famous.element.previousStyle = merge(nextStyle);
     }
-  },
-  componentWillMount: function(){
-    this._famous = {};
-
-    // create a fake element that props will go on
-    this._famous.element = {
-      style: {},
-      previousStyle: null
-    };
-
-    // attach famous to this fake element
-    this._famous.elementOutput = new ElementOutput();
-    this._famous.elementOutput._element = this._famous.element;
-    this._famous.node = new RenderNode(this._famous.elementOutput);
-
-    // attach our modifier to our famous node
-    this._famous.modifier = new StateModifier();
-
-    // register with parent
-    // TODO: fix this
-    if (this._owner) {
-      this._owner._famous.node.add(this._famous.node);
-    }
-  },
-
-  componentWillUnmount: function(){
-    // TODO: remove from parent component
-    // halt the animation on our modifier
-    this._famous.modifier.halt();
-
-    // remove our tick from the event loop
-    Engine.removeListener('prerender', this.tick);
-  },
-  componentDidMount: function(){
-    // add our tick to the event loop
-    Engine.on('prerender', this.tick);
-
-    // update our props for the first time
-    this.componentWillReceiveProps(this.props);
-  },
-
-  componentWillReceiveProps: function(newProps){
-    applyPropsToModifer(newProps, this._famous.modifier);
-    this.tick();
   }
 };
 
 module.exports = RenderableMixin;
 
-},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
+},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/cloneWithProps":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/cloneWithProps.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
 'use strict';
 
 module.exports = function(value, transition) {
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return value;
+  }
+
   if (typeof transition === 'string') {
     transition = {
       method: transition
@@ -18242,74 +18387,58 @@ module.exports = function(value, transition) {
 },{}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
 'use strict';
 
-function getTransitionValue(val) {
-  // config
-  if (typeof val === 'object' && !Array.isArray(val)) {
-    return val;
-  }
-  // primitive, use auto transition
-  return {
-    value: val,
-    transition: true
-  };
-}
+var Transitionable = require('./Transitionable');
 
 function applyPropsToModifer(props, mod) {
-  var transform = getTransitionValue(props.transform);
-  var opacity = getTransitionValue(props.opacity);
-  var origin = getTransitionValue(props.origin);
-  var align = getTransitionValue(props.align);
-
-  var width = (typeof props.width === 'undefined' ? true : props.width);
-  var height = (typeof props.height === 'undefined' ? true : props.height);
-  var size = [width, height];
-
-  if (typeof transform.value !== 'undefined') {
+  if (typeof props.transform !== 'undefined') {
+    var transform = Transitionable(props.transform);
     mod.setTransform(transform.value, transform.transition);
   }
-  if (typeof opacity.value !== 'undefined') {
+  if (typeof props.opacity !== 'undefined') {
+    var opacity = Transitionable(props.opacity);
     mod.setOpacity(opacity.value, opacity.transition);
   }
-  if (typeof origin.value !== 'undefined') {
+  if (typeof props.origin !== 'undefined') {
+    var origin = Transitionable(props.origin);
     mod.setOrigin(origin.value, origin.transition);
   }
-  if (typeof align.value !== 'undefined') {
+  if (typeof props.align !== 'undefined') {
+    var align = Transitionable(props.align);
     mod.setAlign(align.value, align.transition);
   }
 
-  mod.setSize(size, null);
+  mod.setSize([props.width, props.height]);
 }
 
 module.exports = applyPropsToModifer;
-},{}],"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js":[function(require,module,exports){
+},{"./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js"}],"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js":[function(require,module,exports){
 'use strict';
 
-// pulled from ReactDOMComponent and cleaned up
 function getStyleUpdates(lastStyle, nextStyle){
   if (lastStyle === nextStyle) {
     return;
   }
 
-  var styleName;
   var styleUpdates;
 
-  // Unset styles on `lastStyle` but not on `nextStyle`.
-  for (styleName in lastStyle) {
-    if (lastStyle.hasOwnProperty(styleName) &&
-        (!nextStyle || !nextStyle.hasOwnProperty(styleName))) {
-      styleUpdates = styleUpdates || {};
-      styleUpdates[styleName] = '';
+  // unset styles that were removed since lastStyle
+  Object.keys(lastStyle).forEach(function(styleName){
+    if (nextStyle[styleName]) {
+      return;
     }
-  }
+    styleUpdates = styleUpdates || {};
+    styleUpdates[styleName] = '';
+  });
 
-  // Update styles that changed since `lastStyle`.
-  for (styleName in nextStyle) {
-    if (nextStyle.hasOwnProperty(styleName) &&
-        lastStyle[styleName] !== nextStyle[styleName]) {
-      styleUpdates = styleUpdates || {};
-      styleUpdates[styleName] = nextStyle[styleName];
+  // update styles that changed since lastStyle
+  Object.keys(nextStyle).forEach(function(styleName){
+    var nextVal = nextStyle[styleName];
+    if (lastStyle[styleName] === nextVal) {
+      return;
     }
-  }
+    styleUpdates = styleUpdates || {};
+    styleUpdates[styleName] = nextVal;
+  });
 
   return styleUpdates;
 }
