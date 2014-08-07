@@ -60,7 +60,7 @@ var App = React.createClass({
       }
     });
 
-    var centered = DOM.div({
+    var centered = DOM.span({
       ref: 'centered',
       key: 'centered',
       height: 200,

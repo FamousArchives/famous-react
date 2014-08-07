@@ -4,6 +4,7 @@ var Engine = require('famous/core/Engine');
 var RenderNode = require('famous/core/RenderNode');
 var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
+var Transform = require('famous/core/Transform');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
 var cloneWithProps = require('react/lib/cloneWithProps');
@@ -17,6 +18,10 @@ var perfStyles = {
   backfaceVisibility: 'hidden',
   webkitTransformStyle: 'flat',
   transformStyle: 'preserve-3d'
+};
+
+var defaultState = {
+  transform: Transform.identity
 };
 
 var RenderableMixin = {
@@ -52,10 +57,11 @@ var RenderableMixin = {
   },
 
   componentWillMount: function(){
-    // add our tick to the event loop
-    Engine.on('prerender', this._tick);
     this._createFamous();
     this.componentWillReceiveProps(this.props);
+
+    // add our tick to the event loop
+    Engine.on('prerender', this._tick);
     this._tick();
   },
 
@@ -64,7 +70,7 @@ var RenderableMixin = {
     Engine.removeListener('prerender', this._tick);
 
     // halt the animation on our modifier
-    this._famous.modifier.halt();
+    // this._famous.modifier.halt();
   },
 
   componentWillReceiveProps: function(newProps){
@@ -107,36 +113,24 @@ var RenderableMixin = {
     this._famous.elementOutput._element = this._famous.element;
 
     // create our nodes
-    this._famous.nodes = {};
-
     this._famous.isRoot = !this.props._owner;
-
-    // TODO: split align into its own modifier
+    this._famous.nodes = {};
     this._famous.nodes.root = new RenderNode(this._famous.modifier);
-    this._famous.nodes.el = this._famous.nodes.root.add(this._famous.elementOutput);
+    this._famous.nodes.el = new RenderNode(this._famous.elementOutput);
+    this._famous.nodes.root.add(this._famous.nodes.el);
 
     // register with parent famous RenderNode for spec
     if (!this._famous.isRoot) {
+      console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
       this._famous.nodes.parent = this.props._owner._famous.nodes.root;
       this._famous.nodes.parent.add(this._famous.nodes.root);
-    } else {
-      console.log(this._famous.nodes.root);
     }
   },
 
   // updates the spec of this node
   // and all child nodes
   _renderSpec: function(){
-    var newState;
-    if (this._famous.isRoot) {
-      // commit to self since we are root
-      newState = this._famous.nodes.root.render();
-      this._famous.nodes.el.commit(newState);
-    } else {
-      // commit from parent to self
-      newState = this._famous.nodes.parent.render();
-      this._famous.nodes.root.commit(newState);
-    }
+    this._famous.nodes.root.commit(defaultState);
   },
 
   _tick: function(){
@@ -146,7 +140,9 @@ var RenderableMixin = {
     }
 
     // calculate the new styles
-    this._renderSpec();
+    if (this._famous.isRoot) {
+      this._renderSpec();
+    }
 
     // diff our faked element with the last run
     // so we only update when stuff changes
