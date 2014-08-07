@@ -11,9 +11,7 @@ var famousProps = [
   'origin',
   'align',
   'ref',
-  'key',
-  'height',
-  'width'
+  'key'
 ];
 
 var output = {};

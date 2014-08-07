@@ -129,9 +129,11 @@ var RenderableMixin = {
   _renderSpec: function(){
     var newState;
     if (this._famous.isRoot) {
+      // commit to self since we are root
       newState = this._famous.nodes.root.render();
       this._famous.nodes.el.commit(newState);
     } else {
+      // commit from parent to self
       newState = this._famous.nodes.parent.render();
       this._famous.nodes.root.commit(newState);
     }

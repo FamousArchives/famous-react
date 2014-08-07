@@ -45,6 +45,8 @@ var App = React.createClass({
     var transformX = Transform.translate(0, translateX, 0);
     var translateY = this.state.famous ? 200 : 0;
     var transformY = Transform.translate(translateY, 0, 0);
+    var scale = this.state.famous ? 1 : 2;
+    var transformScale = Transform.scale(scale);
 
     var centeredBlock = DOM.div({
       ref: 'centeredBlock',
@@ -53,6 +55,7 @@ var App = React.createClass({
       width: 50,
       align: [0.5, 0.5],
       origin: [0.5, 0.5],
+      transform: Transitionable(transformScale, true),
       style: {
         backgroundColor: '#0074D9'
       }
@@ -63,7 +66,6 @@ var App = React.createClass({
       key: 'centered',
       height: 200,
       width: 200,
-      transform: Transitionable(transformX, true),
       style: {
         backgroundColor: '#111111',
         display: 'inline-block'
@@ -775,7 +777,7 @@ ElementOutput.prototype.commit = function commit(context) {
     }
 
     if (_xyNotEquals(this._origin, origin)) this._originDirty = true;
-    if (_xyNotEquals(this._size, origin)) this._sizeDirty = true;
+    if (_xyNotEquals(this._size, size)) this._sizeDirty = true;
     if (Transform.notEquals(this._matrix, matrix)) this._transformDirty = true;
 
     if (this._invisible) {
@@ -26406,9 +26408,7 @@ var famousProps = [
   'origin',
   'align',
   'ref',
-  'key',
-  'height',
-  'width'
+  'key'
 ];
 
 var output = {};
@@ -26574,9 +26574,11 @@ var RenderableMixin = {
   _renderSpec: function(){
     var newState;
     if (this._famous.isRoot) {
+      // commit to self since we are root
       newState = this._famous.nodes.root.render();
       this._famous.nodes.el.commit(newState);
     } else {
+      // commit from parent to self
       newState = this._famous.nodes.parent.render();
       this._famous.nodes.root.commit(newState);
     }

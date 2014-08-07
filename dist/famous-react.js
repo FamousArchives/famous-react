@@ -672,7 +672,7 @@ ElementOutput.prototype.commit = function commit(context) {
     }
 
     if (_xyNotEquals(this._origin, origin)) this._originDirty = true;
-    if (_xyNotEquals(this._size, origin)) this._sizeDirty = true;
+    if (_xyNotEquals(this._size, size)) this._sizeDirty = true;
     if (Transform.notEquals(this._matrix, matrix)) this._transformDirty = true;
 
     if (this._invisible) {
@@ -18172,9 +18172,7 @@ var famousProps = [
   'origin',
   'align',
   'ref',
-  'key',
-  'height',
-  'width'
+  'key'
 ];
 
 var output = {};
@@ -18340,9 +18338,11 @@ var RenderableMixin = {
   _renderSpec: function(){
     var newState;
     if (this._famous.isRoot) {
+      // commit to self since we are root
       newState = this._famous.nodes.root.render();
       this._famous.nodes.el.commit(newState);
     } else {
+      // commit from parent to self
       newState = this._famous.nodes.parent.render();
       this._famous.nodes.root.commit(newState);
     }

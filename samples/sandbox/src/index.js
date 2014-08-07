@@ -44,6 +44,8 @@ var App = React.createClass({
     var transformX = Transform.translate(0, translateX, 0);
     var translateY = this.state.famous ? 200 : 0;
     var transformY = Transform.translate(translateY, 0, 0);
+    var scale = this.state.famous ? 1 : 2;
+    var transformScale = Transform.scale(scale);
 
     var centeredBlock = DOM.div({
       ref: 'centeredBlock',
@@ -52,6 +54,7 @@ var App = React.createClass({
       width: 50,
       align: [0.5, 0.5],
       origin: [0.5, 0.5],
+      transform: Transitionable(transformScale, true),
       style: {
         backgroundColor: '#0074D9'
       }
@@ -62,7 +65,6 @@ var App = React.createClass({
       key: 'centered',
       height: 200,
       width: 200,
-      transform: Transitionable(transformX, true),
       style: {
         backgroundColor: '#111111',
         display: 'inline-block'
