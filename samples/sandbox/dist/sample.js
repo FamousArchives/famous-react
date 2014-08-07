@@ -26562,7 +26562,8 @@ var RenderableMixin = {
 
     // register with parent famous RenderNode for spec
     if (!this._famous.isRoot) {
-      this.props._owner._famous.nodes.root.add(this._famous.nodes.root);
+      this._famous.nodes.parent = this.props._owner._famous.nodes.root;
+      this._famous.nodes.parent.add(this._famous.nodes.root);
     } else {
       console.log(this._famous.nodes.root);
     }
@@ -26571,8 +26572,14 @@ var RenderableMixin = {
   // updates the spec of this node
   // and all child nodes
   _renderSpec: function(){
-    var newState = this._famous.nodes.root.render();
-    this._famous.nodes.el.commit(newState);
+    var newState;
+    if (this._famous.isRoot) {
+      newState = this._famous.nodes.root.render();
+      this._famous.nodes.el.commit(newState);
+    } else {
+      newState = this._famous.nodes.parent.render();
+      this._famous.nodes.root.commit(newState);
+    }
   },
 
   _tick: function(){
