@@ -61,7 +61,7 @@ var App = React.createClass({
       }
     });
 
-    var centered = DOM.span({
+    var centered = DOM.div({
       ref: 'centered',
       key: 'centered',
       height: 200,
@@ -110,7 +110,7 @@ var App = React.createClass({
     return DOM.div({
       height: 200,
       width: 800,
-      transform: Transitionable(transformY, true),
+      //transform: Transitionable(transformY, true),
     }, [img, vid, canvas, centered]);
   }
 });
@@ -795,8 +795,8 @@ ElementOutput.prototype.commit = function commit(context) {
             if (!this._size) this._size = [0, 0];
             this._size[0] = size[0];
             this._size[1] = size[1];
-            this._sizeDirty = false;
             _setSize(target, this._size);
+            this._sizeDirty = false;
         }
 
         if (this._originDirty) {
@@ -26561,14 +26561,13 @@ var RenderableMixin = {
     this._famous.isRoot = !this.props._owner;
     this._famous.nodes = {};
     this._famous.nodes.root = new RenderNode(this._famous.modifier);
-    this._famous.nodes.el = new RenderNode(this._famous.elementOutput);
-    this._famous.nodes.root.add(this._famous.nodes.el);
+    this._famous.nodes.el = this._famous.nodes.root.add(this._famous.elementOutput);
 
     // register with parent famous RenderNode for spec
     if (!this._famous.isRoot) {
       console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
       this._famous.nodes.parent = this.props._owner._famous.nodes.root;
-      this._famous.nodes.parent.add(this._famous.nodes.root);
+      this._famous.nodes.root = this._famous.nodes.parent.add(this._famous.nodes.root);
     }
   },
 

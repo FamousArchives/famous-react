@@ -60,7 +60,7 @@ var App = React.createClass({
       }
     });
 
-    var centered = DOM.span({
+    var centered = DOM.div({
       ref: 'centered',
       key: 'centered',
       height: 200,
@@ -109,7 +109,7 @@ var App = React.createClass({
     return DOM.div({
       height: 200,
       width: 800,
-      transform: Transitionable(transformY, true),
+      //transform: Transitionable(transformY, true),
     }, [img, vid, canvas, centered]);
   }
 });

@@ -116,14 +116,13 @@ var RenderableMixin = {
     this._famous.isRoot = !this.props._owner;
     this._famous.nodes = {};
     this._famous.nodes.root = new RenderNode(this._famous.modifier);
-    this._famous.nodes.el = new RenderNode(this._famous.elementOutput);
-    this._famous.nodes.root.add(this._famous.nodes.el);
+    this._famous.nodes.el = this._famous.nodes.root.add(this._famous.elementOutput);
 
     // register with parent famous RenderNode for spec
     if (!this._famous.isRoot) {
       console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
       this._famous.nodes.parent = this.props._owner._famous.nodes.root;
-      this._famous.nodes.parent.add(this._famous.nodes.root);
+      this._famous.nodes.root = this._famous.nodes.parent.add(this._famous.nodes.root);
     }
   },
 
