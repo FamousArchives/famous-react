@@ -110,7 +110,7 @@ var App = React.createClass({
     return DOM.div({
       height: 200,
       width: 800,
-      //transform: Transitionable(transformY, true),
+      transform: Transitionable(transformY, true),
     }, [img, vid, canvas, centered]);
   }
 });
