@@ -2,6 +2,7 @@
 
 'use strict';
 
+var Timer = require('famous/utilities/Timer');
 var Transform = require('famous/core/Transform');
 var React = require('react');
 window.React = React; // for dev
@@ -19,7 +20,10 @@ var App = React.createClass({
     };
   },
   componentDidMount: function() {
-    setInterval(this.toggle, 1000);
+    this.interval = Timer.setInterval(this.toggle, 1000);
+  },
+  componentWillUnmount: function() {
+    Timer.clear(this.interval);
   },
   toggle: function() {
     this.setState({

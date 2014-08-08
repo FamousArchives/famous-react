@@ -7,13 +7,18 @@ var StateModifier = require('famous/modifiers/StateModifier');
 var Transform = require('famous/core/Transform');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
+var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var cloneStyle = require('./cloneStyle');
 var applyPropsToModifer = require('./applyPropsToModifer');
 
 var defaultState = {
-  transform: Transform.identity
+  transform: Transform.identity,
+  opacity: 1,
+  origin: [0, 0],
+  size: [0, 0],
+  align: null
 };
 
 var RenderableMixin = {

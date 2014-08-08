@@ -7,33 +7,22 @@ function getStyleUpdates(lastStyle, nextStyle){
   var styleUpdates = {};
   var styleUpdated = false;
 
-  if (lastStyle === nextStyle) {
-    return;
-  }
-
-  styleFields.forEach(function updateStyle(styleName){
+  styleFields.forEach(function(styleName){
     var lastVal = lastStyle[styleName];
     var nextVal = nextStyle[styleName];
     if (!lastVal && !nextVal) {
       return;
     }
-    if (lastVal && !nextVal) {
-      styleUpdated = true;
-      styleUpdates[styleName] = '';
-      return;
-    }
+
     if (lastVal !== nextVal) {
       styleUpdated = true;
-      styleUpdates[styleName] = nextVal;
-      return;
+      styleUpdates[styleName] = (nextVal || '');
     }
   });
 
-  if (!styleUpdated) {
-    return;
+  if (styleUpdated) {
+    return styleUpdates;
   }
-
-  return styleUpdates;
 }
 
 module.exports = getStyleUpdates;

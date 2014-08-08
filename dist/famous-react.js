@@ -2395,7 +2395,7 @@ SpecParser.prototype._parseSpec = function _parseSpec(spec, parentContext, sizeC
         var nextSizeContext = sizeContext;
 
         if (spec.opacity !== undefined) opacity = parentContext.opacity * spec.opacity;
-        if (spec.transform) transform = Transform.multiply(parentContext.transform, spec.transform);
+        if (spec.transform) transform = spec.transform; //Transform.multiply(parentContext.transform, spec.transform);
         if (spec.origin) {
             origin = spec.origin;
             nextSizeContext = parentContext.transform;
@@ -18151,13 +18151,18 @@ var StateModifier = require('famous/modifiers/StateModifier');
 var Transform = require('famous/core/Transform');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
+var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var cloneStyle = require('./cloneStyle');
 var applyPropsToModifer = require('./applyPropsToModifer');
 
 var defaultState = {
-  transform: Transform.identity
+  transform: Transform.identity,
+  opacity: 1,
+  origin: [0, 0],
+  size: [0, 0],
+  align: null
 };
 
 var RenderableMixin = {
@@ -18277,7 +18282,7 @@ var RenderableMixin = {
 
 module.exports = RenderableMixin;
 
-},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
+},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
 'use strict';
 
 module.exports = function(value, transition) {
@@ -18353,33 +18358,22 @@ function getStyleUpdates(lastStyle, nextStyle){
   var styleUpdates = {};
   var styleUpdated = false;
 
-  if (lastStyle === nextStyle) {
-    return;
-  }
-
-  styleFields.forEach(function updateStyle(styleName){
+  styleFields.forEach(function(styleName){
     var lastVal = lastStyle[styleName];
     var nextVal = nextStyle[styleName];
     if (!lastVal && !nextVal) {
       return;
     }
-    if (lastVal && !nextVal) {
-      styleUpdated = true;
-      styleUpdates[styleName] = '';
-      return;
-    }
+
     if (lastVal !== nextVal) {
       styleUpdated = true;
-      styleUpdates[styleName] = nextVal;
-      return;
+      styleUpdates[styleName] = (nextVal || '');
     }
   });
 
-  if (!styleUpdated) {
-    return;
+  if (styleUpdated) {
+    return styleUpdates;
   }
-
-  return styleUpdates;
 }
 
 module.exports = getStyleUpdates;
