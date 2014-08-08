@@ -57,8 +57,7 @@ var App = React.createClass({
       key: 'centeredBlock',
       height: 50,
       width: 50,
-      align: [0.5, 0.5],
-      origin: [0.5, 0.5],
+      center: true,
       transform: Transitionable(transformScale, true),
       style: {
         backgroundColor: '#0074D9'
@@ -26609,6 +26608,7 @@ var defaultState = {
 var RenderableMixin = {
   propTypes: {
     _owner: PropTypes.object,
+    center: PropTypes.bool,
     opacity: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.object
@@ -26652,12 +26652,27 @@ var RenderableMixin = {
   },
 
   componentWillReceiveProps: function(newProps){
-    applyPropsToModifer(newProps, this.famous.modifier);
+    // some props sugar
+    if (newProps.center) {
+      if (newProps.center === 'vertical') {
+        newProps.align = [0, 0.5];
+        newProps.origin = [0, 0.5];
+      } else if (newProps.center === 'horizontal') {
+        newProps.align = [0.5, 0];
+        newProps.origin = [0.5, 0];
+      } else if (newProps.center === true) {
+        newProps.origin = [0.5, 0.5];
+        newProps.align = [0.5, 0.5];
+      }
+    }
 
     // modify children if we have them
     if (newProps.children) {
       newProps.children = this.attachToChildren(newProps.children);
     }
+
+    // apply our props to the modifier
+    applyPropsToModifer(newProps, this.famous.modifier);
   },
 
   attachToChildren: function(children) {

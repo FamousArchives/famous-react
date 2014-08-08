@@ -56,8 +56,7 @@ var App = React.createClass({
       key: 'centeredBlock',
       height: 50,
       width: 50,
-      align: [0.5, 0.5],
-      origin: [0.5, 0.5],
+      center: true,
       transform: Transitionable(transformScale, true),
       style: {
         backgroundColor: '#0074D9'
