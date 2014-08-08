@@ -7,18 +7,10 @@ var StateModifier = require('famous/modifiers/StateModifier');
 var Transform = require('famous/core/Transform');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
-var cloneWithProps = require('react/lib/cloneWithProps');
-var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
+var cloneStyle = require('./cloneStyle');
 var applyPropsToModifer = require('./applyPropsToModifer');
-
-var perfStyles = {
-  webkitBackfaceVisibility: 'hidden',
-  backfaceVisibility: 'hidden',
-  webkitTransformStyle: 'flat',
-  transformStyle: 'preserve-3d'
-};
 
 var defaultState = {
   transform: Transform.identity
@@ -57,101 +49,84 @@ var RenderableMixin = {
   },
 
   componentWillMount: function(){
-    this._createFamous();
+    this.createFamous();
     this.componentWillReceiveProps(this.props);
 
     // add our tick to the event loop
-    Engine.on('prerender', this._tick);
-    this._tick();
+    Engine.on('prerender', this.tick);
   },
 
   componentWillUnmount: function(){
     // remove our tick from the event loop
-    Engine.removeListener('prerender', this._tick);
-
-    // halt the animation on our modifier
-    // this._famous.modifier.halt();
+    Engine.removeListener('prerender', this.tick);
   },
 
   componentWillReceiveProps: function(newProps){
-    applyPropsToModifer(newProps, this._famous.modifier);
-
-    newProps.style = merge(newProps.style, perfStyles);
+    applyPropsToModifer(newProps, this.famous.modifier);
 
     // modify children if we have them
-    if (!newProps.children) {
-      return;
+    if (newProps.children) {
+      newProps.children = this.attachToChildren(newProps.children);
     }
-    if (Array.isArray(newProps.children)) {
+  },
+
+  attachToChildren: function(children) {
+    if (Array.isArray(children)) {
       // multi child
-      newProps.children = newProps.children.map(this._attachTo);
-    } else {
-      // single child
-      newProps.children = this._attachTo(newProps.children);
+      return children.map(this.attachToChildren);
     }
+    // single child
+    children.props._owner = this;
+    return children;
   },
 
-  _attachTo: function(child) {
-    child.props._owner = this;
-    return child;
-  },
-
-  _createFamous: function() {
-    this._famous = {};
+  createFamous: function() {
+    this.famous = {};
 
     // create a fake element that props will go on
-    this._famous.element = {
+    this.famous.element = {
       style: {},
-      previousStyle: null
+      lastStyle: null
     };
 
     // create a modifier
-    this._famous.modifier = new StateModifier();
+    this.famous.modifier = new StateModifier();
 
     // attach famous to this fake element
-    this._famous.elementOutput = new ElementOutput();
-    this._famous.elementOutput._element = this._famous.element;
+    this.famous.elementOutput = new ElementOutput(this.famous.element);
 
     // create our nodes
-    this._famous.isRoot = !this.props._owner;
-    this._famous.nodes = {};
-    this._famous.nodes.root = new RenderNode(this._famous.modifier);
-    this._famous.nodes.el = this._famous.nodes.root.add(this._famous.elementOutput);
+    this.famous.isRoot = !this.props._owner;
+    this.famous.node = new RenderNode(this.famous.modifier);
+    this.famous.node.add(this.famous.elementOutput);
 
     // register with parent famous RenderNode for spec
-    if (!this._famous.isRoot) {
-      console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
-      this._famous.nodes.parent = this.props._owner._famous.nodes.root;
-      this._famous.nodes.root = this._famous.nodes.parent.add(this._famous.nodes.root);
+    if (!this.famous.isRoot) {
+      //console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
+      this.props._owner.famous.node.add(this.famous.node);
     }
   },
 
-  // updates the spec of this node
-  // and all child nodes
-  _renderSpec: function(){
-    this._famous.nodes.root.commit(defaultState);
-  },
-
-  _tick: function(){
-    // no need to touch the dom while unmounted
+  tick: function(){
     if (!this.isMounted()) {
       return;
     }
 
-    // calculate the new styles
-    if (this._famous.isRoot) {
-      this._renderSpec();
+    // updates the spec of this node
+    // and all child nodes
+    if (this.famous.isRoot) {
+      this.famous.node.commit(defaultState);
     }
 
     // diff our faked element with the last run
     // so we only update when stuff changes
-    var lastStyle = this._famous.element.previousStyle;
-    var nextStyle = this._famous.element.style;
+    var lastStyle = this.famous.element.lastStyle;
+    var nextStyle = this.famous.element.style;
 
     var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
     if (styleUpdates) {
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
-      this._famous.element.previousStyle = merge(nextStyle);
+      this.famous.element.lastStyle = cloneStyle(nextStyle);
     }
   }
 };

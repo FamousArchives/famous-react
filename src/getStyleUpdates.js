@@ -1,28 +1,37 @@
 'use strict';
 
+var styleFields = require('./styleFields');
+
+// TODO: cleverly inline styleFields to reduce a loop here
 function getStyleUpdates(lastStyle, nextStyle){
+  var styleUpdates = {};
+  var styleUpdated = false;
+
   if (lastStyle === nextStyle) {
     return;
   }
 
-  var styleUpdates;
-
-  // unset styles that were removed since lastStyle
-  Object.keys(lastStyle).forEach(function(styleName){
-    if (!nextStyle[styleName]) {
-      styleUpdates = styleUpdates || {};
-      styleUpdates[styleName] = '';
-    }
-  });
-
-  // update styles that changed since lastStyle
-  Object.keys(nextStyle).forEach(function(styleName){
+  styleFields.forEach(function updateStyle(styleName){
+    var lastVal = lastStyle[styleName];
     var nextVal = nextStyle[styleName];
-    if (lastStyle[styleName] !== nextVal) {
-      styleUpdates = styleUpdates || {};
+    if (!lastVal && !nextVal) {
+      return;
+    }
+    if (lastVal && !nextVal) {
+      styleUpdated = true;
+      styleUpdates[styleName] = '';
+      return;
+    }
+    if (lastVal !== nextVal) {
+      styleUpdated = true;
       styleUpdates[styleName] = nextVal;
+      return;
     }
   });
+
+  if (!styleUpdated) {
+    return;
+  }
 
   return styleUpdates;
 }

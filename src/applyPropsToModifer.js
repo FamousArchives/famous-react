@@ -3,6 +3,7 @@
 var Transitionable = require('./Transitionable');
 
 function applyPropsToModifer(props, mod) {
+  // TODO: dirty checking here
   if (typeof props.transform !== 'undefined') {
     var transform = Transitionable(props.transform);
     mod.setTransform(transform.value, transform.transition);
