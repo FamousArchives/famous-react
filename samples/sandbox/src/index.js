@@ -16,7 +16,7 @@ var App = React.createClass({
 
   getInitialState: function() {
     return {
-      famous: true
+      famous: false
     };
   },
   componentDidMount: function() {
@@ -44,8 +44,8 @@ var App = React.createClass({
 
   render: function() {
     var imageUrl = this.state.famous ? 'famous_logo.png' : 'react_logo.png';
-    var translate = this.state.famous ? 200 : 0;
-    var scale = this.state.famous ? 1 : 2;
+    var translate = this.state.famous ? 0 : 200;
+    var scale = this.state.famous ? 2 : 1;
     var transformX = Transitionable(Transform.translate(0, translate, 0), true);
     var transformY = Transitionable(Transform.translate(translate, 0, 0), true);
     var transformScale = Transitionable(Transform.scale(scale), true);
