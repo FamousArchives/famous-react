@@ -5,10 +5,7 @@ var path = require('path');
 
 var gulp = require('gulp');
 var jshint = require('gulp-jshint');
-var uglify = require('gulp-uglify');
-var rename = require('gulp-rename');
 var sourcemaps = require('gulp-sourcemaps');
-var gif = require('gulp-if');
 var lr = require('gulp-livereload');
 var cached = require('gulp-cached');
 
@@ -53,7 +50,7 @@ gulp.task('watch', function(){
   });
 });
 
-gulp.task('js', function(cb){
+gulp.task('js', function(){
   var browserifyStream = bundler.bundle()
     // browserify -> gulp transfer
     .pipe(source('famous-react.js'))

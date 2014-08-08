@@ -7,7 +7,6 @@ var StateModifier = require('famous/modifiers/StateModifier');
 var Transform = require('famous/core/Transform');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
-var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var cloneStyle = require('./cloneStyle');
@@ -57,7 +56,11 @@ var RenderableMixin = {
   componentWillMount: function(){
     this.createFamous();
     this.componentWillReceiveProps(this.props);
+    this.tick();
+  },
 
+  componentDidMount: function(){
+    this.tick();
     // add our tick to the event loop
     Engine.on('prerender', this.tick);
   },
@@ -129,14 +132,14 @@ var RenderableMixin = {
   },
 
   tick: function(){
-    if (!this.isMounted()) {
-      return;
-    }
-
     // updates the spec of this node
     // and all child nodes
     if (this.famous.isRoot) {
       this.famous.node.commit(defaultState);
+    }
+
+    if (!this.isMounted()) {
+      return;
     }
 
     // diff our faked element with the last run

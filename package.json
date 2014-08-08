@@ -8,9 +8,9 @@
     "url": "git://github.com/FamousInternal/famous-react.git"
   },
   "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
-  "main": "./index.js",
+  "main": "./src/index.js",
   "dependencies": {
-    "famous": "http://code.famo.us/famous/common/famous0.3.0a.tar.gz",
+    "famous": "https://github.com/contra/famous/archive/master.tar.gz",
     "lodash.omit": "^2.4.1",
     "react": "^0.11.0"
   },
@@ -20,12 +20,9 @@
     "gulp": "^3.8.6",
     "gulp-autowatch": "0.0.1",
     "gulp-cached": "^1.0.1",
-    "gulp-if": "^1.2.4",
     "gulp-jshint": "^1.7.1",
     "gulp-livereload": "^2.1.0",
-    "gulp-rename": "^1.2.0",
     "gulp-sourcemaps": "^1.1.0",
-    "gulp-uglify": "^0.3.1",
     "jshint": "^2.4.1",
     "jshint-stylish": "^0.4.0",
     "merge-stream": "^0.1.5",

@@ -14,7 +14,6 @@ var DOM = FamousReact.DOM;
 
 var App = React.createClass({
   displayName: 'demo',
-  mixins: [FamousReact.Mixin],
 
   getInitialState: function() {
     return {
@@ -33,10 +32,10 @@ var App = React.createClass({
     });
   },
 
-  imageClick: function(e) {
+  imageClick: function() {
     this.drawImage(this.refs.img.getDOMNode());
   },
-  videoClick: function(e) {
+  videoClick: function() {
     this.drawImage(this.refs.vid.getDOMNode());
   },
   drawImage: function(img) {
@@ -812,7 +811,7 @@ ElementOutput.prototype.commit = function commit(context) {
 
         if (!matrix) matrix = Transform.identity;
         this._matrix = matrix;
-        var aaMatrix = this._size ? Transform.thenMove(matrix, [-this._size[0]*origin[0], -this._size[1]*origin[1], 0]) : matrix;
+        var aaMatrix = this.size ? Transform.thenMove(matrix, [-this._size[0]*origin[0], -this._size[1]*origin[1], 0]) : matrix;
         _setMatrix(target, aaMatrix);
         this._transformDirty = false;
     }
@@ -2500,7 +2499,7 @@ SpecParser.prototype._parseSpec = function _parseSpec(spec, parentContext, sizeC
         var nextSizeContext = sizeContext;
 
         if (spec.opacity !== undefined) opacity = parentContext.opacity * spec.opacity;
-        if (spec.transform) transform = spec.transform; //Transform.multiply(parentContext.transform, spec.transform);
+        if (spec.transform) transform = spec.transform;//Transform.multiply(parentContext.transform, spec.transform);
         if (spec.origin) {
             origin = spec.origin;
             nextSizeContext = parentContext.transform;
@@ -3764,7 +3763,7 @@ Transitionable.prototype.isActive = function isActive() {
  * @method halt
  */
 Transitionable.prototype.halt = function halt() {
-    this.set(this.get());
+    return this.set(this.get());
 };
 
 module.exports = Transitionable;
@@ -26588,7 +26587,6 @@ var StateModifier = require('famous/modifiers/StateModifier');
 var Transform = require('famous/core/Transform');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
-var merge = require('react/lib/merge');
 
 var getStyleUpdates = require('./getStyleUpdates');
 var cloneStyle = require('./cloneStyle');
@@ -26638,7 +26636,11 @@ var RenderableMixin = {
   componentWillMount: function(){
     this.createFamous();
     this.componentWillReceiveProps(this.props);
+    this.tick();
+  },
 
+  componentDidMount: function(){
+    this.tick();
     // add our tick to the event loop
     Engine.on('prerender', this.tick);
   },
@@ -26710,14 +26712,14 @@ var RenderableMixin = {
   },
 
   tick: function(){
-    if (!this.isMounted()) {
-      return;
-    }
-
     // updates the spec of this node
     // and all child nodes
     if (this.famous.isRoot) {
       this.famous.node.commit(defaultState);
+    }
+
+    if (!this.isMounted()) {
+      return;
     }
 
     // diff our faked element with the last run
@@ -26735,7 +26737,7 @@ var RenderableMixin = {
 
 module.exports = RenderableMixin;
 
-},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
+},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
 'use strict';
 
 module.exports = function(value, transition) {

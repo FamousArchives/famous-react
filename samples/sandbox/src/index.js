@@ -13,7 +13,6 @@ var DOM = FamousReact.DOM;
 
 var App = React.createClass({
   displayName: 'demo',
-  mixins: [FamousReact.Mixin],
 
   getInitialState: function() {
     return {
@@ -32,10 +31,10 @@ var App = React.createClass({
     });
   },
 
-  imageClick: function(e) {
+  imageClick: function() {
     this.drawImage(this.refs.img.getDOMNode());
   },
-  videoClick: function(e) {
+  videoClick: function() {
     this.drawImage(this.refs.vid.getDOMNode());
   },
   drawImage: function(img) {
