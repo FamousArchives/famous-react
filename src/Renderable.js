@@ -103,7 +103,9 @@ var RenderableMixin = {
       return children.map(this.attachToChildren);
     }
     // single child
-    children.props._owner = this;
+    if (children.props) {
+      children.props._owner = this;
+    }
     return children;
   },
 
