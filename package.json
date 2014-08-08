@@ -1,11 +1,11 @@
 {
-  "name": "react-famous",
+  "name": "famous-react",
   "description": "Integration between React and Famous",
   "version": "0.0.1",
-  "homepage": "http://github.com/FamousInternal/famous-react",
+  "homepage": "http://github.com/Famous/famous-react",
   "repository": {
     "type": "git",
-    "url": "git://github.com/FamousInternal/famous-react.git"
+    "url": "git://github.com/Famous/famous-react.git"
   },
   "author": "Fractal <contact@wearefractal.com> (http://wearefractal.com/)",
   "main": "./src/index.js",
