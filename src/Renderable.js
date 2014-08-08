@@ -154,6 +154,9 @@ var RenderableMixin = {
 
     var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
     if (styleUpdates) {
+      if (!this.getDOMNode) {
+        console.log(this);
+      }
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this.famous.element.lastStyle = cloneStyle(nextStyle);
     }

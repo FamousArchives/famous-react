@@ -26736,6 +26736,9 @@ var RenderableMixin = {
 
     var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
     if (styleUpdates) {
+      if (!this.getDOMNode) {
+        console.log(this);
+      }
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this.famous.element.lastStyle = cloneStyle(nextStyle);
     }
@@ -26846,15 +26849,13 @@ module.exports = getStyleUpdates;
 var DOM = require('./DOM');
 var Renderable = require('./Renderable');
 var Transitionable = require('./Transitionable');
-var React = require('react');
 
 module.exports = {
   Mixin: Renderable,
   DOM: DOM,
-  Transitionable: Transitionable,
-  React: React
+  Transitionable: Transitionable
 };
-},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/src/styleFields.js":[function(require,module,exports){
+},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js"}],"/Users/contra/Projects/famous/famous-react/src/styleFields.js":[function(require,module,exports){
 'use strict';
 
 module.exports = [
