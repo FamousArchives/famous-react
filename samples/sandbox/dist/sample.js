@@ -106,11 +106,13 @@ var App = React.createClass({
       }
     });
 
-    return DOM.div({
+    var container = DOM.div({
       height: 200,
       width: 800,
       transform: transformY,
     }, [img, vid, canvas, centered]);
+
+    return container;
   }
 });
 React.renderComponent(App(), document.body);
