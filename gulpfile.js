@@ -18,10 +18,10 @@ var buffer = require('vinyl-buffer');
 var watchify = require('watchify');
 var browserify = require('browserify');
 var ecstatic = require('ecstatic');
+var reactify = require('reactify');
 
 var paths = {
-  js: 'src/**/*.js',
-  samples: ['src/**/*.js', 'samples/sandbox/src/**/*']
+  js: 'src/**/*.js'
 };
 
 var bundleCache = {};
@@ -42,6 +42,7 @@ var sampleBundler = watchify(browserify('./samples/sandbox/src/index.js', {
   standalone: 'sample',
   debug: true
 }));
+sampleBundler.transform(reactify);
 
 gulp.task('watch', function(){
   bundler.on('update', function(){

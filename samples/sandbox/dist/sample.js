@@ -14,6 +14,7 @@ var DOM = FamousReact.DOM;
 
 var App = React.createClass({
   displayName: 'demo',
+  mixins: [FamousReact.Mixin],
 
   getInitialState: function() {
     return {
@@ -45,27 +46,23 @@ var App = React.createClass({
 
   render: function() {
     var imageUrl = this.state.famous ? 'famous_logo.png' : 'react_logo.png';
-    var translateX = this.state.famous ? 0 : 200;
-    var transformX = Transform.translate(0, translateX, 0);
-    var translateY = this.state.famous ? 200 : 0;
-    var transformY = Transform.translate(translateY, 0, 0);
+    var translate = this.state.famous ? 200 : 0;
     var scale = this.state.famous ? 1 : 2;
-    var transformScale = Transform.scale(scale);
+    var transformX = Transitionable(Transform.translate(0, translate, 0), true);
+    var transformY = Transitionable(Transform.translate(translate, 0, 0), true);
+    var transformScale = Transitionable(Transform.scale(scale), true);
 
     var centeredBlock = DOM.div({
-      ref: 'centeredBlock',
-      key: 'centeredBlock',
       height: 50,
       width: 50,
       center: true,
-      transform: Transitionable(transformScale, true),
+      transform: transformScale,
       style: {
         backgroundColor: '#0074D9'
       }
     });
 
     var centered = DOM.div({
-      ref: 'centered',
       key: 'centered',
       height: 200,
       width: 200,
@@ -95,7 +92,7 @@ var App = React.createClass({
       style: {
         backgroundColor: '#111111'
       },
-      transform: Transitionable(transformX, true),
+      transform: transformX,
       src: './dizzy.mp4',
       onClick: this.videoClick
     });
@@ -113,7 +110,7 @@ var App = React.createClass({
     return DOM.div({
       height: 200,
       width: 800,
-      transform: Transitionable(transformY, true),
+      transform: transformY,
     }, [img, vid, canvas, centered]);
   }
 });
@@ -26764,6 +26761,7 @@ var Transitionable = require('./Transitionable');
 
 function applyPropsToModifer(props, mod) {
   // TODO: dirty checking here
+  // TODO: animation callbacks
   if (typeof props.transform !== 'undefined') {
     var transform = Transitionable(props.transform);
     mod.setTransform(transform.value, transform.transition);
