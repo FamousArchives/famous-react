@@ -18193,7 +18193,10 @@ var RenderableMixin = {
 
   getDefaultProps: function(){
     return {
-      style: {}
+      style: {
+        backfaceVisibility: 'hidden',
+        transformStyle: 'preserve-3d'
+      }
     };
   },
 
