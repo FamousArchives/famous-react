@@ -1,10 +1,14 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.sample=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"./samples/sandbox/src/index.js":[function(require,module,exports){
-/* global document */
+/* global document, window */
 
 'use strict';
 
+var dat = require('dat-gui');
 var Timer = require('famous/utilities/Timer');
 var Transform = require('famous/core/Transform');
+var Spring = require('famous/transitions/SpringTransition');
+var Wall = require('famous/transitions/WallTransition');
+
 var React = require('react');
 window.React = React; // for dev
 
@@ -15,41 +19,46 @@ var DOM = FamousReact.DOM;
 var App = React.createClass({
   displayName: 'demo',
 
+  getDefaultProps: function() {
+    return {
+      dampngRatio: 0.5,
+      speed: 500,
+      animation: Spring
+    };
+  },
   getInitialState: function() {
     return {
       famous: false
     };
   },
   componentDidMount: function() {
-    this.interval = Timer.setInterval(this.toggle, 1000);
+    this.timeout = Timer.setTimeout(this.toggle, this.props.speed*2);
   },
   componentWillUnmount: function() {
-    Timer.clear(this.interval);
+    Timer.clear(this.timeout);
   },
   toggle: function() {
     this.setState({
       famous: !this.state.famous
     });
-  },
-
-  imageClick: function() {
-    this.drawImage(this.refs.img.getDOMNode());
-  },
-  videoClick: function() {
-    this.drawImage(this.refs.vid.getDOMNode());
-  },
-  drawImage: function(img) {
-    var ctx = this.refs.canvas.getDOMNode().getContext('2d');
-    ctx.drawImage(img, 0, 0, 200, 200);
+    this.timeout = Timer.setTimeout(this.toggle, this.props.speed*2);
   },
 
   render: function() {
-    var imageUrl = this.state.famous ? 'famous_logo.png' : 'react_logo.png';
+    var swap = this.state.famous ? 0 : 600;
     var translate = this.state.famous ? 0 : 200;
     var scale = this.state.famous ? 2 : 1;
-    var transformX = Transitionable(Transform.translate(0, translate, 0), true);
-    var transformY = Transitionable(Transform.translate(translate, 0, 0), true);
-    var transformScale = Transitionable(Transform.scale(scale), true);
+    var anim = {
+      method: this.props.animation,
+      period: this.props.speed,
+      dampingRatio: this.props.dampingRatio
+    };
+
+    var swap1Transform = Transitionable(Transform.translate(swap, 0, 0), anim);
+    var swap2Transform = Transitionable(Transform.translate(-swap, 0, 0), anim);
+    var transformX = Transitionable(Transform.translate(0, translate, 0), anim);
+    var transformY = Transitionable(Transform.translate(translate, 0, 0), anim);
+    var transformScale = Transitionable(Transform.scale(scale), anim);
 
     var centeredBlock = DOM.div({
       height: 50,
@@ -57,7 +66,7 @@ var App = React.createClass({
       center: true,
       transform: transformScale,
       style: {
-        backgroundColor: '#0074D9'
+        backgroundColor: '#FF851B'
       }
     });
 
@@ -66,7 +75,7 @@ var App = React.createClass({
       height: 200,
       width: 200,
       style: {
-        backgroundColor: '#111111',
+        backgroundColor: '#0074D9',
         display: 'inline-block'
       }
     }, centeredBlock);
@@ -76,8 +85,17 @@ var App = React.createClass({
       key: 'img',
       height: 200,
       width: 200,
-      src: imageUrl,
-      onClick: this.imageClick
+      transform: swap1Transform,
+      src: 'famous_logo.png'
+    });
+
+    var img2 = DOM.img({
+      ref: 'img2',
+      key: 'img2',
+      height: 200,
+      width: 200,
+      transform: swap2Transform,
+      src: 'react_logo.png'
     });
 
     var vid = DOM.video({
@@ -92,31 +110,39 @@ var App = React.createClass({
         backgroundColor: '#111111'
       },
       transform: transformX,
-      src: './dizzy.mp4',
-      onClick: this.videoClick
-    });
-
-    var canvas = DOM.canvas({
-      ref: 'canvas',
-      key: 'canvas',
-      height: 200,
-      width: 200,
-      style: {
-        backgroundColor: '#0074D9'
-      }
+      src: './dizzy.mp4'
     });
 
     var container = DOM.div({
       height: 200,
       width: 800,
       transform: transformY,
-    }, [img, vid, canvas, centered]);
+    }, [img, vid, centered, img2]);
 
     return container;
   }
 });
-React.renderComponent(App(), document.body);
-},{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/utilities/Timer":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Timer.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
+
+// demo code
+var state = {
+  dampingRatio: 0.5,
+  speed: 500
+};
+var app = App(state);
+var inst = React.renderComponent(app, document.body);
+
+var render = function(){
+  inst.setProps(state);
+};
+
+var gui = new dat.GUI();
+var anim = gui.addFolder('Animation Properties');
+var damping = anim.add(state, 'dampingRatio', 0.3, 1).step(0.1).listen();
+var speed = anim.add(state, 'speed', 150, 2000).step(10).listen();
+
+damping.onChange(render);
+speed.onChange(render);
+},{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","dat-gui":"/Users/contra/Projects/famous/famous-react/node_modules/dat-gui/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/transitions/SpringTransition":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js","famous/transitions/WallTransition":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/WallTransition.js","famous/utilities/Timer":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Timer.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -181,6 +207,4426 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
+},{}],"/Users/contra/Projects/famous/famous-react/node_modules/dat-gui/index.js":[function(require,module,exports){
+module.exports = require('./vendor/dat.gui')
+module.exports.color = require('./vendor/dat.color')
+},{"./vendor/dat.color":"/Users/contra/Projects/famous/famous-react/node_modules/dat-gui/vendor/dat.color.js","./vendor/dat.gui":"/Users/contra/Projects/famous/famous-react/node_modules/dat-gui/vendor/dat.gui.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/dat-gui/vendor/dat.color.js":[function(require,module,exports){
+/**
+ * dat-gui JavaScript Controller Library
+ * http://code.google.com/p/dat-gui
+ *
+ * Copyright 2011 Data Arts Team, Google Creative Lab
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+/** @namespace */
+var dat = module.exports = dat || {};
+
+/** @namespace */
+dat.color = dat.color || {};
+
+/** @namespace */
+dat.utils = dat.utils || {};
+
+dat.utils.common = (function () {
+  
+  var ARR_EACH = Array.prototype.forEach;
+  var ARR_SLICE = Array.prototype.slice;
+
+  /**
+   * Band-aid methods for things that should be a lot easier in JavaScript.
+   * Implementation and structure inspired by underscore.js
+   * http://documentcloud.github.com/underscore/
+   */
+
+  return { 
+    
+    BREAK: {},
+  
+    extend: function(target) {
+      
+      this.each(ARR_SLICE.call(arguments, 1), function(obj) {
+        
+        for (var key in obj)
+          if (!this.isUndefined(obj[key])) 
+            target[key] = obj[key];
+        
+      }, this);
+      
+      return target;
+      
+    },
+    
+    defaults: function(target) {
+      
+      this.each(ARR_SLICE.call(arguments, 1), function(obj) {
+        
+        for (var key in obj)
+          if (this.isUndefined(target[key])) 
+            target[key] = obj[key];
+        
+      }, this);
+      
+      return target;
+    
+    },
+    
+    compose: function() {
+      var toCall = ARR_SLICE.call(arguments);
+            return function() {
+              var args = ARR_SLICE.call(arguments);
+              for (var i = toCall.length -1; i >= 0; i--) {
+                args = [toCall[i].apply(this, args)];
+              }
+              return args[0];
+            }
+    },
+    
+    each: function(obj, itr, scope) {
+
+      
+      if (ARR_EACH && obj.forEach === ARR_EACH) { 
+        
+        obj.forEach(itr, scope);
+        
+      } else if (obj.length === obj.length + 0) { // Is number but not NaN
+        
+        for (var key = 0, l = obj.length; key < l; key++)
+          if (key in obj && itr.call(scope, obj[key], key) === this.BREAK) 
+            return;
+            
+      } else {
+
+        for (var key in obj) 
+          if (itr.call(scope, obj[key], key) === this.BREAK)
+            return;
+            
+      }
+            
+    },
+    
+    defer: function(fnc) {
+      setTimeout(fnc, 0);
+    },
+    
+    toArray: function(obj) {
+      if (obj.toArray) return obj.toArray();
+      return ARR_SLICE.call(obj);
+    },
+
+    isUndefined: function(obj) {
+      return obj === undefined;
+    },
+    
+    isNull: function(obj) {
+      return obj === null;
+    },
+    
+    isNaN: function(obj) {
+      return obj !== obj;
+    },
+    
+    isArray: Array.isArray || function(obj) {
+      return obj.constructor === Array;
+    },
+    
+    isObject: function(obj) {
+      return obj === Object(obj);
+    },
+    
+    isNumber: function(obj) {
+      return obj === obj+0;
+    },
+    
+    isString: function(obj) {
+      return obj === obj+'';
+    },
+    
+    isBoolean: function(obj) {
+      return obj === false || obj === true;
+    },
+    
+    isFunction: function(obj) {
+      return Object.prototype.toString.call(obj) === '[object Function]';
+    }
+  
+  };
+    
+})();
+
+
+dat.color.toString = (function (common) {
+
+  return function(color) {
+
+    if (color.a == 1 || common.isUndefined(color.a)) {
+
+      var s = color.hex.toString(16);
+      while (s.length < 6) {
+        s = '0' + s;
+      }
+
+      return '#' + s;
+
+    } else {
+
+      return 'rgba(' + Math.round(color.r) + ',' + Math.round(color.g) + ',' + Math.round(color.b) + ',' + color.a + ')';
+
+    }
+
+  }
+
+})(dat.utils.common);
+
+
+dat.Color = dat.color.Color = (function (interpret, math, toString, common) {
+
+  var Color = function() {
+
+    this.__state = interpret.apply(this, arguments);
+
+    if (this.__state === false) {
+      throw 'Failed to interpret color arguments';
+    }
+
+    this.__state.a = this.__state.a || 1;
+
+
+  };
+
+  Color.COMPONENTS = ['r','g','b','h','s','v','hex','a'];
+
+  common.extend(Color.prototype, {
+
+    toString: function() {
+      return toString(this);
+    },
+
+    toOriginal: function() {
+      return this.__state.conversion.write(this);
+    }
+
+  });
+
+  defineRGBComponent(Color.prototype, 'r', 2);
+  defineRGBComponent(Color.prototype, 'g', 1);
+  defineRGBComponent(Color.prototype, 'b', 0);
+
+  defineHSVComponent(Color.prototype, 'h');
+  defineHSVComponent(Color.prototype, 's');
+  defineHSVComponent(Color.prototype, 'v');
+
+  Object.defineProperty(Color.prototype, 'a', {
+
+    get: function() {
+      return this.__state.a;
+    },
+
+    set: function(v) {
+      this.__state.a = v;
+    }
+
+  });
+
+  Object.defineProperty(Color.prototype, 'hex', {
+
+    get: function() {
+
+      if (!this.__state.space !== 'HEX') {
+        this.__state.hex = math.rgb_to_hex(this.r, this.g, this.b);
+      }
+
+      return this.__state.hex;
+
+    },
+
+    set: function(v) {
+
+      this.__state.space = 'HEX';
+      this.__state.hex = v;
+
+    }
+
+  });
+
+  function defineRGBComponent(target, component, componentHexIndex) {
+
+    Object.defineProperty(target, component, {
+
+      get: function() {
+
+        if (this.__state.space === 'RGB') {
+          return this.__state[component];
+        }
+
+        recalculateRGB(this, component, componentHexIndex);
+
+        return this.__state[component];
+
+      },
+
+      set: function(v) {
+
+        if (this.__state.space !== 'RGB') {
+          recalculateRGB(this, component, componentHexIndex);
+          this.__state.space = 'RGB';
+        }
+
+        this.__state[component] = v;
+
+      }
+
+    });
+
+  }
+
+  function defineHSVComponent(target, component) {
+
+    Object.defineProperty(target, component, {
+
+      get: function() {
+
+        if (this.__state.space === 'HSV')
+          return this.__state[component];
+
+        recalculateHSV(this);
+
+        return this.__state[component];
+
+      },
+
+      set: function(v) {
+
+        if (this.__state.space !== 'HSV') {
+          recalculateHSV(this);
+          this.__state.space = 'HSV';
+        }
+
+        this.__state[component] = v;
+
+      }
+
+    });
+
+  }
+
+  function recalculateRGB(color, component, componentHexIndex) {
+
+    if (color.__state.space === 'HEX') {
+
+      color.__state[component] = math.component_from_hex(color.__state.hex, componentHexIndex);
+
+    } else if (color.__state.space === 'HSV') {
+
+      common.extend(color.__state, math.hsv_to_rgb(color.__state.h, color.__state.s, color.__state.v));
+
+    } else {
+
+      throw 'Corrupted color state';
+
+    }
+
+  }
+
+  function recalculateHSV(color) {
+
+    var result = math.rgb_to_hsv(color.r, color.g, color.b);
+
+    common.extend(color.__state,
+        {
+          s: result.s,
+          v: result.v
+        }
+    );
+
+    if (!common.isNaN(result.h)) {
+      color.__state.h = result.h;
+    } else if (common.isUndefined(color.__state.h)) {
+      color.__state.h = 0;
+    }
+
+  }
+
+  return Color;
+
+})(dat.color.interpret = (function (toString, common) {
+
+  var result, toReturn;
+
+  var interpret = function() {
+
+    toReturn = false;
+
+    var original = arguments.length > 1 ? common.toArray(arguments) : arguments[0];
+
+    common.each(INTERPRETATIONS, function(family) {
+
+      if (family.litmus(original)) {
+
+        common.each(family.conversions, function(conversion, conversionName) {
+
+          result = conversion.read(original);
+
+          if (toReturn === false && result !== false) {
+            toReturn = result;
+            result.conversionName = conversionName;
+            result.conversion = conversion;
+            return common.BREAK;
+
+          }
+
+        });
+
+        return common.BREAK;
+
+      }
+
+    });
+
+    return toReturn;
+
+  };
+
+  var INTERPRETATIONS = [
+
+    // Strings
+    {
+
+      litmus: common.isString,
+
+      conversions: {
+
+        THREE_CHAR_HEX: {
+
+          read: function(original) {
+
+            var test = original.match(/^#([A-F0-9])([A-F0-9])([A-F0-9])$/i);
+            if (test === null) return false;
+
+            return {
+              space: 'HEX',
+              hex: parseInt(
+                  '0x' +
+                      test[1].toString() + test[1].toString() +
+                      test[2].toString() + test[2].toString() +
+                      test[3].toString() + test[3].toString())
+            };
+
+          },
+
+          write: toString
+
+        },
+
+        SIX_CHAR_HEX: {
+
+          read: function(original) {
+
+            var test = original.match(/^#([A-F0-9]{6})$/i);
+            if (test === null) return false;
+
+            return {
+              space: 'HEX',
+              hex: parseInt('0x' + test[1].toString())
+            };
+
+          },
+
+          write: toString
+
+        },
+
+        CSS_RGB: {
+
+          read: function(original) {
+
+            var test = original.match(/^rgb\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
+            if (test === null) return false;
+
+            return {
+              space: 'RGB',
+              r: parseFloat(test[1]),
+              g: parseFloat(test[2]),
+              b: parseFloat(test[3])
+            };
+
+          },
+
+          write: toString
+
+        },
+
+        CSS_RGBA: {
+
+          read: function(original) {
+
+            var test = original.match(/^rgba\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\,\s*(.+)\s*\)/);
+            if (test === null) return false;
+
+            return {
+              space: 'RGB',
+              r: parseFloat(test[1]),
+              g: parseFloat(test[2]),
+              b: parseFloat(test[3]),
+              a: parseFloat(test[4])
+            };
+
+          },
+
+          write: toString
+
+        }
+
+      }
+
+    },
+
+    // Numbers
+    {
+
+      litmus: common.isNumber,
+
+      conversions: {
+
+        HEX: {
+          read: function(original) {
+            return {
+              space: 'HEX',
+              hex: original,
+              conversionName: 'HEX'
+            }
+          },
+
+          write: function(color) {
+            return color.hex;
+          }
+        }
+
+      }
+
+    },
+
+    // Arrays
+    {
+
+      litmus: common.isArray,
+
+      conversions: {
+
+        RGB_ARRAY: {
+          read: function(original) {
+            if (original.length != 3) return false;
+            return {
+              space: 'RGB',
+              r: original[0],
+              g: original[1],
+              b: original[2]
+            };
+          },
+
+          write: function(color) {
+            return [color.r, color.g, color.b];
+          }
+
+        },
+
+        RGBA_ARRAY: {
+          read: function(original) {
+            if (original.length != 4) return false;
+            return {
+              space: 'RGB',
+              r: original[0],
+              g: original[1],
+              b: original[2],
+              a: original[3]
+            };
+          },
+
+          write: function(color) {
+            return [color.r, color.g, color.b, color.a];
+          }
+
+        }
+
+      }
+
+    },
+
+    // Objects
+    {
+
+      litmus: common.isObject,
+
+      conversions: {
+
+        RGBA_OBJ: {
+          read: function(original) {
+            if (common.isNumber(original.r) &&
+                common.isNumber(original.g) &&
+                common.isNumber(original.b) &&
+                common.isNumber(original.a)) {
+              return {
+                space: 'RGB',
+                r: original.r,
+                g: original.g,
+                b: original.b,
+                a: original.a
+              }
+            }
+            return false;
+          },
+
+          write: function(color) {
+            return {
+              r: color.r,
+              g: color.g,
+              b: color.b,
+              a: color.a
+            }
+          }
+        },
+
+        RGB_OBJ: {
+          read: function(original) {
+            if (common.isNumber(original.r) &&
+                common.isNumber(original.g) &&
+                common.isNumber(original.b)) {
+              return {
+                space: 'RGB',
+                r: original.r,
+                g: original.g,
+                b: original.b
+              }
+            }
+            return false;
+          },
+
+          write: function(color) {
+            return {
+              r: color.r,
+              g: color.g,
+              b: color.b
+            }
+          }
+        },
+
+        HSVA_OBJ: {
+          read: function(original) {
+            if (common.isNumber(original.h) &&
+                common.isNumber(original.s) &&
+                common.isNumber(original.v) &&
+                common.isNumber(original.a)) {
+              return {
+                space: 'HSV',
+                h: original.h,
+                s: original.s,
+                v: original.v,
+                a: original.a
+              }
+            }
+            return false;
+          },
+
+          write: function(color) {
+            return {
+              h: color.h,
+              s: color.s,
+              v: color.v,
+              a: color.a
+            }
+          }
+        },
+
+        HSV_OBJ: {
+          read: function(original) {
+            if (common.isNumber(original.h) &&
+                common.isNumber(original.s) &&
+                common.isNumber(original.v)) {
+              return {
+                space: 'HSV',
+                h: original.h,
+                s: original.s,
+                v: original.v
+              }
+            }
+            return false;
+          },
+
+          write: function(color) {
+            return {
+              h: color.h,
+              s: color.s,
+              v: color.v
+            }
+          }
+
+        }
+
+      }
+
+    }
+
+
+  ];
+
+  return interpret;
+
+
+})(dat.color.toString,
+dat.utils.common),
+dat.color.math = (function () {
+
+  var tmpComponent;
+
+  return {
+
+    hsv_to_rgb: function(h, s, v) {
+
+      var hi = Math.floor(h / 60) % 6;
+
+      var f = h / 60 - Math.floor(h / 60);
+      var p = v * (1.0 - s);
+      var q = v * (1.0 - (f * s));
+      var t = v * (1.0 - ((1.0 - f) * s));
+      var c = [
+        [v, t, p],
+        [q, v, p],
+        [p, v, t],
+        [p, q, v],
+        [t, p, v],
+        [v, p, q]
+      ][hi];
+
+      return {
+        r: c[0] * 255,
+        g: c[1] * 255,
+        b: c[2] * 255
+      };
+
+    },
+
+    rgb_to_hsv: function(r, g, b) {
+
+      var min = Math.min(r, g, b),
+          max = Math.max(r, g, b),
+          delta = max - min,
+          h, s;
+
+      if (max != 0) {
+        s = delta / max;
+      } else {
+        return {
+          h: NaN,
+          s: 0,
+          v: 0
+        };
+      }
+
+      if (r == max) {
+        h = (g - b) / delta;
+      } else if (g == max) {
+        h = 2 + (b - r) / delta;
+      } else {
+        h = 4 + (r - g) / delta;
+      }
+      h /= 6;
+      if (h < 0) {
+        h += 1;
+      }
+
+      return {
+        h: h * 360,
+        s: s,
+        v: max / 255
+      };
+    },
+
+    rgb_to_hex: function(r, g, b) {
+      var hex = this.hex_with_component(0, 2, r);
+      hex = this.hex_with_component(hex, 1, g);
+      hex = this.hex_with_component(hex, 0, b);
+      return hex;
+    },
+
+    component_from_hex: function(hex, componentIndex) {
+      return (hex >> (componentIndex * 8)) & 0xFF;
+    },
+
+    hex_with_component: function(hex, componentIndex, value) {
+      return value << (tmpComponent = componentIndex * 8) | (hex & ~ (0xFF << tmpComponent));
+    }
+
+  }
+
+})(),
+dat.color.toString,
+dat.utils.common);
+},{}],"/Users/contra/Projects/famous/famous-react/node_modules/dat-gui/vendor/dat.gui.js":[function(require,module,exports){
+/**
+ * dat-gui JavaScript Controller Library
+ * http://code.google.com/p/dat-gui
+ *
+ * Copyright 2011 Data Arts Team, Google Creative Lab
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+/** @namespace */
+var dat = module.exports = dat || {};
+
+/** @namespace */
+dat.gui = dat.gui || {};
+
+/** @namespace */
+dat.utils = dat.utils || {};
+
+/** @namespace */
+dat.controllers = dat.controllers || {};
+
+/** @namespace */
+dat.dom = dat.dom || {};
+
+/** @namespace */
+dat.color = dat.color || {};
+
+dat.utils.css = (function () {
+  return {
+    load: function (url, doc) {
+      doc = doc || document;
+      var link = doc.createElement('link');
+      link.type = 'text/css';
+      link.rel = 'stylesheet';
+      link.href = url;
+      doc.getElementsByTagName('head')[0].appendChild(link);
+    },
+    inject: function(css, doc) {
+      doc = doc || document;
+      var injected = document.createElement('style');
+      injected.type = 'text/css';
+      injected.innerHTML = css;
+      doc.getElementsByTagName('head')[0].appendChild(injected);
+    }
+  }
+})();
+
+
+dat.utils.common = (function () {
+  
+  var ARR_EACH = Array.prototype.forEach;
+  var ARR_SLICE = Array.prototype.slice;
+
+  /**
+   * Band-aid methods for things that should be a lot easier in JavaScript.
+   * Implementation and structure inspired by underscore.js
+   * http://documentcloud.github.com/underscore/
+   */
+
+  return { 
+    
+    BREAK: {},
+  
+    extend: function(target) {
+      
+      this.each(ARR_SLICE.call(arguments, 1), function(obj) {
+        
+        for (var key in obj)
+          if (!this.isUndefined(obj[key])) 
+            target[key] = obj[key];
+        
+      }, this);
+      
+      return target;
+      
+    },
+    
+    defaults: function(target) {
+      
+      this.each(ARR_SLICE.call(arguments, 1), function(obj) {
+        
+        for (var key in obj)
+          if (this.isUndefined(target[key])) 
+            target[key] = obj[key];
+        
+      }, this);
+      
+      return target;
+    
+    },
+    
+    compose: function() {
+      var toCall = ARR_SLICE.call(arguments);
+            return function() {
+              var args = ARR_SLICE.call(arguments);
+              for (var i = toCall.length -1; i >= 0; i--) {
+                args = [toCall[i].apply(this, args)];
+              }
+              return args[0];
+            }
+    },
+    
+    each: function(obj, itr, scope) {
+
+      
+      if (ARR_EACH && obj.forEach === ARR_EACH) { 
+        
+        obj.forEach(itr, scope);
+        
+      } else if (obj.length === obj.length + 0) { // Is number but not NaN
+        
+        for (var key = 0, l = obj.length; key < l; key++)
+          if (key in obj && itr.call(scope, obj[key], key) === this.BREAK) 
+            return;
+            
+      } else {
+
+        for (var key in obj) 
+          if (itr.call(scope, obj[key], key) === this.BREAK)
+            return;
+            
+      }
+            
+    },
+    
+    defer: function(fnc) {
+      setTimeout(fnc, 0);
+    },
+    
+    toArray: function(obj) {
+      if (obj.toArray) return obj.toArray();
+      return ARR_SLICE.call(obj);
+    },
+
+    isUndefined: function(obj) {
+      return obj === undefined;
+    },
+    
+    isNull: function(obj) {
+      return obj === null;
+    },
+    
+    isNaN: function(obj) {
+      return obj !== obj;
+    },
+    
+    isArray: Array.isArray || function(obj) {
+      return obj.constructor === Array;
+    },
+    
+    isObject: function(obj) {
+      return obj === Object(obj);
+    },
+    
+    isNumber: function(obj) {
+      return obj === obj+0;
+    },
+    
+    isString: function(obj) {
+      return obj === obj+'';
+    },
+    
+    isBoolean: function(obj) {
+      return obj === false || obj === true;
+    },
+    
+    isFunction: function(obj) {
+      return Object.prototype.toString.call(obj) === '[object Function]';
+    }
+  
+  };
+    
+})();
+
+
+dat.controllers.Controller = (function (common) {
+
+  /**
+   * @class An "abstract" class that represents a given property of an object.
+   *
+   * @param {Object} object The object to be manipulated
+   * @param {string} property The name of the property to be manipulated
+   *
+   * @member dat.controllers
+   */
+  var Controller = function(object, property) {
+
+    this.initialValue = object[property];
+
+    /**
+     * Those who extend this class will put their DOM elements in here.
+     * @type {DOMElement}
+     */
+    this.domElement = document.createElement('div');
+
+    /**
+     * The object to manipulate
+     * @type {Object}
+     */
+    this.object = object;
+
+    /**
+     * The name of the property to manipulate
+     * @type {String}
+     */
+    this.property = property;
+
+    /**
+     * The function to be called on change.
+     * @type {Function}
+     * @ignore
+     */
+    this.__onChange = undefined;
+
+    /**
+     * The function to be called on finishing change.
+     * @type {Function}
+     * @ignore
+     */
+    this.__onFinishChange = undefined;
+
+  };
+
+  common.extend(
+
+      Controller.prototype,
+
+      /** @lends dat.controllers.Controller.prototype */
+      {
+
+        /**
+         * Specify that a function fire every time someone changes the value with
+         * this Controller.
+         *
+         * @param {Function} fnc This function will be called whenever the value
+         * is modified via this Controller.
+         * @returns {dat.controllers.Controller} this
+         */
+        onChange: function(fnc) {
+          this.__onChange = fnc;
+          return this;
+        },
+
+        /**
+         * Specify that a function fire every time someone "finishes" changing
+         * the value wih this Controller. Useful for values that change
+         * incrementally like numbers or strings.
+         *
+         * @param {Function} fnc This function will be called whenever
+         * someone "finishes" changing the value via this Controller.
+         * @returns {dat.controllers.Controller} this
+         */
+        onFinishChange: function(fnc) {
+          this.__onFinishChange = fnc;
+          return this;
+        },
+
+        /**
+         * Change the value of <code>object[property]</code>
+         *
+         * @param {Object} newValue The new value of <code>object[property]</code>
+         */
+        setValue: function(newValue) {
+          this.object[this.property] = newValue;
+          if (this.__onChange) {
+            this.__onChange.call(this, newValue);
+          }
+          this.updateDisplay();
+          return this;
+        },
+
+        /**
+         * Gets the value of <code>object[property]</code>
+         *
+         * @returns {Object} The current value of <code>object[property]</code>
+         */
+        getValue: function() {
+          return this.object[this.property];
+        },
+
+        /**
+         * Refreshes the visual display of a Controller in order to keep sync
+         * with the object's current value.
+         * @returns {dat.controllers.Controller} this
+         */
+        updateDisplay: function() {
+          return this;
+        },
+
+        /**
+         * @returns {Boolean} true if the value has deviated from initialValue
+         */
+        isModified: function() {
+          return this.initialValue !== this.getValue()
+        }
+
+      }
+
+  );
+
+  return Controller;
+
+
+})(dat.utils.common);
+
+
+dat.dom.dom = (function (common) {
+
+  var EVENT_MAP = {
+    'HTMLEvents': ['change'],
+    'MouseEvents': ['click','mousemove','mousedown','mouseup', 'mouseover'],
+    'KeyboardEvents': ['keydown']
+  };
+
+  var EVENT_MAP_INV = {};
+  common.each(EVENT_MAP, function(v, k) {
+    common.each(v, function(e) {
+      EVENT_MAP_INV[e] = k;
+    });
+  });
+
+  var CSS_VALUE_PIXELS = /(\d+(\.\d+)?)px/;
+
+  function cssValueToPixels(val) {
+
+    if (val === '0' || common.isUndefined(val)) return 0;
+
+    var match = val.match(CSS_VALUE_PIXELS);
+
+    if (!common.isNull(match)) {
+      return parseFloat(match[1]);
+    }
+
+    // TODO ...ems? %?
+
+    return 0;
+
+  }
+
+  /**
+   * @namespace
+   * @member dat.dom
+   */
+  var dom = {
+
+    /**
+     * 
+     * @param elem
+     * @param selectable
+     */
+    makeSelectable: function(elem, selectable) {
+
+      if (elem === undefined || elem.style === undefined) return;
+
+      elem.onselectstart = selectable ? function() {
+        return false;
+      } : function() {
+      };
+
+      elem.style.MozUserSelect = selectable ? 'auto' : 'none';
+      elem.style.KhtmlUserSelect = selectable ? 'auto' : 'none';
+      elem.unselectable = selectable ? 'on' : 'off';
+
+    },
+
+    /**
+     *
+     * @param elem
+     * @param horizontal
+     * @param vertical
+     */
+    makeFullscreen: function(elem, horizontal, vertical) {
+
+      if (common.isUndefined(horizontal)) horizontal = true;
+      if (common.isUndefined(vertical)) vertical = true;
+
+      elem.style.position = 'absolute';
+
+      if (horizontal) {
+        elem.style.left = 0;
+        elem.style.right = 0;
+      }
+      if (vertical) {
+        elem.style.top = 0;
+        elem.style.bottom = 0;
+      }
+
+    },
+
+    /**
+     *
+     * @param elem
+     * @param eventType
+     * @param params
+     */
+    fakeEvent: function(elem, eventType, params, aux) {
+      params = params || {};
+      var className = EVENT_MAP_INV[eventType];
+      if (!className) {
+        throw new Error('Event type ' + eventType + ' not supported.');
+      }
+      var evt = document.createEvent(className);
+      switch (className) {
+        case 'MouseEvents':
+          var clientX = params.x || params.clientX || 0;
+          var clientY = params.y || params.clientY || 0;
+          evt.initMouseEvent(eventType, params.bubbles || false,
+              params.cancelable || true, window, params.clickCount || 1,
+              0, //screen X
+              0, //screen Y
+              clientX, //client X
+              clientY, //client Y
+              false, false, false, false, 0, null);
+          break;
+        case 'KeyboardEvents':
+          var init = evt.initKeyboardEvent || evt.initKeyEvent; // webkit || moz
+          common.defaults(params, {
+            cancelable: true,
+            ctrlKey: false,
+            altKey: false,
+            shiftKey: false,
+            metaKey: false,
+            keyCode: undefined,
+            charCode: undefined
+          });
+          init(eventType, params.bubbles || false,
+              params.cancelable, window,
+              params.ctrlKey, params.altKey,
+              params.shiftKey, params.metaKey,
+              params.keyCode, params.charCode);
+          break;
+        default:
+          evt.initEvent(eventType, params.bubbles || false,
+              params.cancelable || true);
+          break;
+      }
+      common.defaults(evt, aux);
+      elem.dispatchEvent(evt);
+    },
+
+    /**
+     *
+     * @param elem
+     * @param event
+     * @param func
+     * @param bool
+     */
+    bind: function(elem, event, func, bool) {
+      bool = bool || false;
+      if (elem.addEventListener)
+        elem.addEventListener(event, func, bool);
+      else if (elem.attachEvent)
+        elem.attachEvent('on' + event, func);
+      return dom;
+    },
+
+    /**
+     *
+     * @param elem
+     * @param event
+     * @param func
+     * @param bool
+     */
+    unbind: function(elem, event, func, bool) {
+      bool = bool || false;
+      if (elem.removeEventListener)
+        elem.removeEventListener(event, func, bool);
+      else if (elem.detachEvent)
+        elem.detachEvent('on' + event, func);
+      return dom;
+    },
+
+    /**
+     *
+     * @param elem
+     * @param className
+     */
+    addClass: function(elem, className) {
+      if (elem.className === undefined) {
+        elem.className = className;
+      } else if (elem.className !== className) {
+        var classes = elem.className.split(/ +/);
+        if (classes.indexOf(className) == -1) {
+          classes.push(className);
+          elem.className = classes.join(' ').replace(/^\s+/, '').replace(/\s+$/, '');
+        }
+      }
+      return dom;
+    },
+
+    /**
+     *
+     * @param elem
+     * @param className
+     */
+    removeClass: function(elem, className) {
+      if (className) {
+        if (elem.className === undefined) {
+          // elem.className = className;
+        } else if (elem.className === className) {
+          elem.removeAttribute('class');
+        } else {
+          var classes = elem.className.split(/ +/);
+          var index = classes.indexOf(className);
+          if (index != -1) {
+            classes.splice(index, 1);
+            elem.className = classes.join(' ');
+          }
+        }
+      } else {
+        elem.className = undefined;
+      }
+      return dom;
+    },
+
+    hasClass: function(elem, className) {
+      return new RegExp('(?:^|\\s+)' + className + '(?:\\s+|$)').test(elem.className) || false;
+    },
+
+    /**
+     *
+     * @param elem
+     */
+    getWidth: function(elem) {
+
+      var style = getComputedStyle(elem);
+
+      return cssValueToPixels(style['border-left-width']) +
+          cssValueToPixels(style['border-right-width']) +
+          cssValueToPixels(style['padding-left']) +
+          cssValueToPixels(style['padding-right']) +
+          cssValueToPixels(style['width']);
+    },
+
+    /**
+     *
+     * @param elem
+     */
+    getHeight: function(elem) {
+
+      var style = getComputedStyle(elem);
+
+      return cssValueToPixels(style['border-top-width']) +
+          cssValueToPixels(style['border-bottom-width']) +
+          cssValueToPixels(style['padding-top']) +
+          cssValueToPixels(style['padding-bottom']) +
+          cssValueToPixels(style['height']);
+    },
+
+    /**
+     *
+     * @param elem
+     */
+    getOffset: function(elem) {
+      var offset = {left: 0, top:0};
+      if (elem.offsetParent) {
+        do {
+          offset.left += elem.offsetLeft;
+          offset.top += elem.offsetTop;
+        } while (elem = elem.offsetParent);
+      }
+      return offset;
+    },
+
+    // http://stackoverflow.com/posts/2684561/revisions
+    /**
+     * 
+     * @param elem
+     */
+    isActive: function(elem) {
+      return elem === document.activeElement && ( elem.type || elem.href );
+    }
+
+  };
+
+  return dom;
+
+})(dat.utils.common);
+
+
+dat.controllers.OptionController = (function (Controller, dom, common) {
+
+  /**
+   * @class Provides a select input to alter the property of an object, using a
+   * list of accepted values.
+   *
+   * @extends dat.controllers.Controller
+   *
+   * @param {Object} object The object to be manipulated
+   * @param {string} property The name of the property to be manipulated
+   * @param {Object|string[]} options A map of labels to acceptable values, or
+   * a list of acceptable string values.
+   *
+   * @member dat.controllers
+   */
+  var OptionController = function(object, property, options) {
+
+    OptionController.superclass.call(this, object, property);
+
+    var _this = this;
+
+    /**
+     * The drop down menu
+     * @ignore
+     */
+    this.__select = document.createElement('select');
+
+    if (common.isArray(options)) {
+      var map = {};
+      common.each(options, function(element) {
+        map[element] = element;
+      });
+      options = map;
+    }
+
+    common.each(options, function(value, key) {
+
+      var opt = document.createElement('option');
+      opt.innerHTML = key;
+      opt.setAttribute('value', value);
+      _this.__select.appendChild(opt);
+
+    });
+
+    // Acknowledge original value
+    this.updateDisplay();
+
+    dom.bind(this.__select, 'change', function() {
+      var desiredValue = this.options[this.selectedIndex].value;
+      _this.setValue(desiredValue);
+    });
+
+    this.domElement.appendChild(this.__select);
+
+  };
+
+  OptionController.superclass = Controller;
+
+  common.extend(
+
+      OptionController.prototype,
+      Controller.prototype,
+
+      {
+
+        setValue: function(v) {
+          var toReturn = OptionController.superclass.prototype.setValue.call(this, v);
+          if (this.__onFinishChange) {
+            this.__onFinishChange.call(this, this.getValue());
+          }
+          return toReturn;
+        },
+
+        updateDisplay: function() {
+          this.__select.value = this.getValue();
+          return OptionController.superclass.prototype.updateDisplay.call(this);
+        }
+
+      }
+
+  );
+
+  return OptionController;
+
+})(dat.controllers.Controller,
+dat.dom.dom,
+dat.utils.common);
+
+
+dat.controllers.NumberController = (function (Controller, common) {
+
+  /**
+   * @class Represents a given property of an object that is a number.
+   *
+   * @extends dat.controllers.Controller
+   *
+   * @param {Object} object The object to be manipulated
+   * @param {string} property The name of the property to be manipulated
+   * @param {Object} [params] Optional parameters
+   * @param {Number} [params.min] Minimum allowed value
+   * @param {Number} [params.max] Maximum allowed value
+   * @param {Number} [params.step] Increment by which to change value
+   *
+   * @member dat.controllers
+   */
+  var NumberController = function(object, property, params) {
+
+    NumberController.superclass.call(this, object, property);
+
+    params = params || {};
+
+    this.__min = params.min;
+    this.__max = params.max;
+    this.__step = params.step;
+
+    if (common.isUndefined(this.__step)) {
+
+      if (this.initialValue == 0) {
+        this.__impliedStep = 1; // What are we, psychics?
+      } else {
+        // Hey Doug, check this out.
+        this.__impliedStep = Math.pow(10, Math.floor(Math.log(this.initialValue)/Math.LN10))/10;
+      }
+
+    } else {
+
+      this.__impliedStep = this.__step;
+
+    }
+
+    this.__precision = numDecimals(this.__impliedStep);
+
+
+  };
+
+  NumberController.superclass = Controller;
+
+  common.extend(
+
+      NumberController.prototype,
+      Controller.prototype,
+
+      /** @lends dat.controllers.NumberController.prototype */
+      {
+
+        setValue: function(v) {
+
+          if (this.__min !== undefined && v < this.__min) {
+            v = this.__min;
+          } else if (this.__max !== undefined && v > this.__max) {
+            v = this.__max;
+          }
+
+          if (this.__step !== undefined && v % this.__step != 0) {
+            v = Math.round(v / this.__step) * this.__step;
+          }
+
+          return NumberController.superclass.prototype.setValue.call(this, v);
+
+        },
+
+        /**
+         * Specify a minimum value for <code>object[property]</code>.
+         *
+         * @param {Number} minValue The minimum value for
+         * <code>object[property]</code>
+         * @returns {dat.controllers.NumberController} this
+         */
+        min: function(v) {
+          this.__min = v;
+          return this;
+        },
+
+        /**
+         * Specify a maximum value for <code>object[property]</code>.
+         *
+         * @param {Number} maxValue The maximum value for
+         * <code>object[property]</code>
+         * @returns {dat.controllers.NumberController} this
+         */
+        max: function(v) {
+          this.__max = v;
+          return this;
+        },
+
+        /**
+         * Specify a step value that dat.controllers.NumberController
+         * increments by.
+         *
+         * @param {Number} stepValue The step value for
+         * dat.controllers.NumberController
+         * @default if minimum and maximum specified increment is 1% of the
+         * difference otherwise stepValue is 1
+         * @returns {dat.controllers.NumberController} this
+         */
+        step: function(v) {
+          this.__step = v;
+          return this;
+        }
+
+      }
+
+  );
+
+  function numDecimals(x) {
+    x = x.toString();
+    if (x.indexOf('.') > -1) {
+      return x.length - x.indexOf('.') - 1;
+    } else {
+      return 0;
+    }
+  }
+
+  return NumberController;
+
+})(dat.controllers.Controller,
+dat.utils.common);
+
+
+dat.controllers.NumberControllerBox = (function (NumberController, dom, common) {
+
+  /**
+   * @class Represents a given property of an object that is a number and
+   * provides an input element with which to manipulate it.
+   *
+   * @extends dat.controllers.Controller
+   * @extends dat.controllers.NumberController
+   *
+   * @param {Object} object The object to be manipulated
+   * @param {string} property The name of the property to be manipulated
+   * @param {Object} [params] Optional parameters
+   * @param {Number} [params.min] Minimum allowed value
+   * @param {Number} [params.max] Maximum allowed value
+   * @param {Number} [params.step] Increment by which to change value
+   *
+   * @member dat.controllers
+   */
+  var NumberControllerBox = function(object, property, params) {
+
+    this.__truncationSuspended = false;
+
+    NumberControllerBox.superclass.call(this, object, property, params);
+
+    var _this = this;
+
+    /**
+     * {Number} Previous mouse y position
+     * @ignore
+     */
+    var prev_y;
+
+    this.__input = document.createElement('input');
+    this.__input.setAttribute('type', 'text');
+
+    // Makes it so manually specified values are not truncated.
+
+    dom.bind(this.__input, 'change', onChange);
+    dom.bind(this.__input, 'blur', onBlur);
+    dom.bind(this.__input, 'mousedown', onMouseDown);
+    dom.bind(this.__input, 'keydown', function(e) {
+
+      // When pressing entire, you can be as precise as you want.
+      if (e.keyCode === 13) {
+        _this.__truncationSuspended = true;
+        this.blur();
+        _this.__truncationSuspended = false;
+      }
+
+    });
+
+    function onChange() {
+      var attempted = parseFloat(_this.__input.value);
+      if (!common.isNaN(attempted)) _this.setValue(attempted);
+    }
+
+    function onBlur() {
+      onChange();
+      if (_this.__onFinishChange) {
+        _this.__onFinishChange.call(_this, _this.getValue());
+      }
+    }
+
+    function onMouseDown(e) {
+      dom.bind(window, 'mousemove', onMouseDrag);
+      dom.bind(window, 'mouseup', onMouseUp);
+      prev_y = e.clientY;
+    }
+
+    function onMouseDrag(e) {
+
+      var diff = prev_y - e.clientY;
+      _this.setValue(_this.getValue() + diff * _this.__impliedStep);
+
+      prev_y = e.clientY;
+
+    }
+
+    function onMouseUp() {
+      dom.unbind(window, 'mousemove', onMouseDrag);
+      dom.unbind(window, 'mouseup', onMouseUp);
+    }
+
+    this.updateDisplay();
+
+    this.domElement.appendChild(this.__input);
+
+  };
+
+  NumberControllerBox.superclass = NumberController;
+
+  common.extend(
+
+      NumberControllerBox.prototype,
+      NumberController.prototype,
+
+      {
+
+        updateDisplay: function() {
+
+          this.__input.value = this.__truncationSuspended ? this.getValue() : roundToDecimal(this.getValue(), this.__precision);
+          return NumberControllerBox.superclass.prototype.updateDisplay.call(this);
+        }
+
+      }
+
+  );
+
+  function roundToDecimal(value, decimals) {
+    var tenTo = Math.pow(10, decimals);
+    return Math.round(value * tenTo) / tenTo;
+  }
+
+  return NumberControllerBox;
+
+})(dat.controllers.NumberController,
+dat.dom.dom,
+dat.utils.common);
+
+
+dat.controllers.NumberControllerSlider = (function (NumberController, dom, css, common, styleSheet) {
+
+  /**
+   * @class Represents a given property of an object that is a number, contains
+   * a minimum and maximum, and provides a slider element with which to
+   * manipulate it. It should be noted that the slider element is made up of
+   * <code>&lt;div&gt;</code> tags, <strong>not</strong> the html5
+   * <code>&lt;slider&gt;</code> element.
+   *
+   * @extends dat.controllers.Controller
+   * @extends dat.controllers.NumberController
+   * 
+   * @param {Object} object The object to be manipulated
+   * @param {string} property The name of the property to be manipulated
+   * @param {Number} minValue Minimum allowed value
+   * @param {Number} maxValue Maximum allowed value
+   * @param {Number} stepValue Increment by which to change value
+   *
+   * @member dat.controllers
+   */
+  var NumberControllerSlider = function(object, property, min, max, step) {
+
+    NumberControllerSlider.superclass.call(this, object, property, { min: min, max: max, step: step });
+
+    var _this = this;
+
+    this.__background = document.createElement('div');
+    this.__foreground = document.createElement('div');
+    
+
+
+    dom.bind(this.__background, 'mousedown', onMouseDown);
+    
+    dom.addClass(this.__background, 'slider');
+    dom.addClass(this.__foreground, 'slider-fg');
+
+    function onMouseDown(e) {
+
+      dom.bind(window, 'mousemove', onMouseDrag);
+      dom.bind(window, 'mouseup', onMouseUp);
+
+      onMouseDrag(e);
+    }
+
+    function onMouseDrag(e) {
+
+      e.preventDefault();
+
+      var offset = dom.getOffset(_this.__background);
+      var width = dom.getWidth(_this.__background);
+      
+      _this.setValue(
+        map(e.clientX, offset.left, offset.left + width, _this.__min, _this.__max)
+      );
+
+      return false;
+
+    }
+
+    function onMouseUp() {
+      dom.unbind(window, 'mousemove', onMouseDrag);
+      dom.unbind(window, 'mouseup', onMouseUp);
+      if (_this.__onFinishChange) {
+        _this.__onFinishChange.call(_this, _this.getValue());
+      }
+    }
+
+    this.updateDisplay();
+
+    this.__background.appendChild(this.__foreground);
+    this.domElement.appendChild(this.__background);
+
+  };
+
+  NumberControllerSlider.superclass = NumberController;
+
+  /**
+   * Injects default stylesheet for slider elements.
+   */
+  NumberControllerSlider.useDefaultStyles = function() {
+    css.inject(styleSheet);
+  };
+
+  common.extend(
+
+      NumberControllerSlider.prototype,
+      NumberController.prototype,
+
+      {
+
+        updateDisplay: function() {
+          var pct = (this.getValue() - this.__min)/(this.__max - this.__min);
+          this.__foreground.style.width = pct*100+'%';
+          return NumberControllerSlider.superclass.prototype.updateDisplay.call(this);
+        }
+
+      }
+
+
+
+  );
+
+  function map(v, i1, i2, o1, o2) {
+    return o1 + (o2 - o1) * ((v - i1) / (i2 - i1));
+  }
+
+  return NumberControllerSlider;
+  
+})(dat.controllers.NumberController,
+dat.dom.dom,
+dat.utils.css,
+dat.utils.common,
+".slider {\n  box-shadow: inset 0 2px 4px rgba(0,0,0,0.15);\n  height: 1em;\n  border-radius: 1em;\n  background-color: #eee;\n  padding: 0 0.5em;\n  overflow: hidden;\n}\n\n.slider-fg {\n  padding: 1px 0 2px 0;\n  background-color: #aaa;\n  height: 1em;\n  margin-left: -0.5em;\n  padding-right: 0.5em;\n  border-radius: 1em 0 0 1em;\n}\n\n.slider-fg:after {\n  display: inline-block;\n  border-radius: 1em;\n  background-color: #fff;\n  border:  1px solid #aaa;\n  content: '';\n  float: right;\n  margin-right: -1em;\n  margin-top: -1px;\n  height: 0.9em;\n  width: 0.9em;\n}");
+
+
+dat.controllers.FunctionController = (function (Controller, dom, common) {
+
+  /**
+   * @class Provides a GUI interface to fire a specified method, a property of an object.
+   *
+   * @extends dat.controllers.Controller
+   *
+   * @param {Object} object The object to be manipulated
+   * @param {string} property The name of the property to be manipulated
+   *
+   * @member dat.controllers
+   */
+  var FunctionController = function(object, property, text) {
+
+    FunctionController.superclass.call(this, object, property);
+
+    var _this = this;
+
+    this.__button = document.createElement('div');
+    this.__button.innerHTML = text === undefined ? 'Fire' : text;
+    dom.bind(this.__button, 'click', function(e) {
+      e.preventDefault();
+      _this.fire();
+      return false;
+    });
+
+    dom.addClass(this.__button, 'button');
+
+    this.domElement.appendChild(this.__button);
+
+
+  };
+
+  FunctionController.superclass = Controller;
+
+  common.extend(
+
+      FunctionController.prototype,
+      Controller.prototype,
+      {
+        
+        fire: function() {
+          if (this.__onChange) {
+            this.__onChange.call(this);
+          }
+          if (this.__onFinishChange) {
+            this.__onFinishChange.call(this, this.getValue());
+          }
+          this.getValue().call(this.object);
+        }
+      }
+
+  );
+
+  return FunctionController;
+
+})(dat.controllers.Controller,
+dat.dom.dom,
+dat.utils.common);
+
+
+dat.controllers.BooleanController = (function (Controller, dom, common) {
+
+  /**
+   * @class Provides a checkbox input to alter the boolean property of an object.
+   * @extends dat.controllers.Controller
+   *
+   * @param {Object} object The object to be manipulated
+   * @param {string} property The name of the property to be manipulated
+   *
+   * @member dat.controllers
+   */
+  var BooleanController = function(object, property) {
+
+    BooleanController.superclass.call(this, object, property);
+
+    var _this = this;
+    this.__prev = this.getValue();
+
+    this.__checkbox = document.createElement('input');
+    this.__checkbox.setAttribute('type', 'checkbox');
+
+
+    dom.bind(this.__checkbox, 'change', onChange, false);
+
+    this.domElement.appendChild(this.__checkbox);
+
+    // Match original value
+    this.updateDisplay();
+
+    function onChange() {
+      _this.setValue(!_this.__prev);
+    }
+
+  };
+
+  BooleanController.superclass = Controller;
+
+  common.extend(
+
+      BooleanController.prototype,
+      Controller.prototype,
+
+      {
+
+        setValue: function(v) {
+          var toReturn = BooleanController.superclass.prototype.setValue.call(this, v);
+          if (this.__onFinishChange) {
+            this.__onFinishChange.call(this, this.getValue());
+          }
+          this.__prev = this.getValue();
+          return toReturn;
+        },
+
+        updateDisplay: function() {
+          
+          if (this.getValue() === true) {
+            this.__checkbox.setAttribute('checked', 'checked');
+            this.__checkbox.checked = true;    
+          } else {
+              this.__checkbox.checked = false;
+          }
+
+          return BooleanController.superclass.prototype.updateDisplay.call(this);
+
+        }
+
+
+      }
+
+  );
+
+  return BooleanController;
+
+})(dat.controllers.Controller,
+dat.dom.dom,
+dat.utils.common);
+
+
+dat.color.toString = (function (common) {
+
+  return function(color) {
+
+    if (color.a == 1 || common.isUndefined(color.a)) {
+
+      var s = color.hex.toString(16);
+      while (s.length < 6) {
+        s = '0' + s;
+      }
+
+      return '#' + s;
+
+    } else {
+
+      return 'rgba(' + Math.round(color.r) + ',' + Math.round(color.g) + ',' + Math.round(color.b) + ',' + color.a + ')';
+
+    }
+
+  }
+
+})(dat.utils.common);
+
+
+dat.color.interpret = (function (toString, common) {
+
+  var result, toReturn;
+
+  var interpret = function() {
+
+    toReturn = false;
+
+    var original = arguments.length > 1 ? common.toArray(arguments) : arguments[0];
+
+    common.each(INTERPRETATIONS, function(family) {
+
+      if (family.litmus(original)) {
+
+        common.each(family.conversions, function(conversion, conversionName) {
+
+          result = conversion.read(original);
+
+          if (toReturn === false && result !== false) {
+            toReturn = result;
+            result.conversionName = conversionName;
+            result.conversion = conversion;
+            return common.BREAK;
+
+          }
+
+        });
+
+        return common.BREAK;
+
+      }
+
+    });
+
+    return toReturn;
+
+  };
+
+  var INTERPRETATIONS = [
+
+    // Strings
+    {
+
+      litmus: common.isString,
+
+      conversions: {
+
+        THREE_CHAR_HEX: {
+
+          read: function(original) {
+
+            var test = original.match(/^#([A-F0-9])([A-F0-9])([A-F0-9])$/i);
+            if (test === null) return false;
+
+            return {
+              space: 'HEX',
+              hex: parseInt(
+                  '0x' +
+                      test[1].toString() + test[1].toString() +
+                      test[2].toString() + test[2].toString() +
+                      test[3].toString() + test[3].toString())
+            };
+
+          },
+
+          write: toString
+
+        },
+
+        SIX_CHAR_HEX: {
+
+          read: function(original) {
+
+            var test = original.match(/^#([A-F0-9]{6})$/i);
+            if (test === null) return false;
+
+            return {
+              space: 'HEX',
+              hex: parseInt('0x' + test[1].toString())
+            };
+
+          },
+
+          write: toString
+
+        },
+
+        CSS_RGB: {
+
+          read: function(original) {
+
+            var test = original.match(/^rgb\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\)/);
+            if (test === null) return false;
+
+            return {
+              space: 'RGB',
+              r: parseFloat(test[1]),
+              g: parseFloat(test[2]),
+              b: parseFloat(test[3])
+            };
+
+          },
+
+          write: toString
+
+        },
+
+        CSS_RGBA: {
+
+          read: function(original) {
+
+            var test = original.match(/^rgba\(\s*(.+)\s*,\s*(.+)\s*,\s*(.+)\s*\,\s*(.+)\s*\)/);
+            if (test === null) return false;
+
+            return {
+              space: 'RGB',
+              r: parseFloat(test[1]),
+              g: parseFloat(test[2]),
+              b: parseFloat(test[3]),
+              a: parseFloat(test[4])
+            };
+
+          },
+
+          write: toString
+
+        }
+
+      }
+
+    },
+
+    // Numbers
+    {
+
+      litmus: common.isNumber,
+
+      conversions: {
+
+        HEX: {
+          read: function(original) {
+            return {
+              space: 'HEX',
+              hex: original,
+              conversionName: 'HEX'
+            }
+          },
+
+          write: function(color) {
+            return color.hex;
+          }
+        }
+
+      }
+
+    },
+
+    // Arrays
+    {
+
+      litmus: common.isArray,
+
+      conversions: {
+
+        RGB_ARRAY: {
+          read: function(original) {
+            if (original.length != 3) return false;
+            return {
+              space: 'RGB',
+              r: original[0],
+              g: original[1],
+              b: original[2]
+            };
+          },
+
+          write: function(color) {
+            return [color.r, color.g, color.b];
+          }
+
+        },
+
+        RGBA_ARRAY: {
+          read: function(original) {
+            if (original.length != 4) return false;
+            return {
+              space: 'RGB',
+              r: original[0],
+              g: original[1],
+              b: original[2],
+              a: original[3]
+            };
+          },
+
+          write: function(color) {
+            return [color.r, color.g, color.b, color.a];
+          }
+
+        }
+
+      }
+
+    },
+
+    // Objects
+    {
+
+      litmus: common.isObject,
+
+      conversions: {
+
+        RGBA_OBJ: {
+          read: function(original) {
+            if (common.isNumber(original.r) &&
+                common.isNumber(original.g) &&
+                common.isNumber(original.b) &&
+                common.isNumber(original.a)) {
+              return {
+                space: 'RGB',
+                r: original.r,
+                g: original.g,
+                b: original.b,
+                a: original.a
+              }
+            }
+            return false;
+          },
+
+          write: function(color) {
+            return {
+              r: color.r,
+              g: color.g,
+              b: color.b,
+              a: color.a
+            }
+          }
+        },
+
+        RGB_OBJ: {
+          read: function(original) {
+            if (common.isNumber(original.r) &&
+                common.isNumber(original.g) &&
+                common.isNumber(original.b)) {
+              return {
+                space: 'RGB',
+                r: original.r,
+                g: original.g,
+                b: original.b
+              }
+            }
+            return false;
+          },
+
+          write: function(color) {
+            return {
+              r: color.r,
+              g: color.g,
+              b: color.b
+            }
+          }
+        },
+
+        HSVA_OBJ: {
+          read: function(original) {
+            if (common.isNumber(original.h) &&
+                common.isNumber(original.s) &&
+                common.isNumber(original.v) &&
+                common.isNumber(original.a)) {
+              return {
+                space: 'HSV',
+                h: original.h,
+                s: original.s,
+                v: original.v,
+                a: original.a
+              }
+            }
+            return false;
+          },
+
+          write: function(color) {
+            return {
+              h: color.h,
+              s: color.s,
+              v: color.v,
+              a: color.a
+            }
+          }
+        },
+
+        HSV_OBJ: {
+          read: function(original) {
+            if (common.isNumber(original.h) &&
+                common.isNumber(original.s) &&
+                common.isNumber(original.v)) {
+              return {
+                space: 'HSV',
+                h: original.h,
+                s: original.s,
+                v: original.v
+              }
+            }
+            return false;
+          },
+
+          write: function(color) {
+            return {
+              h: color.h,
+              s: color.s,
+              v: color.v
+            }
+          }
+
+        }
+
+      }
+
+    }
+
+
+  ];
+
+  return interpret;
+
+
+})(dat.color.toString,
+dat.utils.common);
+
+
+dat.GUI = dat.gui.GUI = (function (css, saveDialogueContents, styleSheet, controllerFactory, Controller, BooleanController, FunctionController, NumberControllerBox, NumberControllerSlider, OptionController, ColorController, requestAnimationFrame, CenteredDiv, dom, common) {
+
+  css.inject(styleSheet);
+
+  /** Outer-most className for GUI's */
+  var CSS_NAMESPACE = 'dg';
+
+  var HIDE_KEY_CODE = 72;
+
+  /** The only value shared between the JS and SCSS. Use caution. */
+  var CLOSE_BUTTON_HEIGHT = 20;
+
+  var DEFAULT_DEFAULT_PRESET_NAME = 'Default';
+
+  var SUPPORTS_LOCAL_STORAGE = (function() {
+    try {
+      return 'localStorage' in window && window['localStorage'] !== null;
+    } catch (e) {
+      return false;
+    }
+  })();
+
+  var SAVE_DIALOGUE;
+
+  /** Have we yet to create an autoPlace GUI? */
+  var auto_place_virgin = true;
+
+  /** Fixed position div that auto place GUI's go inside */
+  var auto_place_container;
+
+  /** Are we hiding the GUI's ? */
+  var hide = false;
+
+  /** GUI's which should be hidden */
+  var hideable_guis = [];
+
+  /**
+   * A lightweight controller library for JavaScript. It allows you to easily
+   * manipulate variables and fire functions on the fly.
+   * @class
+   *
+   * @member dat.gui
+   *
+   * @param {Object} [params]
+   * @param {String} [params.name] The name of this GUI.
+   * @param {Object} [params.load] JSON object representing the saved state of
+   * this GUI.
+   * @param {Boolean} [params.auto=true]
+   * @param {dat.gui.GUI} [params.parent] The GUI I'm nested in.
+   * @param {Boolean} [params.closed] If true, starts closed
+   */
+  var GUI = function(params) {
+
+    var _this = this;
+
+    /**
+     * Outermost DOM Element
+     * @type DOMElement
+     */
+    this.domElement = document.createElement('div');
+    this.__ul = document.createElement('ul');
+    this.domElement.appendChild(this.__ul);
+
+    dom.addClass(this.domElement, CSS_NAMESPACE);
+
+    /**
+     * Nested GUI's by name
+     * @ignore
+     */
+    this.__folders = {};
+
+    this.__controllers = [];
+
+    /**
+     * List of objects I'm remembering for save, only used in top level GUI
+     * @ignore
+     */
+    this.__rememberedObjects = [];
+
+    /**
+     * Maps the index of remembered objects to a map of controllers, only used
+     * in top level GUI.
+     *
+     * @private
+     * @ignore
+     *
+     * @example
+     * [
+     *  {
+     *    propertyName: Controller,
+     *    anotherPropertyName: Controller
+     *  },
+     *  {
+     *    propertyName: Controller
+     *  }
+     * ]
+     */
+    this.__rememberedObjectIndecesToControllers = [];
+
+    this.__listening = [];
+
+    params = params || {};
+
+    // Default parameters
+    params = common.defaults(params, {
+      autoPlace: true,
+      width: GUI.DEFAULT_WIDTH
+    });
+
+    params = common.defaults(params, {
+      resizable: params.autoPlace,
+      hideable: params.autoPlace
+    });
+
+
+    if (!common.isUndefined(params.load)) {
+
+      // Explicit preset
+      if (params.preset) params.load.preset = params.preset;
+
+    } else {
+
+      params.load = { preset: DEFAULT_DEFAULT_PRESET_NAME };
+
+    }
+
+    if (common.isUndefined(params.parent) && params.hideable) {
+      hideable_guis.push(this);
+    }
+
+    // Only root level GUI's are resizable.
+    params.resizable = common.isUndefined(params.parent) && params.resizable;
+
+
+    if (params.autoPlace && common.isUndefined(params.scrollable)) {
+      params.scrollable = true;
+    }
+//    params.scrollable = common.isUndefined(params.parent) && params.scrollable === true;
+
+    // Not part of params because I don't want people passing this in via
+    // constructor. Should be a 'remembered' value.
+    var use_local_storage =
+        SUPPORTS_LOCAL_STORAGE &&
+            localStorage.getItem(getLocalStorageHash(this, 'isLocal')) === 'true';
+
+    Object.defineProperties(this,
+
+        /** @lends dat.gui.GUI.prototype */
+        {
+
+          /**
+           * The parent <code>GUI</code>
+           * @type dat.gui.GUI
+           */
+          parent: {
+            get: function() {
+              return params.parent;
+            }
+          },
+
+          scrollable: {
+            get: function() {
+              return params.scrollable;
+            }
+          },
+
+          /**
+           * Handles <code>GUI</code>'s element placement for you
+           * @type Boolean
+           */
+          autoPlace: {
+            get: function() {
+              return params.autoPlace;
+            }
+          },
+
+          /**
+           * The identifier for a set of saved values
+           * @type String
+           */
+          preset: {
+
+            get: function() {
+              if (_this.parent) {
+                return _this.getRoot().preset;
+              } else {
+                return params.load.preset;
+              }
+            },
+
+            set: function(v) {
+              if (_this.parent) {
+                _this.getRoot().preset = v;
+              } else {
+                params.load.preset = v;
+              }
+              setPresetSelectIndex(this);
+              _this.revert();
+            }
+
+          },
+
+          /**
+           * The width of <code>GUI</code> element
+           * @type Number
+           */
+          width: {
+            get: function() {
+              return params.width;
+            },
+            set: function(v) {
+              params.width = v;
+              setWidth(_this, v);
+            }
+          },
+
+          /**
+           * The name of <code>GUI</code>. Used for folders. i.e
+           * a folder's name
+           * @type String
+           */
+          name: {
+            get: function() {
+              return params.name;
+            },
+            set: function(v) {
+              // TODO Check for collisions among sibling folders
+              params.name = v;
+              if (title_row_name) {
+                title_row_name.innerHTML = params.name;
+              }
+            }
+          },
+
+          /**
+           * Whether the <code>GUI</code> is collapsed or not
+           * @type Boolean
+           */
+          closed: {
+            get: function() {
+              return params.closed;
+            },
+            set: function(v) {
+              params.closed = v;
+              if (params.closed) {
+                dom.addClass(_this.__ul, GUI.CLASS_CLOSED);
+              } else {
+                dom.removeClass(_this.__ul, GUI.CLASS_CLOSED);
+              }
+              // For browsers that aren't going to respect the CSS transition,
+              // Lets just check our height against the window height right off
+              // the bat.
+              this.onResize();
+
+              if (_this.__closeButton) {
+                _this.__closeButton.innerHTML = v ? GUI.TEXT_OPEN : GUI.TEXT_CLOSED;
+              }
+            }
+          },
+
+          /**
+           * Contains all presets
+           * @type Object
+           */
+          load: {
+            get: function() {
+              return params.load;
+            }
+          },
+
+          /**
+           * Determines whether or not to use <a href="https://developer.mozilla.org/en/DOM/Storage#localStorage">localStorage</a> as the means for
+           * <code>remember</code>ing
+           * @type Boolean
+           */
+          useLocalStorage: {
+
+            get: function() {
+              return use_local_storage;
+            },
+            set: function(bool) {
+              if (SUPPORTS_LOCAL_STORAGE) {
+                use_local_storage = bool;
+                if (bool) {
+                  dom.bind(window, 'unload', saveToLocalStorage);
+                } else {
+                  dom.unbind(window, 'unload', saveToLocalStorage);
+                }
+                localStorage.setItem(getLocalStorageHash(_this, 'isLocal'), bool);
+              }
+            }
+
+          }
+
+        });
+
+    // Are we a root level GUI?
+    if (common.isUndefined(params.parent)) {
+
+      params.closed = false;
+
+      dom.addClass(this.domElement, GUI.CLASS_MAIN);
+      dom.makeSelectable(this.domElement, false);
+
+      // Are we supposed to be loading locally?
+      if (SUPPORTS_LOCAL_STORAGE) {
+
+        if (use_local_storage) {
+
+          _this.useLocalStorage = true;
+
+          var saved_gui = localStorage.getItem(getLocalStorageHash(this, 'gui'));
+
+          if (saved_gui) {
+            params.load = JSON.parse(saved_gui);
+          }
+
+        }
+
+      }
+
+      this.__closeButton = document.createElement('div');
+      this.__closeButton.innerHTML = GUI.TEXT_CLOSED;
+      dom.addClass(this.__closeButton, GUI.CLASS_CLOSE_BUTTON);
+      this.domElement.appendChild(this.__closeButton);
+
+      dom.bind(this.__closeButton, 'click', function() {
+
+        _this.closed = !_this.closed;
+
+
+      });
+
+
+      // Oh, you're a nested GUI!
+    } else {
+
+      if (params.closed === undefined) {
+        params.closed = true;
+      }
+
+      var title_row_name = document.createTextNode(params.name);
+      dom.addClass(title_row_name, 'controller-name');
+
+      var title_row = addRow(_this, title_row_name);
+
+      var on_click_title = function(e) {
+        e.preventDefault();
+        _this.closed = !_this.closed;
+        return false;
+      };
+
+      dom.addClass(this.__ul, GUI.CLASS_CLOSED);
+
+      dom.addClass(title_row, 'title');
+      dom.bind(title_row, 'click', on_click_title);
+
+      if (!params.closed) {
+        this.closed = false;
+      }
+
+    }
+
+    if (params.autoPlace) {
+
+      if (common.isUndefined(params.parent)) {
+
+        if (auto_place_virgin) {
+          auto_place_container = document.createElement('div');
+          dom.addClass(auto_place_container, CSS_NAMESPACE);
+          dom.addClass(auto_place_container, GUI.CLASS_AUTO_PLACE_CONTAINER);
+          document.body.appendChild(auto_place_container);
+          auto_place_virgin = false;
+        }
+
+        // Put it in the dom for you.
+        auto_place_container.appendChild(this.domElement);
+
+        // Apply the auto styles
+        dom.addClass(this.domElement, GUI.CLASS_AUTO_PLACE);
+
+      }
+
+
+      // Make it not elastic.
+      if (!this.parent) setWidth(_this, params.width);
+
+    }
+
+    dom.bind(window, 'resize', function() { _this.onResize() });
+    dom.bind(this.__ul, 'webkitTransitionEnd', function() { _this.onResize(); });
+    dom.bind(this.__ul, 'transitionend', function() { _this.onResize() });
+    dom.bind(this.__ul, 'oTransitionEnd', function() { _this.onResize() });
+    this.onResize();
+
+
+    if (params.resizable) {
+      addResizeHandle(this);
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem(getLocalStorageHash(_this, 'gui'), JSON.stringify(_this.getSaveObject()));
+    }
+
+    var root = _this.getRoot();
+    function resetWidth() {
+        var root = _this.getRoot();
+        root.width += 1;
+        common.defer(function() {
+          root.width -= 1;
+        });
+      }
+
+      if (!params.parent) {
+        resetWidth();
+      }
+
+  };
+
+  GUI.toggleHide = function() {
+
+    hide = !hide;
+    common.each(hideable_guis, function(gui) {
+      gui.domElement.style.zIndex = hide ? -999 : 999;
+      gui.domElement.style.opacity = hide ? 0 : 1;
+    });
+  };
+
+  GUI.CLASS_AUTO_PLACE = 'a';
+  GUI.CLASS_AUTO_PLACE_CONTAINER = 'ac';
+  GUI.CLASS_MAIN = 'main';
+  GUI.CLASS_CONTROLLER_ROW = 'cr';
+  GUI.CLASS_TOO_TALL = 'taller-than-window';
+  GUI.CLASS_CLOSED = 'closed';
+  GUI.CLASS_CLOSE_BUTTON = 'close-button';
+  GUI.CLASS_DRAG = 'drag';
+
+  GUI.DEFAULT_WIDTH = 245;
+  GUI.TEXT_CLOSED = 'Close Controls';
+  GUI.TEXT_OPEN = 'Open Controls';
+
+  dom.bind(window, 'keydown', function(e) {
+
+    if (document.activeElement.type !== 'text' &&
+        (e.which === HIDE_KEY_CODE || e.keyCode == HIDE_KEY_CODE)) {
+      GUI.toggleHide();
+    }
+
+  }, false);
+
+  common.extend(
+
+      GUI.prototype,
+
+      /** @lends dat.gui.GUI */
+      {
+
+        /**
+         * @param object
+         * @param property
+         * @returns {dat.controllers.Controller} The new controller that was added.
+         * @instance
+         */
+        add: function(object, property) {
+
+          return add(
+              this,
+              object,
+              property,
+              {
+                factoryArgs: Array.prototype.slice.call(arguments, 2)
+              }
+          );
+
+        },
+
+        /**
+         * @param object
+         * @param property
+         * @returns {dat.controllers.ColorController} The new controller that was added.
+         * @instance
+         */
+        addColor: function(object, property) {
+
+          return add(
+              this,
+              object,
+              property,
+              {
+                color: true
+              }
+          );
+
+        },
+
+        /**
+         * @param controller
+         * @instance
+         */
+        remove: function(controller) {
+
+          // TODO listening?
+          this.__ul.removeChild(controller.__li);
+          this.__controllers.slice(this.__controllers.indexOf(controller), 1);
+          var _this = this;
+          common.defer(function() {
+            _this.onResize();
+          });
+
+        },
+
+        destroy: function() {
+
+          if (this.autoPlace) {
+            auto_place_container.removeChild(this.domElement);
+          }
+
+        },
+
+        /**
+         * @param name
+         * @returns {dat.gui.GUI} The new folder.
+         * @throws {Error} if this GUI already has a folder by the specified
+         * name
+         * @instance
+         */
+        addFolder: function(name) {
+
+          // We have to prevent collisions on names in order to have a key
+          // by which to remember saved values
+          if (this.__folders[name] !== undefined) {
+            throw new Error('You already have a folder in this GUI by the' +
+                ' name "' + name + '"');
+          }
+
+          var new_gui_params = { name: name, parent: this };
+
+          // We need to pass down the autoPlace trait so that we can
+          // attach event listeners to open/close folder actions to
+          // ensure that a scrollbar appears if the window is too short.
+          new_gui_params.autoPlace = this.autoPlace;
+
+          // Do we have saved appearance data for this folder?
+
+          if (this.load && // Anything loaded?
+              this.load.folders && // Was my parent a dead-end?
+              this.load.folders[name]) { // Did daddy remember me?
+
+            // Start me closed if I was closed
+            new_gui_params.closed = this.load.folders[name].closed;
+
+            // Pass down the loaded data
+            new_gui_params.load = this.load.folders[name];
+
+          }
+
+          var gui = new GUI(new_gui_params);
+          this.__folders[name] = gui;
+
+          var li = addRow(this, gui.domElement);
+          dom.addClass(li, 'folder');
+          return gui;
+
+        },
+
+        open: function() {
+          this.closed = false;
+        },
+
+        close: function() {
+          this.closed = true;
+        },
+
+        onResize: function() {
+
+          var root = this.getRoot();
+
+          if (root.scrollable) {
+
+            var top = dom.getOffset(root.__ul).top;
+            var h = 0;
+
+            common.each(root.__ul.childNodes, function(node) {
+              if (! (root.autoPlace && node === root.__save_row))
+                h += dom.getHeight(node);
+            });
+
+            if (window.innerHeight - top - CLOSE_BUTTON_HEIGHT < h) {
+              dom.addClass(root.domElement, GUI.CLASS_TOO_TALL);
+              root.__ul.style.height = window.innerHeight - top - CLOSE_BUTTON_HEIGHT + 'px';
+            } else {
+              dom.removeClass(root.domElement, GUI.CLASS_TOO_TALL);
+              root.__ul.style.height = 'auto';
+            }
+
+          }
+
+          if (root.__resize_handle) {
+            common.defer(function() {
+              root.__resize_handle.style.height = root.__ul.offsetHeight + 'px';
+            });
+          }
+
+          if (root.__closeButton) {
+            root.__closeButton.style.width = root.width + 'px';
+          }
+
+        },
+
+        /**
+         * Mark objects for saving. The order of these objects cannot change as
+         * the GUI grows. When remembering new objects, append them to the end
+         * of the list.
+         *
+         * @param {Object...} objects
+         * @throws {Error} if not called on a top level GUI.
+         * @instance
+         */
+        remember: function() {
+
+          if (common.isUndefined(SAVE_DIALOGUE)) {
+            SAVE_DIALOGUE = new CenteredDiv();
+            SAVE_DIALOGUE.domElement.innerHTML = saveDialogueContents;
+          }
+
+          if (this.parent) {
+            throw new Error("You can only call remember on a top level GUI.");
+          }
+
+          var _this = this;
+
+          common.each(Array.prototype.slice.call(arguments), function(object) {
+            if (_this.__rememberedObjects.length == 0) {
+              addSaveMenu(_this);
+            }
+            if (_this.__rememberedObjects.indexOf(object) == -1) {
+              _this.__rememberedObjects.push(object);
+            }
+          });
+
+          if (this.autoPlace) {
+            // Set save row width
+            setWidth(this, this.width);
+          }
+
+        },
+
+        /**
+         * @returns {dat.gui.GUI} the topmost parent GUI of a nested GUI.
+         * @instance
+         */
+        getRoot: function() {
+          var gui = this;
+          while (gui.parent) {
+            gui = gui.parent;
+          }
+          return gui;
+        },
+
+        /**
+         * @returns {Object} a JSON object representing the current state of
+         * this GUI as well as its remembered properties.
+         * @instance
+         */
+        getSaveObject: function() {
+
+          var toReturn = this.load;
+
+          toReturn.closed = this.closed;
+
+          // Am I remembering any values?
+          if (this.__rememberedObjects.length > 0) {
+
+            toReturn.preset = this.preset;
+
+            if (!toReturn.remembered) {
+              toReturn.remembered = {};
+            }
+
+            toReturn.remembered[this.preset] = getCurrentPreset(this);
+
+          }
+
+          toReturn.folders = {};
+          common.each(this.__folders, function(element, key) {
+            toReturn.folders[key] = element.getSaveObject();
+          });
+
+          return toReturn;
+
+        },
+
+        save: function() {
+
+          if (!this.load.remembered) {
+            this.load.remembered = {};
+          }
+
+          this.load.remembered[this.preset] = getCurrentPreset(this);
+          markPresetModified(this, false);
+
+        },
+
+        saveAs: function(presetName) {
+
+          if (!this.load.remembered) {
+
+            // Retain default values upon first save
+            this.load.remembered = {};
+            this.load.remembered[DEFAULT_DEFAULT_PRESET_NAME] = getCurrentPreset(this, true);
+
+          }
+
+          this.load.remembered[presetName] = getCurrentPreset(this);
+          this.preset = presetName;
+          addPresetOption(this, presetName, true);
+
+        },
+
+        revert: function(gui) {
+
+          common.each(this.__controllers, function(controller) {
+            // Make revert work on Default.
+            if (!this.getRoot().load.remembered) {
+              controller.setValue(controller.initialValue);
+            } else {
+              recallSavedValue(gui || this.getRoot(), controller);
+            }
+          }, this);
+
+          common.each(this.__folders, function(folder) {
+            folder.revert(folder);
+          });
+
+          if (!gui) {
+            markPresetModified(this.getRoot(), false);
+          }
+
+
+        },
+
+        listen: function(controller) {
+
+          var init = this.__listening.length == 0;
+          this.__listening.push(controller);
+          if (init) updateDisplays(this.__listening);
+
+        }
+
+      }
+
+  );
+
+  function add(gui, object, property, params) {
+
+    if (object[property] === undefined) {
+      throw new Error("Object " + object + " has no property \"" + property + "\"");
+    }
+
+    var controller;
+
+    if (params.color) {
+
+      controller = new ColorController(object, property);
+
+    } else {
+
+      var factoryArgs = [object,property].concat(params.factoryArgs);
+      controller = controllerFactory.apply(gui, factoryArgs);
+
+    }
+
+    if (params.before instanceof Controller) {
+      params.before = params.before.__li;
+    }
+
+    recallSavedValue(gui, controller);
+
+    dom.addClass(controller.domElement, 'c');
+
+    var name = document.createElement('span');
+    dom.addClass(name, 'property-name');
+    name.innerHTML = controller.property;
+
+    var container = document.createElement('div');
+    container.appendChild(name);
+    container.appendChild(controller.domElement);
+
+    var li = addRow(gui, container, params.before);
+
+    dom.addClass(li, GUI.CLASS_CONTROLLER_ROW);
+    dom.addClass(li, typeof controller.getValue());
+
+    augmentController(gui, li, controller);
+
+    gui.__controllers.push(controller);
+
+    return controller;
+
+  }
+
+  /**
+   * Add a row to the end of the GUI or before another row.
+   *
+   * @param gui
+   * @param [dom] If specified, inserts the dom content in the new row
+   * @param [liBefore] If specified, places the new row before another row
+   */
+  function addRow(gui, dom, liBefore) {
+    var li = document.createElement('li');
+    if (dom) li.appendChild(dom);
+    if (liBefore) {
+      gui.__ul.insertBefore(li, params.before);
+    } else {
+      gui.__ul.appendChild(li);
+    }
+    gui.onResize();
+    return li;
+  }
+
+  function augmentController(gui, li, controller) {
+
+    controller.__li = li;
+    controller.__gui = gui;
+
+    common.extend(controller, {
+
+      options: function(options) {
+
+        if (arguments.length > 1) {
+          controller.remove();
+
+          return add(
+              gui,
+              controller.object,
+              controller.property,
+              {
+                before: controller.__li.nextElementSibling,
+                factoryArgs: [common.toArray(arguments)]
+              }
+          );
+
+        }
+
+        if (common.isArray(options) || common.isObject(options)) {
+          controller.remove();
+
+          return add(
+              gui,
+              controller.object,
+              controller.property,
+              {
+                before: controller.__li.nextElementSibling,
+                factoryArgs: [options]
+              }
+          );
+
+        }
+
+      },
+
+      name: function(v) {
+        controller.__li.firstElementChild.firstElementChild.innerHTML = v;
+        return controller;
+      },
+
+      listen: function() {
+        controller.__gui.listen(controller);
+        return controller;
+      },
+
+      remove: function() {
+        controller.__gui.remove(controller);
+        return controller;
+      }
+
+    });
+
+    // All sliders should be accompanied by a box.
+    if (controller instanceof NumberControllerSlider) {
+
+      var box = new NumberControllerBox(controller.object, controller.property,
+          { min: controller.__min, max: controller.__max, step: controller.__step });
+
+      common.each(['updateDisplay', 'onChange', 'onFinishChange'], function(method) {
+        var pc = controller[method];
+        var pb = box[method];
+        controller[method] = box[method] = function() {
+          var args = Array.prototype.slice.call(arguments);
+          pc.apply(controller, args);
+          return pb.apply(box, args);
+        }
+      });
+
+      dom.addClass(li, 'has-slider');
+      controller.domElement.insertBefore(box.domElement, controller.domElement.firstElementChild);
+
+    }
+    else if (controller instanceof NumberControllerBox) {
+
+      var r = function(returned) {
+
+        // Have we defined both boundaries?
+        if (common.isNumber(controller.__min) && common.isNumber(controller.__max)) {
+
+          // Well, then lets just replace this with a slider.
+          controller.remove();
+          return add(
+              gui,
+              controller.object,
+              controller.property,
+              {
+                before: controller.__li.nextElementSibling,
+                factoryArgs: [controller.__min, controller.__max, controller.__step]
+              });
+
+        }
+
+        return returned;
+
+      };
+
+      controller.min = common.compose(r, controller.min);
+      controller.max = common.compose(r, controller.max);
+
+    }
+    else if (controller instanceof BooleanController) {
+
+      dom.bind(li, 'click', function() {
+        dom.fakeEvent(controller.__checkbox, 'click');
+      });
+
+      dom.bind(controller.__checkbox, 'click', function(e) {
+        e.stopPropagation(); // Prevents double-toggle
+      })
+
+    }
+    else if (controller instanceof FunctionController) {
+
+      dom.bind(li, 'click', function() {
+        dom.fakeEvent(controller.__button, 'click');
+      });
+
+      dom.bind(li, 'mouseover', function() {
+        dom.addClass(controller.__button, 'hover');
+      });
+
+      dom.bind(li, 'mouseout', function() {
+        dom.removeClass(controller.__button, 'hover');
+      });
+
+    }
+    else if (controller instanceof ColorController) {
+
+      dom.addClass(li, 'color');
+      controller.updateDisplay = common.compose(function(r) {
+        li.style.borderLeftColor = controller.__color.toString();
+        return r;
+      }, controller.updateDisplay);
+
+      controller.updateDisplay();
+
+    }
+
+    controller.setValue = common.compose(function(r) {
+      if (gui.getRoot().__preset_select && controller.isModified()) {
+        markPresetModified(gui.getRoot(), true);
+      }
+      return r;
+    }, controller.setValue);
+
+  }
+
+  function recallSavedValue(gui, controller) {
+
+    // Find the topmost GUI, that's where remembered objects live.
+    var root = gui.getRoot();
+
+    // Does the object we're controlling match anything we've been told to
+    // remember?
+    var matched_index = root.__rememberedObjects.indexOf(controller.object);
+
+    // Why yes, it does!
+    if (matched_index != -1) {
+
+      // Let me fetch a map of controllers for thcommon.isObject.
+      var controller_map =
+          root.__rememberedObjectIndecesToControllers[matched_index];
+
+      // Ohp, I believe this is the first controller we've created for this
+      // object. Lets make the map fresh.
+      if (controller_map === undefined) {
+        controller_map = {};
+        root.__rememberedObjectIndecesToControllers[matched_index] =
+            controller_map;
+      }
+
+      // Keep track of this controller
+      controller_map[controller.property] = controller;
+
+      // Okay, now have we saved any values for this controller?
+      if (root.load && root.load.remembered) {
+
+        var preset_map = root.load.remembered;
+
+        // Which preset are we trying to load?
+        var preset;
+
+        if (preset_map[gui.preset]) {
+
+          preset = preset_map[gui.preset];
+
+        } else if (preset_map[DEFAULT_DEFAULT_PRESET_NAME]) {
+
+          // Uhh, you can have the default instead?
+          preset = preset_map[DEFAULT_DEFAULT_PRESET_NAME];
+
+        } else {
+
+          // Nada.
+
+          return;
+
+        }
+
+
+        // Did the loaded object remember thcommon.isObject?
+        if (preset[matched_index] &&
+
+          // Did we remember this particular property?
+            preset[matched_index][controller.property] !== undefined) {
+
+          // We did remember something for this guy ...
+          var value = preset[matched_index][controller.property];
+
+          // And that's what it is.
+          controller.initialValue = value;
+          controller.setValue(value);
+
+        }
+
+      }
+
+    }
+
+  }
+
+  function getLocalStorageHash(gui, key) {
+    // TODO how does this deal with multiple GUI's?
+    return document.location.href + '.' + key;
+
+  }
+
+  function addSaveMenu(gui) {
+
+    var div = gui.__save_row = document.createElement('li');
+
+    dom.addClass(gui.domElement, 'has-save');
+
+    gui.__ul.insertBefore(div, gui.__ul.firstChild);
+
+    dom.addClass(div, 'save-row');
+
+    var gears = document.createElement('span');
+    gears.innerHTML = '&nbsp;';
+    dom.addClass(gears, 'button gears');
+
+    // TODO replace with FunctionController
+    var button = document.createElement('span');
+    button.innerHTML = 'Save';
+    dom.addClass(button, 'button');
+    dom.addClass(button, 'save');
+
+    var button2 = document.createElement('span');
+    button2.innerHTML = 'New';
+    dom.addClass(button2, 'button');
+    dom.addClass(button2, 'save-as');
+
+    var button3 = document.createElement('span');
+    button3.innerHTML = 'Revert';
+    dom.addClass(button3, 'button');
+    dom.addClass(button3, 'revert');
+
+    var select = gui.__preset_select = document.createElement('select');
+
+    if (gui.load && gui.load.remembered) {
+
+      common.each(gui.load.remembered, function(value, key) {
+        addPresetOption(gui, key, key == gui.preset);
+      });
+
+    } else {
+      addPresetOption(gui, DEFAULT_DEFAULT_PRESET_NAME, false);
+    }
+
+    dom.bind(select, 'change', function() {
+
+
+      for (var index = 0; index < gui.__preset_select.length; index++) {
+        gui.__preset_select[index].innerHTML = gui.__preset_select[index].value;
+      }
+
+      gui.preset = this.value;
+
+    });
+
+    div.appendChild(select);
+    div.appendChild(gears);
+    div.appendChild(button);
+    div.appendChild(button2);
+    div.appendChild(button3);
+
+    if (SUPPORTS_LOCAL_STORAGE) {
+
+      var saveLocally = document.getElementById('dg-save-locally');
+      var explain = document.getElementById('dg-local-explain');
+
+      saveLocally.style.display = 'block';
+
+      var localStorageCheckBox = document.getElementById('dg-local-storage');
+
+      if (localStorage.getItem(getLocalStorageHash(gui, 'isLocal')) === 'true') {
+        localStorageCheckBox.setAttribute('checked', 'checked');
+      }
+
+      function showHideExplain() {
+        explain.style.display = gui.useLocalStorage ? 'block' : 'none';
+      }
+
+      showHideExplain();
+
+      // TODO: Use a boolean controller, fool!
+      dom.bind(localStorageCheckBox, 'change', function() {
+        gui.useLocalStorage = !gui.useLocalStorage;
+        showHideExplain();
+      });
+
+    }
+
+    var newConstructorTextArea = document.getElementById('dg-new-constructor');
+
+    dom.bind(newConstructorTextArea, 'keydown', function(e) {
+      if (e.metaKey && (e.which === 67 || e.keyCode == 67)) {
+        SAVE_DIALOGUE.hide();
+      }
+    });
+
+    dom.bind(gears, 'click', function() {
+      newConstructorTextArea.innerHTML = JSON.stringify(gui.getSaveObject(), undefined, 2);
+      SAVE_DIALOGUE.show();
+      newConstructorTextArea.focus();
+      newConstructorTextArea.select();
+    });
+
+    dom.bind(button, 'click', function() {
+      gui.save();
+    });
+
+    dom.bind(button2, 'click', function() {
+      var presetName = prompt('Enter a new preset name.');
+      if (presetName) gui.saveAs(presetName);
+    });
+
+    dom.bind(button3, 'click', function() {
+      gui.revert();
+    });
+
+//    div.appendChild(button2);
+
+  }
+
+  function addResizeHandle(gui) {
+
+    gui.__resize_handle = document.createElement('div');
+
+    common.extend(gui.__resize_handle.style, {
+
+      width: '6px',
+      marginLeft: '-3px',
+      height: '200px',
+      cursor: 'ew-resize',
+      position: 'absolute'
+//      border: '1px solid blue'
+
+    });
+
+    var pmouseX;
+
+    dom.bind(gui.__resize_handle, 'mousedown', dragStart);
+    dom.bind(gui.__closeButton, 'mousedown', dragStart);
+
+    gui.domElement.insertBefore(gui.__resize_handle, gui.domElement.firstElementChild);
+
+    function dragStart(e) {
+
+      e.preventDefault();
+
+      pmouseX = e.clientX;
+
+      dom.addClass(gui.__closeButton, GUI.CLASS_DRAG);
+      dom.bind(window, 'mousemove', drag);
+      dom.bind(window, 'mouseup', dragStop);
+
+      return false;
+
+    }
+
+    function drag(e) {
+
+      e.preventDefault();
+
+      gui.width += pmouseX - e.clientX;
+      gui.onResize();
+      pmouseX = e.clientX;
+
+      return false;
+
+    }
+
+    function dragStop() {
+
+      dom.removeClass(gui.__closeButton, GUI.CLASS_DRAG);
+      dom.unbind(window, 'mousemove', drag);
+      dom.unbind(window, 'mouseup', dragStop);
+
+    }
+
+  }
+
+  function setWidth(gui, w) {
+    gui.domElement.style.width = w + 'px';
+    // Auto placed save-rows are position fixed, so we have to
+    // set the width manually if we want it to bleed to the edge
+    if (gui.__save_row && gui.autoPlace) {
+      gui.__save_row.style.width = w + 'px';
+    }if (gui.__closeButton) {
+      gui.__closeButton.style.width = w + 'px';
+    }
+  }
+
+  function getCurrentPreset(gui, useInitialValues) {
+
+    var toReturn = {};
+
+    // For each object I'm remembering
+    common.each(gui.__rememberedObjects, function(val, index) {
+
+      var saved_values = {};
+
+      // The controllers I've made for thcommon.isObject by property
+      var controller_map =
+          gui.__rememberedObjectIndecesToControllers[index];
+
+      // Remember each value for each property
+      common.each(controller_map, function(controller, property) {
+        saved_values[property] = useInitialValues ? controller.initialValue : controller.getValue();
+      });
+
+      // Save the values for thcommon.isObject
+      toReturn[index] = saved_values;
+
+    });
+
+    return toReturn;
+
+  }
+
+  function addPresetOption(gui, name, setSelected) {
+    var opt = document.createElement('option');
+    opt.innerHTML = name;
+    opt.value = name;
+    gui.__preset_select.appendChild(opt);
+    if (setSelected) {
+      gui.__preset_select.selectedIndex = gui.__preset_select.length - 1;
+    }
+  }
+
+  function setPresetSelectIndex(gui) {
+    for (var index = 0; index < gui.__preset_select.length; index++) {
+      if (gui.__preset_select[index].value == gui.preset) {
+        gui.__preset_select.selectedIndex = index;
+      }
+    }
+  }
+
+  function markPresetModified(gui, modified) {
+    var opt = gui.__preset_select[gui.__preset_select.selectedIndex];
+//    console.log('mark', modified, opt);
+    if (modified) {
+      opt.innerHTML = opt.value + "*";
+    } else {
+      opt.innerHTML = opt.value;
+    }
+  }
+
+  function updateDisplays(controllerArray) {
+
+
+    if (controllerArray.length != 0) {
+
+      requestAnimationFrame(function() {
+        updateDisplays(controllerArray);
+      });
+
+    }
+
+    common.each(controllerArray, function(c) {
+      c.updateDisplay();
+    });
+
+  }
+
+  return GUI;
+
+})(dat.utils.css,
+"<div id=\"dg-save\" class=\"dg dialogue\">\n\n  Here's the new load parameter for your <code>GUI</code>'s constructor:\n\n  <textarea id=\"dg-new-constructor\"></textarea>\n\n  <div id=\"dg-save-locally\">\n\n    <input id=\"dg-local-storage\" type=\"checkbox\"/> Automatically save\n    values to <code>localStorage</code> on exit.\n\n    <div id=\"dg-local-explain\">The values saved to <code>localStorage</code> will\n      override those passed to <code>dat.GUI</code>'s constructor. This makes it\n      easier to work incrementally, but <code>localStorage</code> is fragile,\n      and your friends may not see the same values you do.\n      \n    </div>\n    \n  </div>\n\n</div>",
+".dg ul{list-style:none;margin:0;padding:0;width:100%;clear:both}.dg.ac{position:fixed;top:0;left:0;right:0;height:0;z-index:0}.dg:not(.ac) .main{overflow:hidden}.dg.main{-webkit-transition:opacity 0.1s linear;-o-transition:opacity 0.1s linear;-moz-transition:opacity 0.1s linear;transition:opacity 0.1s linear}.dg.main.taller-than-window{overflow-y:auto}.dg.main.taller-than-window .close-button{opacity:1;margin-top:-1px;border-top:1px solid #2c2c2c}.dg.main ul.closed .close-button{opacity:1 !important}.dg.main:hover .close-button,.dg.main .close-button.drag{opacity:1}.dg.main .close-button{-webkit-transition:opacity 0.1s linear;-o-transition:opacity 0.1s linear;-moz-transition:opacity 0.1s linear;transition:opacity 0.1s linear;border:0;position:absolute;line-height:19px;height:20px;cursor:pointer;text-align:center;background-color:#000}.dg.main .close-button:hover{background-color:#111}.dg.a{float:right;margin-right:15px;overflow-x:hidden}.dg.a.has-save ul{margin-top:27px}.dg.a.has-save ul.closed{margin-top:0}.dg.a .save-row{position:fixed;top:0;z-index:1002}.dg li{-webkit-transition:height 0.1s ease-out;-o-transition:height 0.1s ease-out;-moz-transition:height 0.1s ease-out;transition:height 0.1s ease-out}.dg li:not(.folder){cursor:auto;height:27px;line-height:27px;overflow:hidden;padding:0 4px 0 5px}.dg li.folder{padding:0;border-left:4px solid rgba(0,0,0,0)}.dg li.title{cursor:pointer;margin-left:-4px}.dg .closed li:not(.title),.dg .closed ul li,.dg .closed ul li > *{height:0;overflow:hidden;border:0}.dg .cr{clear:both;padding-left:3px;height:27px}.dg .property-name{cursor:default;float:left;clear:left;width:40%;overflow:hidden;text-overflow:ellipsis}.dg .c{float:left;width:60%}.dg .c input[type=text]{border:0;margin-top:4px;padding:3px;width:100%;float:right}.dg .has-slider input[type=text]{width:30%;margin-left:0}.dg .slider{float:left;width:66%;margin-left:-5px;margin-right:0;height:19px;margin-top:4px}.dg .slider-fg{height:100%}.dg .c input[type=checkbox]{margin-top:9px}.dg .c select{margin-top:5px}.dg .cr.function,.dg .cr.function .property-name,.dg .cr.function *,.dg .cr.boolean,.dg .cr.boolean *{cursor:pointer}.dg .selector{display:none;position:absolute;margin-left:-9px;margin-top:23px;z-index:10}.dg .c:hover .selector,.dg .selector.drag{display:block}.dg li.save-row{padding:0}.dg li.save-row .button{display:inline-block;padding:0px 6px}.dg.dialogue{background-color:#222;width:460px;padding:15px;font-size:13px;line-height:15px}#dg-new-constructor{padding:10px;color:#222;font-family:Monaco, monospace;font-size:10px;border:0;resize:none;box-shadow:inset 1px 1px 1px #888;word-wrap:break-word;margin:12px 0;display:block;width:440px;overflow-y:scroll;height:100px;position:relative}#dg-local-explain{display:none;font-size:11px;line-height:17px;border-radius:3px;background-color:#333;padding:8px;margin-top:10px}#dg-local-explain code{font-size:10px}#dat-gui-save-locally{display:none}.dg{color:#eee;font:11px 'Lucida Grande', sans-serif;text-shadow:0 -1px 0 #111}.dg.main::-webkit-scrollbar{width:5px;background:#1a1a1a}.dg.main::-webkit-scrollbar-corner{height:0;display:none}.dg.main::-webkit-scrollbar-thumb{border-radius:5px;background:#676767}.dg li:not(.folder){background:#1a1a1a;border-bottom:1px solid #2c2c2c}.dg li.save-row{line-height:25px;background:#dad5cb;border:0}.dg li.save-row select{margin-left:5px;width:108px}.dg li.save-row .button{margin-left:5px;margin-top:1px;border-radius:2px;font-size:9px;line-height:7px;padding:4px 4px 5px 4px;background:#c5bdad;color:#fff;text-shadow:0 1px 0 #b0a58f;box-shadow:0 -1px 0 #b0a58f;cursor:pointer}.dg li.save-row .button.gears{background:#c5bdad url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAANCAYAAAB/9ZQ7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQJJREFUeNpiYKAU/P//PwGIC/ApCABiBSAW+I8AClAcgKxQ4T9hoMAEUrxx2QSGN6+egDX+/vWT4e7N82AMYoPAx/evwWoYoSYbACX2s7KxCxzcsezDh3evFoDEBYTEEqycggWAzA9AuUSQQgeYPa9fPv6/YWm/Acx5IPb7ty/fw+QZblw67vDs8R0YHyQhgObx+yAJkBqmG5dPPDh1aPOGR/eugW0G4vlIoTIfyFcA+QekhhHJhPdQxbiAIguMBTQZrPD7108M6roWYDFQiIAAv6Aow/1bFwXgis+f2LUAynwoIaNcz8XNx3Dl7MEJUDGQpx9gtQ8YCueB+D26OECAAQDadt7e46D42QAAAABJRU5ErkJggg==) 2px 1px no-repeat;height:7px;width:8px}.dg li.save-row .button:hover{background-color:#bab19e;box-shadow:0 -1px 0 #b0a58f}.dg li.folder{border-bottom:0}.dg li.title{padding-left:16px;background:#000 url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlI+hKgFxoCgAOw==) 6px 10px no-repeat;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.2)}.dg .closed li.title{background-image:url(data:image/gif;base64,R0lGODlhBQAFAJEAAP////Pz8////////yH5BAEAAAIALAAAAAAFAAUAAAIIlGIWqMCbWAEAOw==)}.dg .cr.boolean{border-left:3px solid #806787}.dg .cr.function{border-left:3px solid #e61d5f}.dg .cr.number{border-left:3px solid #2fa1d6}.dg .cr.number input[type=text]{color:#2fa1d6}.dg .cr.string{border-left:3px solid #1ed36f}.dg .cr.string input[type=text]{color:#1ed36f}.dg .cr.function:hover,.dg .cr.boolean:hover{background:#111}.dg .c input[type=text]{background:#303030;outline:none}.dg .c input[type=text]:hover{background:#3c3c3c}.dg .c input[type=text]:focus{background:#494949;color:#fff}.dg .c .slider{background:#303030;cursor:ew-resize}.dg .c .slider-fg{background:#2fa1d6}.dg .c .slider:hover{background:#3c3c3c}.dg .c .slider:hover .slider-fg{background:#44abda}\n",
+dat.controllers.factory = (function (OptionController, NumberControllerBox, NumberControllerSlider, StringController, FunctionController, BooleanController, common) {
+
+      return function(object, property) {
+
+        var initialValue = object[property];
+
+        // Providing options?
+        if (common.isArray(arguments[2]) || common.isObject(arguments[2])) {
+          return new OptionController(object, property, arguments[2]);
+        }
+
+        // Providing a map?
+
+        if (common.isNumber(initialValue)) {
+
+          if (common.isNumber(arguments[2]) && common.isNumber(arguments[3])) {
+
+            // Has min and max.
+            return new NumberControllerSlider(object, property, arguments[2], arguments[3]);
+
+          } else {
+
+            return new NumberControllerBox(object, property, { min: arguments[2], max: arguments[3] });
+
+          }
+
+        }
+
+        if (common.isString(initialValue)) {
+          return new StringController(object, property);
+        }
+
+        if (common.isFunction(initialValue)) {
+          return new FunctionController(object, property, '');
+        }
+
+        if (common.isBoolean(initialValue)) {
+          return new BooleanController(object, property);
+        }
+
+      }
+
+    })(dat.controllers.OptionController,
+dat.controllers.NumberControllerBox,
+dat.controllers.NumberControllerSlider,
+dat.controllers.StringController = (function (Controller, dom, common) {
+
+  /**
+   * @class Provides a text input to alter the string property of an object.
+   *
+   * @extends dat.controllers.Controller
+   *
+   * @param {Object} object The object to be manipulated
+   * @param {string} property The name of the property to be manipulated
+   *
+   * @member dat.controllers
+   */
+  var StringController = function(object, property) {
+
+    StringController.superclass.call(this, object, property);
+
+    var _this = this;
+
+    this.__input = document.createElement('input');
+    this.__input.setAttribute('type', 'text');
+
+    dom.bind(this.__input, 'keyup', onChange);
+    dom.bind(this.__input, 'change', onChange);
+    dom.bind(this.__input, 'blur', onBlur);
+    dom.bind(this.__input, 'keydown', function(e) {
+      if (e.keyCode === 13) {
+        this.blur();
+      }
+    });
+    
+
+    function onChange() {
+      _this.setValue(_this.__input.value);
+    }
+
+    function onBlur() {
+      if (_this.__onFinishChange) {
+        _this.__onFinishChange.call(_this, _this.getValue());
+      }
+    }
+
+    this.updateDisplay();
+
+    this.domElement.appendChild(this.__input);
+
+  };
+
+  StringController.superclass = Controller;
+
+  common.extend(
+
+      StringController.prototype,
+      Controller.prototype,
+
+      {
+
+        updateDisplay: function() {
+          // Stops the caret from moving on account of:
+          // keyup -> setValue -> updateDisplay
+          if (!dom.isActive(this.__input)) {
+            this.__input.value = this.getValue();
+          }
+          return StringController.superclass.prototype.updateDisplay.call(this);
+        }
+
+      }
+
+  );
+
+  return StringController;
+
+})(dat.controllers.Controller,
+dat.dom.dom,
+dat.utils.common),
+dat.controllers.FunctionController,
+dat.controllers.BooleanController,
+dat.utils.common),
+dat.controllers.Controller,
+dat.controllers.BooleanController,
+dat.controllers.FunctionController,
+dat.controllers.NumberControllerBox,
+dat.controllers.NumberControllerSlider,
+dat.controllers.OptionController,
+dat.controllers.ColorController = (function (Controller, dom, Color, interpret, common) {
+
+  var ColorController = function(object, property) {
+
+    ColorController.superclass.call(this, object, property);
+
+    this.__color = new Color(this.getValue());
+    this.__temp = new Color(0);
+
+    var _this = this;
+
+    this.domElement = document.createElement('div');
+
+    dom.makeSelectable(this.domElement, false);
+
+    this.__selector = document.createElement('div');
+    this.__selector.className = 'selector';
+
+    this.__saturation_field = document.createElement('div');
+    this.__saturation_field.className = 'saturation-field';
+
+    this.__field_knob = document.createElement('div');
+    this.__field_knob.className = 'field-knob';
+    this.__field_knob_border = '2px solid ';
+
+    this.__hue_knob = document.createElement('div');
+    this.__hue_knob.className = 'hue-knob';
+
+    this.__hue_field = document.createElement('div');
+    this.__hue_field.className = 'hue-field';
+
+    this.__input = document.createElement('input');
+    this.__input.type = 'text';
+    this.__input_textShadow = '0 1px 1px ';
+
+    dom.bind(this.__input, 'keydown', function(e) {
+      if (e.keyCode === 13) { // on enter
+        onBlur.call(this);
+      }
+    });
+
+    dom.bind(this.__input, 'blur', onBlur);
+
+    dom.bind(this.__selector, 'mousedown', function(e) {
+
+      dom
+        .addClass(this, 'drag')
+        .bind(window, 'mouseup', function(e) {
+          dom.removeClass(_this.__selector, 'drag');
+        });
+
+    });
+
+    var value_field = document.createElement('div');
+
+    common.extend(this.__selector.style, {
+      width: '122px',
+      height: '102px',
+      padding: '3px',
+      backgroundColor: '#222',
+      boxShadow: '0px 1px 3px rgba(0,0,0,0.3)'
+    });
+
+    common.extend(this.__field_knob.style, {
+      position: 'absolute',
+      width: '12px',
+      height: '12px',
+      border: this.__field_knob_border + (this.__color.v < .5 ? '#fff' : '#000'),
+      boxShadow: '0px 1px 3px rgba(0,0,0,0.5)',
+      borderRadius: '12px',
+      zIndex: 1
+    });
+    
+    common.extend(this.__hue_knob.style, {
+      position: 'absolute',
+      width: '15px',
+      height: '2px',
+      borderRight: '4px solid #fff',
+      zIndex: 1
+    });
+
+    common.extend(this.__saturation_field.style, {
+      width: '100px',
+      height: '100px',
+      border: '1px solid #555',
+      marginRight: '3px',
+      display: 'inline-block',
+      cursor: 'pointer'
+    });
+
+    common.extend(value_field.style, {
+      width: '100%',
+      height: '100%',
+      background: 'none'
+    });
+    
+    linearGradient(value_field, 'top', 'rgba(0,0,0,0)', '#000');
+
+    common.extend(this.__hue_field.style, {
+      width: '15px',
+      height: '100px',
+      display: 'inline-block',
+      border: '1px solid #555',
+      cursor: 'ns-resize'
+    });
+
+    hueGradient(this.__hue_field);
+
+    common.extend(this.__input.style, {
+      outline: 'none',
+//      width: '120px',
+      textAlign: 'center',
+//      padding: '4px',
+//      marginBottom: '6px',
+      color: '#fff',
+      border: 0,
+      fontWeight: 'bold',
+      textShadow: this.__input_textShadow + 'rgba(0,0,0,0.7)'
+    });
+
+    dom.bind(this.__saturation_field, 'mousedown', fieldDown);
+    dom.bind(this.__field_knob, 'mousedown', fieldDown);
+
+    dom.bind(this.__hue_field, 'mousedown', function(e) {
+      setH(e);
+      dom.bind(window, 'mousemove', setH);
+      dom.bind(window, 'mouseup', unbindH);
+    });
+
+    function fieldDown(e) {
+      setSV(e);
+      // document.body.style.cursor = 'none';
+      dom.bind(window, 'mousemove', setSV);
+      dom.bind(window, 'mouseup', unbindSV);
+    }
+
+    function unbindSV() {
+      dom.unbind(window, 'mousemove', setSV);
+      dom.unbind(window, 'mouseup', unbindSV);
+      // document.body.style.cursor = 'default';
+    }
+
+    function onBlur() {
+      var i = interpret(this.value);
+      if (i !== false) {
+        _this.__color.__state = i;
+        _this.setValue(_this.__color.toOriginal());
+      } else {
+        this.value = _this.__color.toString();
+      }
+    }
+
+    function unbindH() {
+      dom.unbind(window, 'mousemove', setH);
+      dom.unbind(window, 'mouseup', unbindH);
+    }
+
+    this.__saturation_field.appendChild(value_field);
+    this.__selector.appendChild(this.__field_knob);
+    this.__selector.appendChild(this.__saturation_field);
+    this.__selector.appendChild(this.__hue_field);
+    this.__hue_field.appendChild(this.__hue_knob);
+
+    this.domElement.appendChild(this.__input);
+    this.domElement.appendChild(this.__selector);
+
+    this.updateDisplay();
+
+    function setSV(e) {
+
+      e.preventDefault();
+
+      var w = dom.getWidth(_this.__saturation_field);
+      var o = dom.getOffset(_this.__saturation_field);
+      var s = (e.clientX - o.left + document.body.scrollLeft) / w;
+      var v = 1 - (e.clientY - o.top + document.body.scrollTop) / w;
+
+      if (v > 1) v = 1;
+      else if (v < 0) v = 0;
+
+      if (s > 1) s = 1;
+      else if (s < 0) s = 0;
+
+      _this.__color.v = v;
+      _this.__color.s = s;
+
+      _this.setValue(_this.__color.toOriginal());
+
+
+      return false;
+
+    }
+
+    function setH(e) {
+
+      e.preventDefault();
+
+      var s = dom.getHeight(_this.__hue_field);
+      var o = dom.getOffset(_this.__hue_field);
+      var h = 1 - (e.clientY - o.top + document.body.scrollTop) / s;
+
+      if (h > 1) h = 1;
+      else if (h < 0) h = 0;
+
+      _this.__color.h = h * 360;
+
+      _this.setValue(_this.__color.toOriginal());
+
+      return false;
+
+    }
+
+  };
+
+  ColorController.superclass = Controller;
+
+  common.extend(
+
+      ColorController.prototype,
+      Controller.prototype,
+
+      {
+
+        updateDisplay: function() {
+
+          var i = interpret(this.getValue());
+
+          if (i !== false) {
+
+            var mismatch = false;
+
+            // Check for mismatch on the interpreted value.
+
+            common.each(Color.COMPONENTS, function(component) {
+              if (!common.isUndefined(i[component]) &&
+                  !common.isUndefined(this.__color.__state[component]) &&
+                  i[component] !== this.__color.__state[component]) {
+                mismatch = true;
+                return {}; // break
+              }
+            }, this);
+
+            // If nothing diverges, we keep our previous values
+            // for statefulness, otherwise we recalculate fresh
+            if (mismatch) {
+              common.extend(this.__color.__state, i);
+            }
+
+          }
+
+          common.extend(this.__temp.__state, this.__color.__state);
+
+          this.__temp.a = 1;
+
+          var flip = (this.__color.v < .5 || this.__color.s > .5) ? 255 : 0;
+          var _flip = 255 - flip;
+
+          common.extend(this.__field_knob.style, {
+            marginLeft: 100 * this.__color.s - 7 + 'px',
+            marginTop: 100 * (1 - this.__color.v) - 7 + 'px',
+            backgroundColor: this.__temp.toString(),
+            border: this.__field_knob_border + 'rgb(' + flip + ',' + flip + ',' + flip +')'
+          });
+
+          this.__hue_knob.style.marginTop = (1 - this.__color.h / 360) * 100 + 'px'
+
+          this.__temp.s = 1;
+          this.__temp.v = 1;
+
+          linearGradient(this.__saturation_field, 'left', '#fff', this.__temp.toString());
+
+          common.extend(this.__input.style, {
+            backgroundColor: this.__input.value = this.__color.toString(),
+            color: 'rgb(' + flip + ',' + flip + ',' + flip +')',
+            textShadow: this.__input_textShadow + 'rgba(' + _flip + ',' + _flip + ',' + _flip +',.7)'
+          });
+
+        }
+
+      }
+
+  );
+  
+  var vendors = ['-moz-','-o-','-webkit-','-ms-',''];
+  
+  function linearGradient(elem, x, a, b) {
+    elem.style.background = '';
+    common.each(vendors, function(vendor) {
+      elem.style.cssText += 'background: ' + vendor + 'linear-gradient('+x+', '+a+' 0%, ' + b + ' 100%); ';
+    });
+  }
+  
+  function hueGradient(elem) {
+    elem.style.background = '';
+    elem.style.cssText += 'background: -moz-linear-gradient(top,  #ff0000 0%, #ff00ff 17%, #0000ff 34%, #00ffff 50%, #00ff00 67%, #ffff00 84%, #ff0000 100%);'
+    elem.style.cssText += 'background: -webkit-linear-gradient(top,  #ff0000 0%,#ff00ff 17%,#0000ff 34%,#00ffff 50%,#00ff00 67%,#ffff00 84%,#ff0000 100%);'
+    elem.style.cssText += 'background: -o-linear-gradient(top,  #ff0000 0%,#ff00ff 17%,#0000ff 34%,#00ffff 50%,#00ff00 67%,#ffff00 84%,#ff0000 100%);'
+    elem.style.cssText += 'background: -ms-linear-gradient(top,  #ff0000 0%,#ff00ff 17%,#0000ff 34%,#00ffff 50%,#00ff00 67%,#ffff00 84%,#ff0000 100%);'
+    elem.style.cssText += 'background: linear-gradient(top,  #ff0000 0%,#ff00ff 17%,#0000ff 34%,#00ffff 50%,#00ff00 67%,#ffff00 84%,#ff0000 100%);'
+  }
+
+
+  return ColorController;
+
+})(dat.controllers.Controller,
+dat.dom.dom,
+dat.color.Color = (function (interpret, math, toString, common) {
+
+  var Color = function() {
+
+    this.__state = interpret.apply(this, arguments);
+
+    if (this.__state === false) {
+      throw 'Failed to interpret color arguments';
+    }
+
+    this.__state.a = this.__state.a || 1;
+
+
+  };
+
+  Color.COMPONENTS = ['r','g','b','h','s','v','hex','a'];
+
+  common.extend(Color.prototype, {
+
+    toString: function() {
+      return toString(this);
+    },
+
+    toOriginal: function() {
+      return this.__state.conversion.write(this);
+    }
+
+  });
+
+  defineRGBComponent(Color.prototype, 'r', 2);
+  defineRGBComponent(Color.prototype, 'g', 1);
+  defineRGBComponent(Color.prototype, 'b', 0);
+
+  defineHSVComponent(Color.prototype, 'h');
+  defineHSVComponent(Color.prototype, 's');
+  defineHSVComponent(Color.prototype, 'v');
+
+  Object.defineProperty(Color.prototype, 'a', {
+
+    get: function() {
+      return this.__state.a;
+    },
+
+    set: function(v) {
+      this.__state.a = v;
+    }
+
+  });
+
+  Object.defineProperty(Color.prototype, 'hex', {
+
+    get: function() {
+
+      if (!this.__state.space !== 'HEX') {
+        this.__state.hex = math.rgb_to_hex(this.r, this.g, this.b);
+      }
+
+      return this.__state.hex;
+
+    },
+
+    set: function(v) {
+
+      this.__state.space = 'HEX';
+      this.__state.hex = v;
+
+    }
+
+  });
+
+  function defineRGBComponent(target, component, componentHexIndex) {
+
+    Object.defineProperty(target, component, {
+
+      get: function() {
+
+        if (this.__state.space === 'RGB') {
+          return this.__state[component];
+        }
+
+        recalculateRGB(this, component, componentHexIndex);
+
+        return this.__state[component];
+
+      },
+
+      set: function(v) {
+
+        if (this.__state.space !== 'RGB') {
+          recalculateRGB(this, component, componentHexIndex);
+          this.__state.space = 'RGB';
+        }
+
+        this.__state[component] = v;
+
+      }
+
+    });
+
+  }
+
+  function defineHSVComponent(target, component) {
+
+    Object.defineProperty(target, component, {
+
+      get: function() {
+
+        if (this.__state.space === 'HSV')
+          return this.__state[component];
+
+        recalculateHSV(this);
+
+        return this.__state[component];
+
+      },
+
+      set: function(v) {
+
+        if (this.__state.space !== 'HSV') {
+          recalculateHSV(this);
+          this.__state.space = 'HSV';
+        }
+
+        this.__state[component] = v;
+
+      }
+
+    });
+
+  }
+
+  function recalculateRGB(color, component, componentHexIndex) {
+
+    if (color.__state.space === 'HEX') {
+
+      color.__state[component] = math.component_from_hex(color.__state.hex, componentHexIndex);
+
+    } else if (color.__state.space === 'HSV') {
+
+      common.extend(color.__state, math.hsv_to_rgb(color.__state.h, color.__state.s, color.__state.v));
+
+    } else {
+
+      throw 'Corrupted color state';
+
+    }
+
+  }
+
+  function recalculateHSV(color) {
+
+    var result = math.rgb_to_hsv(color.r, color.g, color.b);
+
+    common.extend(color.__state,
+        {
+          s: result.s,
+          v: result.v
+        }
+    );
+
+    if (!common.isNaN(result.h)) {
+      color.__state.h = result.h;
+    } else if (common.isUndefined(color.__state.h)) {
+      color.__state.h = 0;
+    }
+
+  }
+
+  return Color;
+
+})(dat.color.interpret,
+dat.color.math = (function () {
+
+  var tmpComponent;
+
+  return {
+
+    hsv_to_rgb: function(h, s, v) {
+
+      var hi = Math.floor(h / 60) % 6;
+
+      var f = h / 60 - Math.floor(h / 60);
+      var p = v * (1.0 - s);
+      var q = v * (1.0 - (f * s));
+      var t = v * (1.0 - ((1.0 - f) * s));
+      var c = [
+        [v, t, p],
+        [q, v, p],
+        [p, v, t],
+        [p, q, v],
+        [t, p, v],
+        [v, p, q]
+      ][hi];
+
+      return {
+        r: c[0] * 255,
+        g: c[1] * 255,
+        b: c[2] * 255
+      };
+
+    },
+
+    rgb_to_hsv: function(r, g, b) {
+
+      var min = Math.min(r, g, b),
+          max = Math.max(r, g, b),
+          delta = max - min,
+          h, s;
+
+      if (max != 0) {
+        s = delta / max;
+      } else {
+        return {
+          h: NaN,
+          s: 0,
+          v: 0
+        };
+      }
+
+      if (r == max) {
+        h = (g - b) / delta;
+      } else if (g == max) {
+        h = 2 + (b - r) / delta;
+      } else {
+        h = 4 + (r - g) / delta;
+      }
+      h /= 6;
+      if (h < 0) {
+        h += 1;
+      }
+
+      return {
+        h: h * 360,
+        s: s,
+        v: max / 255
+      };
+    },
+
+    rgb_to_hex: function(r, g, b) {
+      var hex = this.hex_with_component(0, 2, r);
+      hex = this.hex_with_component(hex, 1, g);
+      hex = this.hex_with_component(hex, 0, b);
+      return hex;
+    },
+
+    component_from_hex: function(hex, componentIndex) {
+      return (hex >> (componentIndex * 8)) & 0xFF;
+    },
+
+    hex_with_component: function(hex, componentIndex, value) {
+      return value << (tmpComponent = componentIndex * 8) | (hex & ~ (0xFF << tmpComponent));
+    }
+
+  }
+
+})(),
+dat.color.toString,
+dat.utils.common),
+dat.color.interpret,
+dat.utils.common),
+dat.utils.requestAnimationFrame = (function () {
+
+  /**
+   * requirejs version of Paul Irish's RequestAnimationFrame
+   * http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+   */
+
+  return window.webkitRequestAnimationFrame ||
+      window.mozRequestAnimationFrame ||
+      window.oRequestAnimationFrame ||
+      window.msRequestAnimationFrame ||
+      function(callback, element) {
+
+        window.setTimeout(callback, 1000 / 60);
+
+      };
+})(),
+dat.dom.CenteredDiv = (function (dom, common) {
+
+
+  var CenteredDiv = function() {
+
+    this.backgroundElement = document.createElement('div');
+    common.extend(this.backgroundElement.style, {
+      backgroundColor: 'rgba(0,0,0,0.8)',
+      top: 0,
+      left: 0,
+      display: 'none',
+      zIndex: '1000',
+      opacity: 0,
+      WebkitTransition: 'opacity 0.2s linear'
+    });
+
+    dom.makeFullscreen(this.backgroundElement);
+    this.backgroundElement.style.position = 'fixed';
+
+    this.domElement = document.createElement('div');
+    common.extend(this.domElement.style, {
+      position: 'fixed',
+      display: 'none',
+      zIndex: '1001',
+      opacity: 0,
+      WebkitTransition: '-webkit-transform 0.2s ease-out, opacity 0.2s linear'
+    });
+
+
+    document.body.appendChild(this.backgroundElement);
+    document.body.appendChild(this.domElement);
+
+    var _this = this;
+    dom.bind(this.backgroundElement, 'click', function() {
+      _this.hide();
+    });
+
+
+  };
+
+  CenteredDiv.prototype.show = function() {
+
+    var _this = this;
+    
+
+
+    this.backgroundElement.style.display = 'block';
+
+    this.domElement.style.display = 'block';
+    this.domElement.style.opacity = 0;
+//    this.domElement.style.top = '52%';
+    this.domElement.style.webkitTransform = 'scale(1.1)';
+
+    this.layout();
+
+    common.defer(function() {
+      _this.backgroundElement.style.opacity = 1;
+      _this.domElement.style.opacity = 1;
+      _this.domElement.style.webkitTransform = 'scale(1)';
+    });
+
+  };
+
+  CenteredDiv.prototype.hide = function() {
+
+    var _this = this;
+
+    var hide = function() {
+
+      _this.domElement.style.display = 'none';
+      _this.backgroundElement.style.display = 'none';
+
+      dom.unbind(_this.domElement, 'webkitTransitionEnd', hide);
+      dom.unbind(_this.domElement, 'transitionend', hide);
+      dom.unbind(_this.domElement, 'oTransitionEnd', hide);
+
+    };
+
+    dom.bind(this.domElement, 'webkitTransitionEnd', hide);
+    dom.bind(this.domElement, 'transitionend', hide);
+    dom.bind(this.domElement, 'oTransitionEnd', hide);
+
+    this.backgroundElement.style.opacity = 0;
+//    this.domElement.style.top = '48%';
+    this.domElement.style.opacity = 0;
+    this.domElement.style.webkitTransform = 'scale(1.1)';
+
+  };
+
+  CenteredDiv.prototype.layout = function() {
+    this.domElement.style.left = window.innerWidth/2 - dom.getWidth(this.domElement) / 2 + 'px';
+    this.domElement.style.top = window.innerHeight/2 - dom.getHeight(this.domElement) / 2 + 'px';
+  };
+  
+  function lockScroll(e) {
+    console.log(e);
+  }
+
+  return CenteredDiv;
+
+})(dat.dom.dom,
+dat.utils.common),
+dat.dom.dom,
+dat.utils.common);
 },{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Context.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -3217,6 +7663,386 @@ Transform.inFront = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1e-3, 1];
 Transform.behind = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -1e-3, 1];
 
 module.exports = Transform;
+},{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+
+
+
+/**
+ * Three-element floating point vector.
+ *
+ * @class Vector
+ * @constructor
+ *
+ * @param {number} x x element value
+ * @param {number} y y element value
+ * @param {number} z z element value
+ */
+function Vector(x,y,z) {
+    if (arguments.length === 1 && x !== undefined) this.set(x);
+    else {
+        this.x = x || 0;
+        this.y = y || 0;
+        this.z = z || 0;
+    }
+    return this;
+}
+
+var _register = new Vector(0,0,0);
+
+/**
+ * Add this element-wise to another Vector, element-wise.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ *
+ * @method add
+ * @param {Vector} v addend
+ * @return {Vector} vector sum
+ */
+Vector.prototype.add = function add(v) {
+    return _setXYZ.call(_register,
+        this.x + v.x,
+        this.y + v.y,
+        this.z + v.z
+    );
+};
+
+/**
+ * Subtract another vector from this vector, element-wise.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ *
+ * @method sub
+ * @param {Vector} v subtrahend
+ * @return {Vector} vector difference
+ */
+Vector.prototype.sub = function sub(v) {
+    return _setXYZ.call(_register,
+        this.x - v.x,
+        this.y - v.y,
+        this.z - v.z
+    );
+};
+
+/**
+ * Scale Vector by floating point r.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ *
+ * @method mult
+ *
+ * @param {number} r scalar
+ * @return {Vector} vector result
+ */
+Vector.prototype.mult = function mult(r) {
+    return _setXYZ.call(_register,
+        r * this.x,
+        r * this.y,
+        r * this.z
+    );
+};
+
+/**
+ * Scale Vector by floating point 1/r.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ *
+ * @method div
+ *
+ * @param {number} r scalar
+ * @return {Vector} vector result
+ */
+Vector.prototype.div = function div(r) {
+    return this.mult(1 / r);
+};
+
+/**
+ * Given another vector v, return cross product (v)x(this).
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ *
+ * @method cross
+ * @param {Vector} v Left Hand Vector
+ * @return {Vector} vector result
+ */
+Vector.prototype.cross = function cross(v) {
+    var x = this.x;
+    var y = this.y;
+    var z = this.z;
+    var vx = v.x;
+    var vy = v.y;
+    var vz = v.z;
+
+    return _setXYZ.call(_register,
+        z * vy - y * vz,
+        x * vz - z * vx,
+        y * vx - x * vy
+    );
+};
+
+/**
+ * Component-wise equality test between this and Vector v.
+ * @method equals
+ * @param {Vector} v vector to compare
+ * @return {boolean}
+ */
+Vector.prototype.equals = function equals(v) {
+    return (v.x === this.x && v.y === this.y && v.z === this.z);
+};
+
+/**
+ * Rotate clockwise around x-axis by theta radians.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ * @method rotateX
+ * @param {number} theta radians
+ * @return {Vector} rotated vector
+ */
+Vector.prototype.rotateX = function rotateX(theta) {
+    var x = this.x;
+    var y = this.y;
+    var z = this.z;
+
+    var cosTheta = Math.cos(theta);
+    var sinTheta = Math.sin(theta);
+
+    return _setXYZ.call(_register,
+        x,
+        y * cosTheta - z * sinTheta,
+        y * sinTheta + z * cosTheta
+    );
+};
+
+/**
+ * Rotate clockwise around y-axis by theta radians.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ * @method rotateY
+ * @param {number} theta radians
+ * @return {Vector} rotated vector
+ */
+Vector.prototype.rotateY = function rotateY(theta) {
+    var x = this.x;
+    var y = this.y;
+    var z = this.z;
+
+    var cosTheta = Math.cos(theta);
+    var sinTheta = Math.sin(theta);
+
+    return _setXYZ.call(_register,
+        z * sinTheta + x * cosTheta,
+        y,
+        z * cosTheta - x * sinTheta
+    );
+};
+
+/**
+ * Rotate clockwise around z-axis by theta radians.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ * @method rotateZ
+ * @param {number} theta radians
+ * @return {Vector} rotated vector
+ */
+Vector.prototype.rotateZ = function rotateZ(theta) {
+    var x = this.x;
+    var y = this.y;
+    var z = this.z;
+
+    var cosTheta = Math.cos(theta);
+    var sinTheta = Math.sin(theta);
+
+    return _setXYZ.call(_register,
+        x * cosTheta - y * sinTheta,
+        x * sinTheta + y * cosTheta,
+        z
+    );
+};
+
+/**
+ * Return dot product of this with a second Vector
+ * @method dot
+ * @param {Vector} v second vector
+ * @return {number} dot product
+ */
+Vector.prototype.dot = function dot(v) {
+    return this.x * v.x + this.y * v.y + this.z * v.z;
+};
+
+/**
+ * Return squared length of this vector
+ * @method normSquared
+ * @return {number} squared length
+ */
+Vector.prototype.normSquared = function normSquared() {
+    return this.dot(this);
+};
+
+/**
+ * Return length of this vector
+ * @method norm
+ * @return {number} length
+ */
+Vector.prototype.norm = function norm() {
+    return Math.sqrt(this.normSquared());
+};
+
+/**
+ * Scale Vector to specified length.
+ *   If length is less than internal tolerance, set vector to [length, 0, 0].
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ * @method normalize
+ *
+ * @param {number} length target length, default 1.0
+ * @return {Vector}
+ */
+Vector.prototype.normalize = function normalize(length) {
+    if (arguments.length === 0) length = 1;
+    var norm = this.norm();
+
+    if (norm > 1e-7) return _setFromVector.call(_register, this.mult(length / norm));
+    else return _setXYZ.call(_register, length, 0, 0);
+};
+
+/**
+ * Make a separate copy of the Vector.
+ *
+ * @method clone
+ *
+ * @return {Vector}
+ */
+Vector.prototype.clone = function clone() {
+    return new Vector(this);
+};
+
+/**
+ * True if and only if every value is 0 (or falsy)
+ *
+ * @method isZero
+ *
+ * @return {boolean}
+ */
+Vector.prototype.isZero = function isZero() {
+    return !(this.x || this.y || this.z);
+};
+
+function _setXYZ(x,y,z) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    return this;
+}
+
+function _setFromArray(v) {
+    return _setXYZ.call(this,v[0],v[1],v[2] || 0);
+}
+
+function _setFromVector(v) {
+    return _setXYZ.call(this, v.x, v.y, v.z);
+}
+
+function _setFromNumber(x) {
+    return _setXYZ.call(this,x,0,0);
+}
+
+/**
+ * Set this Vector to the values in the provided Array or Vector.
+ *
+ * @method set
+ * @param {object} v array, Vector, or number
+ * @return {Vector} this
+ */
+Vector.prototype.set = function set(v) {
+    if (v instanceof Array) return _setFromArray.call(this, v);
+    if (typeof v === 'number') return _setFromNumber.call(this, v);
+    return _setFromVector.call(this, v);
+};
+
+Vector.prototype.setXYZ = function(x,y,z) {
+    return _setXYZ.apply(this, arguments);
+};
+
+Vector.prototype.set1D = function(x) {
+    return _setFromNumber.call(this, x);
+};
+
+/**
+ * Put result of last internal register calculation in specified output vector.
+ *
+ * @method put
+ * @param {Vector} v destination vector
+ * @return {Vector} destination vector
+ */
+
+Vector.prototype.put = function put(v) {
+    if (this === _register) _setFromVector.call(v, _register);
+    else _setFromVector.call(v, this);
+};
+
+/**
+ * Set this vector to [0,0,0]
+ *
+ * @method clear
+ */
+Vector.prototype.clear = function clear() {
+    return _setXYZ.call(this,0,0,0);
+};
+
+/**
+ * Scale this Vector down to specified "cap" length.
+ *   If Vector shorter than cap, or cap is Infinity, do nothing.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ *
+ * @method cap
+ * @return {Vector} capped vector
+ */
+Vector.prototype.cap = function cap(cap) {
+    if (cap === Infinity) return _setFromVector.call(_register, this);
+    var norm = this.norm();
+    if (norm > cap) return _setFromVector.call(_register, this.mult(cap / norm));
+    else return _setFromVector.call(_register, this);
+};
+
+/**
+ * Return projection of this Vector onto another.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ *
+ * @method project
+ * @param {Vector} n vector to project upon
+ * @return {Vector} projected vector
+ */
+Vector.prototype.project = function project(n) {
+    return n.mult(this.dot(n));
+};
+
+/**
+ * Reflect this Vector across provided vector.
+ *   Note: This sets the internal result register, so other references to that vector will change.
+ *
+ * @method reflectAcross
+ * @param {Vector} n vector to reflect across
+ * @return {Vector} reflected vector
+ */
+Vector.prototype.reflectAcross = function reflectAcross(n) {
+    n.normalize().put(n);
+    return _setFromVector(_register, this.sub(this.project(n).mult(2)));
+};
+
+/**
+ * Convert Vector to three-element array.
+ *
+ * @method get
+ * @return {array<number>} three-element array
+ */
+Vector.prototype.get = function get() {
+    return [this.x, this.y, this.z];
+};
+
+Vector.prototype.get1D = function() {
+    return this.x;
+};
+
+module.exports = Vector;
 },{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -3481,7 +8307,1652 @@ StateModifier.prototype.modify = function modify(target) {
 };
 
 module.exports = StateModifier;
-},{"../core/Modifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Modifier.js","../core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","../transitions/Transitionable":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js","../transitions/TransitionableTransform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/TransitionableTransform.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/MultipleTransition.js":[function(require,module,exports){
+},{"../core/Modifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Modifier.js","../core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","../transitions/Transitionable":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js","../transitions/TransitionableTransform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/TransitionableTransform.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/PhysicsEngine.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+var EventHandler = require('../core/EventHandler');
+
+/**
+ * The Physics Engine is responsible for mediating Bodies and their
+ * interaction with forces and constraints. The Physics Engine handles the
+ * logic of adding and removing bodies, updating their state of the over
+ * time.
+ *
+ * @class PhysicsEngine
+ * @constructor
+ * @param options {Object} options
+ */
+function PhysicsEngine(options) {
+    this.options = Object.create(PhysicsEngine.DEFAULT_OPTIONS);
+    if (options) this.setOptions(options);
+
+    this._particles      = [];   //list of managed particles
+    this._bodies         = [];   //list of managed bodies
+    this._agents         = {};   //hash of managed agents
+    this._forces         = [];   //list of IDs of agents that are forces
+    this._constraints    = [];   //list of IDs of agents that are constraints
+
+    this._buffer         = 0.0;
+    this._prevTime       = now();
+    this._isSleeping     = false;
+    this._eventHandler   = null;
+    this._currAgentId    = 0;
+    this._hasBodies      = false;
+}
+
+var TIMESTEP = 17;
+var MIN_TIME_STEP = 1000 / 120;
+var MAX_TIME_STEP = 17;
+
+/**
+ * @property PhysicsEngine.DEFAULT_OPTIONS
+ * @type Object
+ * @protected
+ * @static
+ */
+PhysicsEngine.DEFAULT_OPTIONS = {
+
+    /**
+     * The number of iterations the engine takes to resolve constraints
+     * @attribute constraintSteps
+     * @type Number
+     */
+    constraintSteps : 1,
+
+    /**
+     * The energy threshold before the Engine stops updating
+     * @attribute sleepTolerance
+     * @type Number
+     */
+    sleepTolerance  : 1e-7
+};
+
+var now = (function() {
+    return Date.now;
+})();
+
+/**
+ * Options setter
+ *
+ * @method setOptions
+ * @param opts {Object}
+ */
+PhysicsEngine.prototype.setOptions = function setOptions(opts) {
+    for (var key in opts) if (this.options[key]) this.options[key] = opts[key];
+};
+
+/**
+ * Method to add a physics body to the engine. Necessary to update the
+ * body over time.
+ *
+ * @method addBody
+ * @param body {Body}
+ * @return body {Body}
+ */
+PhysicsEngine.prototype.addBody = function addBody(body) {
+    body._engine = this;
+    if (body.isBody) {
+        this._bodies.push(body);
+        this._hasBodies = true;
+    }
+    else this._particles.push(body);
+    return body;
+};
+
+/**
+ * Remove a body from the engine. Detaches body from all forces and
+ * constraints.
+ *
+ * @method removeBody
+ * @param body {Body}
+ */
+PhysicsEngine.prototype.removeBody = function removeBody(body) {
+    var array = (body.isBody) ? this._bodies : this._particles;
+    var index = array.indexOf(body);
+    if (index > -1) {
+        for (var i = 0; i < Object.keys(this._agents).length; i++) this.detachFrom(i, body);
+        array.splice(index,1);
+    }
+    if (this.getBodies().length === 0) this._hasBodies = false;
+};
+
+function _mapAgentArray(agent) {
+    if (agent.applyForce)      return this._forces;
+    if (agent.applyConstraint) return this._constraints;
+}
+
+function _attachOne(agent, targets, source) {
+    if (targets === undefined) targets = this.getParticlesAndBodies();
+    if (!(targets instanceof Array)) targets = [targets];
+
+    this._agents[this._currAgentId] = {
+        agent   : agent,
+        targets : targets,
+        source  : source
+    };
+
+    _mapAgentArray.call(this, agent).push(this._currAgentId);
+    return this._currAgentId++;
+}
+
+/**
+ * Attaches a force or constraint to a Body. Returns an AgentId of the
+ * attached agent which can be used to detach the agent.
+ *
+ * @method attach
+ * @param agents {Agent|Array.Agent} A force, constraint, or array of them.
+ * @param [targets=All] {Body|Array.Body} The Body or Bodies affected by the agent
+ * @param [source] {Body} The source of the agent
+ * @return AgentId {Number}
+ */
+PhysicsEngine.prototype.attach = function attach(agents, targets, source) {
+    if (agents instanceof Array) {
+        var agentIDs = [];
+        for (var i = 0; i < agents.length; i++)
+            agentIDs[i] = _attachOne.call(this, agents[i], targets, source);
+        return agentIDs;
+    }
+    else return _attachOne.call(this, agents, targets, source);
+};
+
+/**
+ * Append a body to the targets of a previously defined physics agent.
+ *
+ * @method attachTo
+ * @param agentID {AgentId} The agentId of a previously defined agent
+ * @param target {Body} The Body affected by the agent
+ */
+PhysicsEngine.prototype.attachTo = function attachTo(agentID, target) {
+    _getBoundAgent.call(this, agentID).targets.push(target);
+};
+
+/**
+ * Undoes PhysicsEngine.attach. Removes an agent and its associated
+ * effect on its affected Bodies.
+ *
+ * @method detach
+ * @param id {AgentId} The agentId of a previously defined agent
+ */
+PhysicsEngine.prototype.detach = function detach(id) {
+    // detach from forces/constraints array
+    var agent = this.getAgent(id);
+    var agentArray = _mapAgentArray.call(this, agent);
+    var index = agentArray.indexOf(id);
+    agentArray.splice(index,1);
+
+    // detach agents array
+    delete this._agents[id];
+};
+
+/**
+ * Remove a single Body from a previously defined agent.
+ *
+ * @method detach
+ * @param id {AgentId} The agentId of a previously defined agent
+ * @param target {Body} The body to remove from the agent
+ */
+PhysicsEngine.prototype.detachFrom = function detachFrom(id, target) {
+    var boundAgent = _getBoundAgent.call(this, id);
+    if (boundAgent.source === target) this.detach(id);
+    else {
+        var targets = boundAgent.targets;
+        var index = targets.indexOf(target);
+        if (index > -1) targets.splice(index,1);
+    }
+};
+
+/**
+ * A convenience method to give the Physics Engine a clean slate of
+ * agents. Preserves all added Body objects.
+ *
+ * @method detachAll
+ */
+PhysicsEngine.prototype.detachAll = function detachAll() {
+    this._agents        = {};
+    this._forces        = [];
+    this._constraints   = [];
+    this._currAgentId   = 0;
+};
+
+function _getBoundAgent(id) {
+    return this._agents[id];
+}
+
+/**
+ * Returns the corresponding agent given its agentId.
+ *
+ * @method getAgent
+ * @param id {AgentId}
+ */
+PhysicsEngine.prototype.getAgent = function getAgent(id) {
+    return _getBoundAgent.call(this, id).agent;
+};
+
+/**
+ * Returns all particles that are currently managed by the Physics Engine.
+ *
+ * @method getParticles
+ * @return particles {Array.Particles}
+ */
+PhysicsEngine.prototype.getParticles = function getParticles() {
+    return this._particles;
+};
+
+/**
+ * Returns all bodies, except particles, that are currently managed by the Physics Engine.
+ *
+ * @method getBodies
+ * @return bodies {Array.Bodies}
+ */
+PhysicsEngine.prototype.getBodies = function getBodies() {
+    return this._bodies;
+};
+
+/**
+ * Returns all bodies that are currently managed by the Physics Engine.
+ *
+ * @method getBodies
+ * @return bodies {Array.Bodies}
+ */
+PhysicsEngine.prototype.getParticlesAndBodies = function getParticlesAndBodies() {
+    return this.getParticles().concat(this.getBodies());
+};
+
+/**
+ * Iterates over every Particle and applies a function whose first
+ * argument is the Particle
+ *
+ * @method forEachParticle
+ * @param fn {Function} Function to iterate over
+ * @param [dt] {Number} Delta time
+ */
+PhysicsEngine.prototype.forEachParticle = function forEachParticle(fn, dt) {
+    var particles = this.getParticles();
+    for (var index = 0, len = particles.length; index < len; index++)
+        fn.call(this, particles[index], dt);
+};
+
+/**
+ * Iterates over every Body that isn't a Particle and applies
+ * a function whose first argument is the Body
+ *
+ * @method forEachBody
+ * @param fn {Function} Function to iterate over
+ * @param [dt] {Number} Delta time
+ */
+PhysicsEngine.prototype.forEachBody = function forEachBody(fn, dt) {
+    if (!this._hasBodies) return;
+    var bodies = this.getBodies();
+    for (var index = 0, len = bodies.length; index < len; index++)
+        fn.call(this, bodies[index], dt);
+};
+
+/**
+ * Iterates over every Body and applies a function whose first
+ * argument is the Body
+ *
+ * @method forEach
+ * @param fn {Function} Function to iterate over
+ * @param [dt] {Number} Delta time
+ */
+PhysicsEngine.prototype.forEach = function forEach(fn, dt) {
+    this.forEachParticle(fn, dt);
+    this.forEachBody(fn, dt);
+};
+
+function _updateForce(index) {
+    var boundAgent = _getBoundAgent.call(this, this._forces[index]);
+    boundAgent.agent.applyForce(boundAgent.targets, boundAgent.source);
+}
+
+function _updateForces() {
+    for (var index = this._forces.length - 1; index > -1; index--)
+        _updateForce.call(this, index);
+}
+
+function _updateConstraint(index, dt) {
+    var boundAgent = this._agents[this._constraints[index]];
+    return boundAgent.agent.applyConstraint(boundAgent.targets, boundAgent.source, dt);
+}
+
+function _updateConstraints(dt) {
+    var iteration = 0;
+    while (iteration < this.options.constraintSteps) {
+        for (var index = this._constraints.length - 1; index > -1; index--)
+            _updateConstraint.call(this, index, dt);
+        iteration++;
+    }
+}
+
+function _updateVelocities(particle, dt) {
+    particle.integrateVelocity(dt);
+}
+
+function _updateAngularVelocities(body, dt) {
+    body.integrateAngularMomentum(dt);
+    body.updateAngularVelocity();
+}
+
+function _updateOrientations(body, dt) {
+    body.integrateOrientation(dt);
+}
+
+function _updatePositions(particle, dt) {
+    particle.integratePosition(dt);
+    particle.emit('update', particle);
+}
+
+function _integrate(dt) {
+    _updateForces.call(this, dt);
+    this.forEach(_updateVelocities, dt);
+    this.forEachBody(_updateAngularVelocities, dt);
+    _updateConstraints.call(this, dt);
+    this.forEachBody(_updateOrientations, dt);
+    this.forEach(_updatePositions, dt);
+}
+
+function _getEnergyParticles() {
+    var energy = 0.0;
+    var particleEnergy = 0.0;
+    this.forEach(function(particle) {
+        particleEnergy = particle.getEnergy();
+        energy += particleEnergy;
+        if (particleEnergy < particle.sleepTolerance) particle.sleep();
+    });
+    return energy;
+}
+
+function _getEnergyForces() {
+    var energy = 0;
+    for (var index = this._forces.length - 1; index > -1; index--)
+        energy += this._forces[index].getEnergy() || 0.0;
+    return energy;
+}
+
+function _getEnergyConstraints() {
+    var energy = 0;
+    for (var index = this._constraints.length - 1; index > -1; index--)
+        energy += this._constraints[index].getEnergy() || 0.0;
+    return energy;
+}
+
+/**
+ * Calculates the kinetic energy of all Body objects and potential energy
+ * of all attached agents.
+ *
+ * TODO: implement.
+ * @method getEnergy
+ * @return energy {Number}
+ */
+PhysicsEngine.prototype.getEnergy = function getEnergy() {
+    return _getEnergyParticles.call(this) + _getEnergyForces.call(this) + _getEnergyConstraints.call(this);
+};
+
+/**
+ * Updates all Body objects managed by the physics engine over the
+ * time duration since the last time step was called.
+ *
+ * @method step
+ */
+PhysicsEngine.prototype.step = function step() {
+//        if (this.getEnergy() < this.options.sleepTolerance) {
+//            this.sleep();
+//            return;
+//        };
+
+    //set current frame's time
+    var currTime = now();
+
+    //milliseconds elapsed since last frame
+    var dtFrame = currTime - this._prevTime;
+
+    this._prevTime = currTime;
+
+    if (dtFrame < MIN_TIME_STEP) return;
+    if (dtFrame > MAX_TIME_STEP) dtFrame = MAX_TIME_STEP;
+
+    //robust integration
+//        this._buffer += dtFrame;
+//        while (this._buffer > this._timestep){
+//            _integrate.call(this, this._timestep);
+//            this._buffer -= this._timestep;
+//        };
+//        _integrate.call(this, this._buffer);
+//        this._buffer = 0.0;
+    _integrate.call(this, TIMESTEP);
+
+//        this.emit('update', this);
+};
+
+/**
+ * Tells whether the Physics Engine is sleeping or awake.
+ * @method isSleeping
+ * @return {Boolean}
+ */
+PhysicsEngine.prototype.isSleeping = function isSleeping() {
+    return this._isSleeping;
+};
+
+/**
+ * Stops the Physics Engine from updating. Emits an 'end' event.
+ * @method sleep
+ */
+PhysicsEngine.prototype.sleep = function sleep() {
+    this.emit('end', this);
+    this._isSleeping = true;
+};
+
+/**
+ * Starts the Physics Engine from updating. Emits an 'start' event.
+ * @method wake
+ */
+PhysicsEngine.prototype.wake = function wake() {
+    this._prevTime = now();
+    this.emit('start', this);
+    this._isSleeping = false;
+};
+
+PhysicsEngine.prototype.emit = function emit(type, data) {
+    if (this._eventHandler === null) return;
+    this._eventHandler.emit(type, data);
+};
+
+PhysicsEngine.prototype.on = function on(event, fn) {
+    if (this._eventHandler === null) this._eventHandler = new EventHandler();
+    this._eventHandler.on(event, fn);
+};
+
+module.exports = PhysicsEngine;
+},{"../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/bodies/Particle.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var Vector = require('../../math/Vector');
+var Transform = require('../../core/Transform');
+var EventHandler = require('../../core/EventHandler');
+var Integrator = require('../integrators/SymplecticEuler');
+
+/**
+ * A point body that is controlled by the Physics Engine. A particle has
+ *   position and velocity states that are updated by the Physics Engine.
+ *   Ultimately, a particle is a _special type of modifier, and can be added to
+ *   the Famous render tree like any other modifier.
+ *
+ * @constructor
+ * @class Particle
+ * @uses EventHandler
+ * @uses Modifier
+ * @extensionfor Body
+ * @param {Options} [options] An object of configurable options.
+ * @param {Array} [options.position] The position of the particle.
+ * @param {Array} [options.velocity] The velocity of the particle.
+ * @param {Number} [options.mass] The mass of the particle.
+ * @param {Hexadecimal} [options.axis] The axis a particle can move along. Can be bitwise ORed e.g., Particle.AXES.X, Particle.AXES.X | Particle.AXES.Y
+ *
+ */
+ function Particle(options) {
+    options = options || {};
+
+    // registers
+    this.position = new Vector();
+    this.velocity = new Vector();
+    this.force    = new Vector();
+
+    var defaults  = Particle.DEFAULT_OPTIONS;
+
+    // set vectors
+    this.setPosition(options.position || defaults.position);
+    this.setVelocity(options.velocity || defaults.velocity);
+    this.force.set(options.force || [0,0,0]);
+
+    // set scalars
+    this.mass = (options.mass !== undefined)
+        ? options.mass
+        : defaults.mass;
+
+    this.axis = (options.axis !== undefined)
+        ? options.axis
+        : defaults.axis;
+
+    this.inverseMass = 1 / this.mass;
+
+    // state variables
+    this._isSleeping     = false;
+    this._engine         = null;
+    this._eventOutput    = null;
+    this._positionGetter = null;
+
+    this.transform = Transform.identity.slice();
+
+    // cached _spec
+    this._spec = {
+        transform : this.transform,
+        target    : null
+    };
+}
+
+Particle.DEFAULT_OPTIONS = {
+    position : [0,0,0],
+    velocity : [0,0,0],
+    mass : 1,
+    axis : undefined
+};
+
+/**
+ * Kinetic energy threshold needed to update the body
+ *
+ * @property SLEEP_TOLERANCE
+ * @type Number
+ * @static
+ * @default 1e-7
+ */
+Particle.SLEEP_TOLERANCE = 1e-7;
+
+/**
+ * Axes by which a body can translate
+ *
+ * @property AXES
+ * @type Hexadecimal
+ * @static
+ * @default 1e-7
+ */
+Particle.AXES = {
+    X : 0x00, // hexadecimal for 0
+    Y : 0x01, // hexadecimal for 1
+    Z : 0x02  // hexadecimal for 2
+};
+
+// Integrator for updating the particle's state
+// TODO: make this a singleton
+Particle.INTEGRATOR = new Integrator();
+
+//Catalogue of outputted events
+var _events = {
+    start  : 'start',
+    update : 'update',
+    end    : 'end'
+};
+
+// Cached timing function
+var now = (function() {
+    return Date.now;
+})();
+
+/**
+ * Stops the particle from updating
+ * @method sleep
+ */
+Particle.prototype.sleep = function sleep() {
+    if (this._isSleeping) return;
+    this.emit(_events.end, this);
+    this._isSleeping = true;
+};
+
+/**
+ * Starts the particle update
+ * @method wake
+ */
+Particle.prototype.wake = function wake() {
+    if (!this._isSleeping) return;
+    this.emit(_events.start, this);
+    this._isSleeping = false;
+    this._prevTime = now();
+};
+
+/**
+ * @attribute isBody
+ * @type Boolean
+ * @static
+ */
+Particle.prototype.isBody = false;
+
+/**
+ * Basic setter for position
+ * @method setPosition
+ * @param position {Array|Vector}
+ */
+Particle.prototype.setPosition = function setPosition(position) {
+    this.position.set(position);
+};
+
+/**
+ * 1-dimensional setter for position
+ * @method setPosition1D
+ * @param x {Number}
+ */
+Particle.prototype.setPosition1D = function setPosition1D(x) {
+    this.position.x = x;
+};
+
+/**
+ * Basic getter function for position
+ * @method getPosition
+ * @return position {Array}
+ */
+Particle.prototype.getPosition = function getPosition() {
+    if (this._positionGetter instanceof Function)
+        this.setPosition(this._positionGetter());
+
+    this._engine.step();
+
+    return this.position.get();
+};
+
+/**
+ * 1-dimensional getter for position
+ * @method getPosition1D
+ * @return value {Number}
+ */
+Particle.prototype.getPosition1D = function getPosition1D() {
+    this._engine.step();
+    return this.position.x;
+};
+
+/**
+ * Defines the position from outside the Physics Engine
+ * @method positionFrom
+ * @param positionGetter {Function}
+ */
+Particle.prototype.positionFrom = function positionFrom(positionGetter) {
+    this._positionGetter = positionGetter;
+};
+
+/**
+ * Basic setter function for velocity Vector
+ * @method setVelocity
+ * @function
+ */
+Particle.prototype.setVelocity = function setVelocity(velocity) {
+    this.velocity.set(velocity);
+    this.wake();
+};
+
+/**
+ * 1-dimensional setter for velocity
+ * @method setVelocity1D
+ * @param x {Number}
+ */
+Particle.prototype.setVelocity1D = function setVelocity1D(x) {
+    this.velocity.x = x;
+    this.wake();
+};
+
+/**
+ * Basic getter function for velocity Vector
+ * @method getVelocity
+ * @return velocity {Array}
+ */
+Particle.prototype.getVelocity = function getVelocity() {
+    return this.velocity.get();
+};
+
+/**
+ * 1-dimensional getter for velocity
+ * @method getVelocity1D
+ * @return velocity {Number}
+ */
+Particle.prototype.getVelocity1D = function getVelocity1D() {
+    return this.velocity.x;
+};
+
+/**
+ * Basic setter function for mass quantity
+ * @method setMass
+ * @param mass {Number} mass
+ */
+Particle.prototype.setMass = function setMass(mass) {
+    this.mass = mass;
+    this.inverseMass = 1 / mass;
+};
+
+/**
+ * Basic getter function for mass quantity
+ * @method getMass
+ * @return mass {Number}
+ */
+Particle.prototype.getMass = function getMass() {
+    return this.mass;
+};
+
+/**
+ * Reset position and velocity
+ * @method reset
+ * @param position {Array|Vector}
+ * @param velocity {Array|Vector}
+ */
+Particle.prototype.reset = function reset(position, velocity) {
+    this.setPosition(position || [0,0,0]);
+    this.setVelocity(velocity || [0,0,0]);
+};
+
+/**
+ * Add force vector to existing internal force Vector
+ * @method applyForce
+ * @param force {Vector}
+ */
+Particle.prototype.applyForce = function applyForce(force) {
+    if (force.isZero()) return;
+    this.force.add(force).put(this.force);
+    this.wake();
+};
+
+/**
+ * Add impulse (change in velocity) Vector to this Vector's velocity.
+ * @method applyImpulse
+ * @param impulse {Vector}
+ */
+Particle.prototype.applyImpulse = function applyImpulse(impulse) {
+    if (impulse.isZero()) return;
+    var velocity = this.velocity;
+    velocity.add(impulse.mult(this.inverseMass)).put(velocity);
+};
+
+/**
+ * Update a particle's velocity from its force accumulator
+ * @method integrateVelocity
+ * @param dt {Number} Time differential
+ */
+Particle.prototype.integrateVelocity = function integrateVelocity(dt) {
+    Particle.INTEGRATOR.integrateVelocity(this, dt);
+};
+
+/**
+ * Update a particle's position from its velocity
+ * @method integratePosition
+ * @param dt {Number} Time differential
+ */
+Particle.prototype.integratePosition = function integratePosition(dt) {
+    Particle.INTEGRATOR.integratePosition(this, dt);
+};
+
+/**
+ * Update the position and velocity of the particle
+ * @method _integrate
+ * @protected
+ * @param dt {Number} Time differential
+ */
+Particle.prototype._integrate = function _integrate(dt) {
+    this.integrateVelocity(dt);
+    this.integratePosition(dt);
+};
+
+/**
+ * Get kinetic energy of the particle.
+ * @method getEnergy
+ * @function
+ */
+Particle.prototype.getEnergy = function getEnergy() {
+    return 0.5 * this.mass * this.velocity.normSquared();
+};
+
+/**
+ * Generate transform from the current position state
+ * @method getTransform
+ * @return Transform {Transform}
+ */
+Particle.prototype.getTransform = function getTransform() {
+    this._engine.step();
+
+    var position = this.position;
+    var axis = this.axis;
+    var transform = this.transform;
+
+    if (axis !== undefined) {
+        if (axis & ~Particle.AXES.X) {
+            position.x = 0;
+        }
+        if (axis & ~Particle.AXES.Y) {
+            position.y = 0;
+        }
+        if (axis & ~Particle.AXES.Z) {
+            position.z = 0;
+        }
+    }
+
+    transform[12] = position.x;
+    transform[13] = position.y;
+    transform[14] = position.z;
+
+    return transform;
+};
+
+/**
+ * The modify interface of a Modifier
+ * @method modify
+ * @param target {Spec}
+ * @return Spec {Spec}
+ */
+Particle.prototype.modify = function modify(target) {
+    var _spec = this._spec;
+    _spec.transform = this.getTransform();
+    _spec.target = target;
+    return _spec;
+};
+
+// private
+function _createEventOutput() {
+    this._eventOutput = new EventHandler();
+    this._eventOutput.bindThis(this);
+    //overrides on/removeListener/pipe/unpipe methods
+    EventHandler.setOutputHandler(this, this._eventOutput);
+}
+
+Particle.prototype.emit = function emit(type, data) {
+    if (!this._eventOutput) return;
+    this._eventOutput.emit(type, data);
+};
+
+Particle.prototype.on = function on() {
+    _createEventOutput.call(this);
+    return this.on.apply(this, arguments);
+};
+Particle.prototype.removeListener = function removeListener() {
+    _createEventOutput.call(this);
+    return this.removeListener.apply(this, arguments);
+};
+Particle.prototype.pipe = function pipe() {
+    _createEventOutput.call(this);
+    return this.pipe.apply(this, arguments);
+};
+Particle.prototype.unpipe = function unpipe() {
+    _createEventOutput.call(this);
+    return this.unpipe.apply(this, arguments);
+};
+
+module.exports = Particle;
+},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js","../../core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../integrators/SymplecticEuler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/integrators/SymplecticEuler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Constraint.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var EventHandler = require('../../core/EventHandler');
+
+/**
+ *  Allows for two circular bodies to collide and bounce off each other.
+ *
+ *  @class Constraint
+ *  @constructor
+ *  @uses EventHandler
+ *  @param options {Object}
+ */
+function Constraint() {
+    this.options = this.options || {};
+    this._energy = 0.0;
+    this._eventOutput = null;
+}
+
+/*
+ * Setter for options.
+ *
+ * @method setOptions
+ * @param options {Objects}
+ */
+Constraint.prototype.setOptions = function setOptions(options) {
+    for (var key in options) this.options[key] = options[key];
+};
+
+/**
+ * Adds an impulse to a physics body's velocity due to the constraint
+ *
+ * @method applyConstraint
+ */
+Constraint.prototype.applyConstraint = function applyConstraint() {};
+
+/**
+ * Getter for energy
+ *
+ * @method getEnergy
+ * @return energy {Number}
+ */
+Constraint.prototype.getEnergy = function getEnergy() {
+    return this._energy;
+};
+
+/**
+ * Setter for energy
+ *
+ * @method setEnergy
+ * @param energy {Number}
+ */
+Constraint.prototype.setEnergy = function setEnergy(energy) {
+    this._energy = energy;
+};
+
+function _createEventOutput() {
+    this._eventOutput = new EventHandler();
+    this._eventOutput.bindThis(this);
+    EventHandler.setOutputHandler(this, this._eventOutput);
+}
+
+Constraint.prototype.on = function on() {
+    _createEventOutput.call(this);
+    return this.on.apply(this, arguments);
+};
+Constraint.prototype.addListener = function addListener() {
+    _createEventOutput.call(this);
+    return this.addListener.apply(this, arguments);
+};
+Constraint.prototype.pipe = function pipe() {
+    _createEventOutput.call(this);
+    return this.pipe.apply(this, arguments);
+};
+Constraint.prototype.removeListener = function removeListener() {
+    return this.removeListener.apply(this, arguments);
+};
+Constraint.prototype.unpipe = function unpipe() {
+    return this.unpipe.apply(this, arguments);
+};
+
+module.exports = Constraint;
+},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Wall.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var Constraint = require('./Constraint');
+var Vector = require('../../math/Vector');
+
+/**
+ *  A wall describes an infinite two-dimensional plane that physics bodies
+ *    can collide with. To define a wall, you must give it a distance (from
+ *    the center of the physics engine's origin, and a normal defining the plane
+ *    of the wall.
+ *
+ *    (wall)
+ *      |
+ *      | (normal)     (origin)
+ *      | --->            *
+ *      |
+ *      |    (distance)
+ *      ...................
+ *            (100px)
+ *
+ *      e.g., Wall({normal : [1,0,0], distance : 100})
+ *      would be a wall 100 pixels to the left, whose normal points right
+ *
+ *  @class Wall
+ *  @constructor
+ *  @extends Constraint
+ *  @param {Options} [options] An object of configurable options.
+ *  @param {Number} [options.restitution] The energy ratio lost in a collision (0 = stick, 1 = elastic). Range : [0, 1]
+ *  @param {Number} [options.drift] Baumgarte stabilization parameter. Makes constraints "loosely" (0) or "tightly" (1) enforced. Range : [0, 1]
+ *  @param {Number} [options.slop] Amount of penetration in pixels to ignore before collision event triggers.
+ *  @param {Array} [options.normal] The normal direction to the wall.
+ *  @param {Number} [options.distance] The distance from the origin that the wall is placed.
+ *  @param {onContact} [options.onContact] How to handle collision against the wall.
+ *
+ */
+function Wall(options) {
+    this.options = Object.create(Wall.DEFAULT_OPTIONS);
+    if (options) this.setOptions(options);
+
+    //registers
+    this.diff = new Vector();
+    this.impulse = new Vector();
+
+    Constraint.call(this);
+}
+
+Wall.prototype = Object.create(Constraint.prototype);
+Wall.prototype.constructor = Wall;
+
+/**
+ * @property Wall.ON_CONTACT
+ * @type Object
+ * @protected
+ * @static
+ */
+Wall.ON_CONTACT = {
+
+    /**
+     * Physical bodies bounce off the wall
+     * @attribute REFLECT
+     */
+    REFLECT : 0,
+
+    /**
+     * Physical bodies are unaffected. Usecase is to fire events on contact.
+     * @attribute SILENT
+     */
+    SILENT : 1
+};
+
+Wall.DEFAULT_OPTIONS = {
+    restitution : 0.5,
+    drift : 0.5,
+    slop : 0,
+    normal : [1, 0, 0],
+    distance : 0,
+    onContact : Wall.ON_CONTACT.REFLECT
+};
+
+/*
+ * Setter for options.
+ *
+ * @method setOptions
+ * @param options {Objects}
+ */
+Wall.prototype.setOptions = function setOptions(options) {
+    if (options.normal !== undefined) {
+        if (options.normal instanceof Vector) this.options.normal = options.normal.clone();
+        if (options.normal instanceof Array)  this.options.normal = new Vector(options.normal);
+    }
+    if (options.restitution !== undefined) this.options.restitution = options.restitution;
+    if (options.drift !== undefined) this.options.drift = options.drift;
+    if (options.slop !== undefined) this.options.slop = options.slop;
+    if (options.distance !== undefined) this.options.distance = options.distance;
+    if (options.onContact !== undefined) this.options.onContact = options.onContact;
+};
+
+function _getNormalVelocity(n, v) {
+    return v.dot(n);
+}
+
+function _getDistanceFromOrigin(p) {
+    var n = this.options.normal;
+    var d = this.options.distance;
+    return p.dot(n) + d;
+}
+
+function _onEnter(particle, overlap, dt) {
+    var p = particle.position;
+    var v = particle.velocity;
+    var m = particle.mass;
+    var n = this.options.normal;
+    var action = this.options.onContact;
+    var restitution = this.options.restitution;
+    var impulse = this.impulse;
+
+    var drift = this.options.drift;
+    var slop = -this.options.slop;
+    var gamma = 0;
+
+    if (this._eventOutput) {
+        var data = {particle : particle, wall : this, overlap : overlap, normal : n};
+        this._eventOutput.emit('preCollision', data);
+        this._eventOutput.emit('collision', data);
+    }
+
+    switch (action) {
+        case Wall.ON_CONTACT.REFLECT:
+            var lambda = (overlap < slop)
+                ? -((1 + restitution) * n.dot(v) + drift / dt * (overlap - slop)) / (m * dt + gamma)
+                : -((1 + restitution) * n.dot(v)) / (m * dt + gamma);
+
+            impulse.set(n.mult(dt * lambda));
+            particle.applyImpulse(impulse);
+            particle.setPosition(p.add(n.mult(-overlap)));
+            break;
+    }
+
+    if (this._eventOutput) this._eventOutput.emit('postCollision', data);
+}
+
+function _onExit(particle, overlap, dt) {
+    var action = this.options.onContact;
+    var p = particle.position;
+    var n = this.options.normal;
+
+    if (action === Wall.ON_CONTACT.REFLECT) {
+        particle.setPosition(p.add(n.mult(-overlap)));
+    }
+}
+
+/**
+ * Adds an impulse to a physics body's velocity due to the wall constraint
+ *
+ * @method applyConstraint
+ * @param targets {Array.Body}  Array of bodies to apply the constraint to
+ * @param source {Body}         The source of the constraint
+ * @param dt {Number}           Delta time
+ */
+Wall.prototype.applyConstraint = function applyConstraint(targets, source, dt) {
+    var n = this.options.normal;
+
+    for (var i = 0; i < targets.length; i++) {
+        var particle = targets[i];
+        var p = particle.position;
+        var v = particle.velocity;
+        var r = particle.radius || 0;
+
+        var overlap = _getDistanceFromOrigin.call(this, p.add(n.mult(-r)));
+        var nv = _getNormalVelocity.call(this, n, v);
+
+        if (overlap <= 0) {
+            if (nv < 0) _onEnter.call(this, particle, overlap, dt);
+            else _onExit.call(this, particle, overlap, dt);
+        }
+    }
+};
+
+module.exports = Wall;
+},{"../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","./Constraint":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Constraint.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Force.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var Vector = require('../../math/Vector');
+var EventHandler = require('../../core/EventHandler');
+
+/**
+ * Force base class.
+ *
+ * @class Force
+ * @uses EventHandler
+ * @constructor
+ */
+function Force(force) {
+    this.force = new Vector(force);
+    this._energy = 0.0;
+    this._eventOutput = null;
+}
+
+/**
+ * Basic setter for options
+ *
+ * @method setOptions
+ * @param options {Objects}
+ */
+Force.prototype.setOptions = function setOptions(options) {
+    for (var key in options) this.options[key] = options[key];
+};
+
+/**
+ * Adds a force to a physics body's force accumulator.
+ *
+ * @method applyForce
+ * @param body {Body}
+ */
+Force.prototype.applyForce = function applyForce(body) {
+    body.applyForce(this.force);
+};
+
+/**
+ * Getter for a force's potential energy.
+ *
+ * @method getEnergy
+ * @return energy {Number}
+ */
+Force.prototype.getEnergy = function getEnergy() {
+    return this._energy;
+};
+
+/*
+ * Setter for a force's potential energy.
+ *
+ * @method setEnergy
+ * @param energy {Number}
+ */
+Force.prototype.setEnergy = function setEnergy(energy) {
+    this._energy = energy;
+};
+
+function _createEventOutput() {
+    this._eventOutput = new EventHandler();
+    this._eventOutput.bindThis(this);
+    EventHandler.setOutputHandler(this, this._eventOutput);
+}
+
+Force.prototype.on = function on() {
+    _createEventOutput.call(this);
+    return this.on.apply(this, arguments);
+};
+Force.prototype.addListener = function addListener() {
+    _createEventOutput.call(this);
+    return this.addListener.apply(this, arguments);
+};
+Force.prototype.pipe = function pipe() {
+    _createEventOutput.call(this);
+    return this.pipe.apply(this, arguments);
+};
+Force.prototype.removeListener = function removeListener() {
+    return this.removeListener.apply(this, arguments);
+};
+Force.prototype.unpipe = function unpipe() {
+    return this.unpipe.apply(this, arguments);
+};
+
+module.exports = Force;
+},{"../../core/EventHandler":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/EventHandler.js","../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Spring.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var Force = require('./Force');
+var Vector = require('../../math/Vector');
+
+/**
+ *  A force that moves a physics body to a location with a spring motion.
+ *    The body can be moved to another physics body, or an anchor point.
+ *
+ *  @class Spring
+ *  @constructor
+ *  @extends Force
+ *  @param {Object} options options to set on drag
+ */
+function Spring(options) {
+    this.options = Object.create(this.constructor.DEFAULT_OPTIONS);
+    if (options) this.setOptions(options);
+
+    //registers
+    this.disp = new Vector(0,0,0);
+
+    _init.call(this);
+    Force.call(this);
+}
+
+Spring.prototype = Object.create(Force.prototype);
+Spring.prototype.constructor = Spring;
+
+/** @const */ var pi = Math.PI;
+
+/**
+ * @property Spring.FORCE_FUNCTIONS
+ * @type Object
+ * @protected
+ * @static
+ */
+Spring.FORCE_FUNCTIONS = {
+
+    /**
+     * A FENE (Finitely Extensible Nonlinear Elastic) spring force
+     *      see: http://en.wikipedia.org/wiki/FENE
+     * @attribute FENE
+     * @type Function
+     * @param {Number} dist current distance target is from source body
+     * @param {Number} rMax maximum range of influence
+     * @return {Number} unscaled force
+     */
+    FENE : function(dist, rMax) {
+        var rMaxSmall = rMax * .99;
+        var r = Math.max(Math.min(dist, rMaxSmall), -rMaxSmall);
+        return r / (1 - r * r/(rMax * rMax));
+    },
+
+    /**
+     * A Hookean spring force, linear in the displacement
+     *      see: http://en.wikipedia.org/wiki/FENE
+     * @attribute FENE
+     * @type Function
+     * @param {Number} dist current distance target is from source body
+     * @return {Number} unscaled force
+     */
+    HOOK : function(dist) {
+        return dist;
+    }
+};
+
+/**
+ * @property Spring.DEFAULT_OPTIONS
+ * @type Object
+ * @protected
+ * @static
+ */
+Spring.DEFAULT_OPTIONS = {
+
+    /**
+     * The amount of time in milliseconds taken for one complete oscillation
+     * when there is no damping
+     *    Range : [150, Infinity]
+     * @attribute period
+     * @type Number
+     * @default 300
+     */
+    period        : 300,
+
+    /**
+     * The damping of the spring.
+     *    Range : [0, 1]
+     *    0 = no damping, and the spring will oscillate forever
+     *    1 = critically damped (the spring will never oscillate)
+     * @attribute dampingRatio
+     * @type Number
+     * @default 0.1
+     */
+    dampingRatio : 0.1,
+
+    /**
+     * The rest length of the spring
+     *    Range : [0, Infinity]
+     * @attribute length
+     * @type Number
+     * @default 0
+     */
+    length : 0,
+
+    /**
+     * The maximum length of the spring (for a FENE spring)
+     *    Range : [0, Infinity]
+     * @attribute length
+     * @type Number
+     * @default Infinity
+     */
+    maxLength : Infinity,
+
+    /**
+     * The location of the spring's anchor, if not another physics body
+     *
+     * @attribute anchor
+     * @type Array
+     * @optional
+     */
+    anchor : undefined,
+
+    /**
+     * The type of spring force
+     * @attribute forceFunction
+     * @type Function
+     */
+    forceFunction : Spring.FORCE_FUNCTIONS.HOOK
+};
+
+function _setForceFunction(fn) {
+    this.forceFunction = fn;
+}
+
+function _calcStiffness() {
+    var options = this.options;
+    options.stiffness = Math.pow(2 * pi / options.period, 2);
+}
+
+function _calcDamping() {
+    var options = this.options;
+    options.damping = 4 * pi * options.dampingRatio / options.period;
+}
+
+function _calcEnergy(strength, dist) {
+    return 0.5 * strength * dist * dist;
+}
+
+function _init() {
+    _setForceFunction.call(this, this.options.forceFunction);
+    _calcStiffness.call(this);
+    _calcDamping.call(this);
+}
+
+/**
+ * Basic options setter
+ *
+ * @method setOptions
+ * @param options {Objects}
+ */
+Spring.prototype.setOptions = function setOptions(options) {
+    if (options.anchor !== undefined) {
+        if (options.anchor.position instanceof Vector) this.options.anchor = options.anchor.position;
+        if (options.anchor   instanceof Vector)  this.options.anchor = options.anchor;
+        if (options.anchor   instanceof Array)  this.options.anchor = new Vector(options.anchor);
+    }
+    if (options.period !== undefined) this.options.period = options.period;
+    if (options.dampingRatio !== undefined) this.options.dampingRatio = options.dampingRatio;
+    if (options.length !== undefined) this.options.length = options.length;
+    if (options.forceFunction !== undefined) this.options.forceFunction = options.forceFunction;
+    if (options.maxLength !== undefined) this.options.maxLength = options.maxLength;
+
+    _init.call(this);
+};
+
+/**
+ * Adds a spring force to a physics body's force accumulator.
+ *
+ * @method applyForce
+ * @param targets {Array.Body} Array of bodies to apply force to.
+ */
+Spring.prototype.applyForce = function applyForce(targets, source) {
+    var force        = this.force;
+    var disp         = this.disp;
+    var options      = this.options;
+
+    var stiffness    = options.stiffness;
+    var damping      = options.damping;
+    var restLength   = options.length;
+    var lMax         = options.maxLength;
+    var anchor       = options.anchor || source.position;
+
+    for (var i = 0; i < targets.length; i++) {
+        var target = targets[i];
+        var p2 = target.position;
+        var v2 = target.velocity;
+
+        anchor.sub(p2).put(disp);
+        var dist = disp.norm() - restLength;
+
+        if (dist === 0) return;
+
+        //if dampingRatio specified, then override strength and damping
+        var m      = target.mass;
+        stiffness *= m;
+        damping   *= m;
+
+        disp.normalize(stiffness * this.forceFunction(dist, lMax))
+            .put(force);
+
+        if (damping)
+            if (source) force.add(v2.sub(source.velocity).mult(-damping)).put(force);
+            else force.add(v2.mult(-damping)).put(force);
+
+        target.applyForce(force);
+        if (source) source.applyForce(force.mult(-1));
+
+        this.setEnergy(_calcEnergy(stiffness, dist));
+    }
+};
+
+/**
+ * Calculates the potential energy of the spring.
+ *
+ * @method getEnergy
+ * @param target {Body}     The physics body attached to the spring
+ * @return energy {Number}
+ */
+Spring.prototype.getEnergy = function getEnergy(target) {
+    var options        = this.options;
+    var restLength  = options.length;
+    var anchor      = options.anchor;
+    var strength    = options.stiffness;
+
+    var dist = anchor.sub(target.position).norm() - restLength;
+    return 0.5 * strength * dist * dist;
+};
+
+/**
+ * Sets the anchor to a new position
+ *
+ * @method setAnchor
+ * @param anchor {Array}    New anchor of the spring
+ */
+Spring.prototype.setAnchor = function setAnchor(anchor) {
+    if (!this.options.anchor) this.options.anchor = new Vector();
+    this.options.anchor.set(anchor);
+};
+
+module.exports = Spring;
+},{"../../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","./Force":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Force.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/integrators/SymplecticEuler.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var OptionsManager = require('../../core/OptionsManager');
+
+/**
+ * Ordinary Differential Equation (ODE) Integrator.
+ * Manages updating a physics body's state over time.
+ *
+ *  p = position, v = velocity, m = mass, f = force, dt = change in time
+ *
+ *      v <- v + dt * f / m
+ *      p <- p + dt * v
+ *
+ *  q = orientation, w = angular velocity, L = angular momentum
+ *
+ *      L <- L + dt * t
+ *      q <- q + dt/2 * q * w
+ *
+ * @class SymplecticEuler
+ * @constructor
+ * @param {Object} options Options to set
+ */
+function SymplecticEuler(options) {
+    this.options = Object.create(SymplecticEuler.DEFAULT_OPTIONS);
+    this._optionsManager = new OptionsManager(this.options);
+
+    if (options) this.setOptions(options);
+}
+
+/**
+ * @property SymplecticEuler.DEFAULT_OPTIONS
+ * @type Object
+ * @protected
+ * @static
+ */
+SymplecticEuler.DEFAULT_OPTIONS = {
+
+    /**
+     * The maximum velocity of a physics body
+     *      Range : [0, Infinity]
+     * @attribute velocityCap
+     * @type Number
+     */
+
+    velocityCap : undefined,
+
+    /**
+     * The maximum angular velocity of a physics body
+     *      Range : [0, Infinity]
+     * @attribute angularVelocityCap
+     * @type Number
+     */
+    angularVelocityCap : undefined
+};
+
+/*
+ * Setter for options
+ *
+ * @method setOptions
+ * @param {Object} options
+ */
+SymplecticEuler.prototype.setOptions = function setOptions(options) {
+    this._optionsManager.patch(options);
+};
+
+/*
+ * Getter for options
+ *
+ * @method getOptions
+ * @return {Object} options
+ */
+SymplecticEuler.prototype.getOptions = function getOptions() {
+    return this._optionsManager.value();
+};
+
+/*
+ * Updates the velocity of a physics body from its accumulated force.
+ *      v <- v + dt * f / m
+ *
+ * @method integrateVelocity
+ * @param {Body} physics body
+ * @param {Number} dt delta time
+ */
+SymplecticEuler.prototype.integrateVelocity = function integrateVelocity(body, dt) {
+    var v = body.velocity;
+    var w = body.inverseMass;
+    var f = body.force;
+
+    if (f.isZero()) return;
+
+    v.add(f.mult(dt * w)).put(v);
+    f.clear();
+};
+
+/*
+ * Updates the position of a physics body from its velocity.
+ *      p <- p + dt * v
+ *
+ * @method integratePosition
+ * @param {Body} physics body
+ * @param {Number} dt delta time
+ */
+SymplecticEuler.prototype.integratePosition = function integratePosition(body, dt) {
+    var p = body.position;
+    var v = body.velocity;
+
+    if (this.options.velocityCap) v.cap(this.options.velocityCap).put(v);
+    p.add(v.mult(dt)).put(p);
+};
+
+/*
+ * Updates the angular momentum of a physics body from its accumuled torque.
+ *      L <- L + dt * t
+ *
+ * @method integrateAngularMomentum
+ * @param {Body} physics body (except a particle)
+ * @param {Number} dt delta time
+ */
+SymplecticEuler.prototype.integrateAngularMomentum = function integrateAngularMomentum(body, dt) {
+    var L = body.angularMomentum;
+    var t = body.torque;
+
+    if (t.isZero()) return;
+
+    if (this.options.angularVelocityCap) t.cap(this.options.angularVelocityCap).put(t);
+    L.add(t.mult(dt)).put(L);
+    t.clear();
+};
+
+/*
+ * Updates the orientation of a physics body from its angular velocity.
+ *      q <- q + dt/2 * q * w
+ *
+ * @method integrateOrientation
+ * @param {Body} physics body (except a particle)
+ * @param {Number} dt delta time
+ */
+SymplecticEuler.prototype.integrateOrientation = function integrateOrientation(body, dt) {
+    var q = body.orientation;
+    var w = body.angularVelocity;
+
+    if (w.isZero()) return;
+    q.add(q.multiply(w).scalarMultiply(0.5 * dt)).put(q);
+//        q.normalize.put(q);
+};
+
+module.exports = SymplecticEuler;
+},{"../../core/OptionsManager":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/OptionsManager.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/MultipleTransition.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -3557,7 +10028,284 @@ MultipleTransition.prototype.reset = function reset(startState) {
 };
 
 module.exports = MultipleTransition;
-},{"../utilities/Utility":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Utility.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js":[function(require,module,exports){
+},{"../utilities/Utility":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Utility.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+/*global console*/
+
+var PE = require('../physics/PhysicsEngine');
+var Particle = require('../physics/bodies/Particle');
+var Spring = require('../physics/forces/Spring');
+var Vector = require('../math/Vector');
+
+/**
+ * SpringTransition is a method of transitioning between two values (numbers,
+ * or arrays of numbers) with a bounce. The transition will overshoot the target
+ * state depending on the parameters of the transition.
+ *
+ * @class SpringTransition
+ * @constructor
+ *
+ * @param {Number|Array} [state=0] Initial state
+ */
+function SpringTransition(state) {
+    state = state || 0;
+    this.endState  = new Vector(state);
+    this.initState = new Vector();
+
+    this._dimensions       = undefined;
+    this._restTolerance    = 1e-10;
+    this._absRestTolerance = this._restTolerance;
+    this._callback         = undefined;
+
+    this.PE       = new PE();
+    this.spring   = new Spring({anchor : this.endState});
+    this.particle = new Particle();
+
+    this.PE.addBody(this.particle);
+    this.PE.attach(this.spring, this.particle);
+}
+
+SpringTransition.SUPPORTS_MULTIPLE = 3;
+
+/**
+ * @property SpringTransition.DEFAULT_OPTIONS
+ * @type Object
+ * @protected
+ * @static
+ */
+SpringTransition.DEFAULT_OPTIONS = {
+
+    /**
+     * The amount of time in milliseconds taken for one complete oscillation
+     * when there is no damping
+     *    Range : [0, Infinity]
+     *
+     * @attribute period
+     * @type Number
+     * @default 300
+     */
+    period : 300,
+
+    /**
+     * The damping of the snap.
+     *    Range : [0, 1]
+     *    0 = no damping, and the spring will oscillate forever
+     *    1 = critically damped (the spring will never oscillate)
+     *
+     * @attribute dampingRatio
+     * @type Number
+     * @default 0.5
+     */
+    dampingRatio : 0.5,
+
+    /**
+     * The initial velocity of the transition.
+     *
+     * @attribute velocity
+     * @type Number|Array
+     * @default 0
+     */
+    velocity : 0
+};
+
+function _getEnergy() {
+    return this.particle.getEnergy() + this.spring.getEnergy(this.particle);
+}
+
+function _setParticlePosition(p) {
+    this.particle.setPosition(p);
+}
+
+function _setParticleVelocity(v) {
+    this.particle.setVelocity(v);
+}
+
+function _getParticlePosition() {
+    return (this._dimensions === 0)
+        ? this.particle.getPosition1D()
+        : this.particle.getPosition();
+}
+
+function _getParticleVelocity() {
+    return (this._dimensions === 0)
+        ? this.particle.getVelocity1D()
+        : this.particle.getVelocity();
+}
+
+function _setCallback(callback) {
+    this._callback = callback;
+}
+
+function _wake() {
+    this.PE.wake();
+}
+
+function _sleep() {
+    this.PE.sleep();
+}
+
+function _update() {
+    if (this.PE.isSleeping()) {
+        if (this._callback) {
+            var cb = this._callback;
+            this._callback = undefined;
+            cb();
+        }
+        return;
+    }
+
+    if (_getEnergy.call(this) < this._absRestTolerance) {
+        _setParticlePosition.call(this, this.endState);
+        _setParticleVelocity.call(this, [0,0,0]);
+        _sleep.call(this);
+    }
+}
+
+function _setupDefinition(definition) {
+    // TODO fix no-console error
+    /* eslint no-console: 0 */
+    var defaults = SpringTransition.DEFAULT_OPTIONS;
+    if (definition.period === undefined)       definition.period       = defaults.period;
+    if (definition.dampingRatio === undefined) definition.dampingRatio = defaults.dampingRatio;
+    if (definition.velocity === undefined)     definition.velocity     = defaults.velocity;
+
+    if (definition.period < 150) {
+        definition.period = 150;
+        console.warn('The period of a SpringTransition is capped at 150 ms. Use a SnapTransition for faster transitions');
+    }
+
+    //setup spring
+    this.spring.setOptions({
+        period       : definition.period,
+        dampingRatio : definition.dampingRatio
+    });
+
+    //setup particle
+    _setParticleVelocity.call(this, definition.velocity);
+}
+
+function _setAbsoluteRestTolerance() {
+    var distance = this.endState.sub(this.initState).normSquared();
+    this._absRestTolerance = (distance === 0)
+        ? this._restTolerance
+        : this._restTolerance * distance;
+}
+
+function _setTarget(target) {
+    this.endState.set(target);
+    _setAbsoluteRestTolerance.call(this);
+}
+
+/**
+ * Resets the position and velocity
+ *
+ * @method reset
+ *
+ * @param {Number|Array.Number} pos positional state
+ * @param {Number|Array} vel velocity
+ */
+SpringTransition.prototype.reset = function reset(pos, vel) {
+    this._dimensions = (pos instanceof Array)
+        ? pos.length
+        : 0;
+
+    this.initState.set(pos);
+    _setParticlePosition.call(this, pos);
+    _setTarget.call(this, pos);
+    if (vel) _setParticleVelocity.call(this, vel);
+    _setCallback.call(this, undefined);
+};
+
+/**
+ * Getter for velocity
+ *
+ * @method getVelocity
+ *
+ * @return {Number|Array} velocity
+ */
+SpringTransition.prototype.getVelocity = function getVelocity() {
+    return _getParticleVelocity.call(this);
+};
+
+/**
+ * Setter for velocity
+ *
+ * @method setVelocity
+ *
+ * @return {Number|Array} velocity
+ */
+SpringTransition.prototype.setVelocity = function setVelocity(v) {
+    this.call(this, _setParticleVelocity(v));
+};
+
+/**
+ * Detects whether a transition is in progress
+ *
+ * @method isActive
+ *
+ * @return {Boolean}
+ */
+SpringTransition.prototype.isActive = function isActive() {
+    return !this.PE.isSleeping();
+};
+
+/**
+ * Halt the transition
+ *
+ * @method halt
+ */
+SpringTransition.prototype.halt = function halt() {
+    this.set(this.get());
+};
+
+/**
+ * Get the current position of the transition
+ *
+ * @method get
+ *
+ * @return {Number|Array} state
+ */
+SpringTransition.prototype.get = function get() {
+    _update.call(this);
+    return _getParticlePosition.call(this);
+};
+
+/**
+ * Set the end position and transition, with optional callback on completion.
+ *
+ * @method set
+ *
+ * @param  {Number|Array} endState Final state
+ * @param {Object}  definition  Transition definition
+ * @param  {Function} callback Callback
+ */
+SpringTransition.prototype.set = function set(endState, definition, callback) {
+    if (!definition) {
+        this.reset(endState);
+        if (callback) callback();
+        return;
+    }
+
+    this._dimensions = (endState instanceof Array)
+        ? endState.length
+        : 0;
+
+    _wake.call(this);
+    _setupDefinition.call(this, definition);
+    _setTarget.call(this, endState);
+    _setCallback.call(this, callback);
+};
+
+module.exports = SpringTransition;
+},{"../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../physics/PhysicsEngine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/PhysicsEngine.js","../physics/bodies/Particle":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/bodies/Particle.js","../physics/forces/Spring":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Spring.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/Transitionable.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -4411,7 +11159,305 @@ TweenTransition.customCurve = function customCurve(v1, v2) {
 };
 
 module.exports = TweenTransition;
-},{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Timer.js":[function(require,module,exports){
+},{}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/WallTransition.js":[function(require,module,exports){
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Owner: david@famo.us
+ * @license MPL 2.0
+ * @copyright Famous Industries, Inc. 2014
+ */
+
+var PE = require('../physics/PhysicsEngine');
+var Particle = require('../physics/bodies/Particle');
+var Spring = require('../physics/forces/Spring');
+var Wall = require('../physics/constraints/Wall');
+var Vector = require('../math/Vector');
+
+/**
+ * WallTransition is a method of transitioning between two values (numbers,
+ *   or arrays of numbers) with a bounce. Unlike a SpringTransition
+ *   The transition will not overshoot the target, but bounce back against it.
+ *   The behavior of the bounce is specified by the transition options.
+ *
+ * @class WallTransition
+ * @constructor
+ *
+ * @param {Number|Array} [state=0] Initial state
+ */
+function WallTransition(state) {
+    state = state || 0;
+
+    this.endState  = new Vector(state);
+    this.initState = new Vector();
+
+    this.spring = new Spring({anchor : this.endState});
+    this.wall   = new Wall();
+
+    this._restTolerance = 1e-10;
+    this._dimensions = 1;
+    this._absRestTolerance = this._restTolerance;
+    this._callback = undefined;
+
+    this.PE = new PE();
+    this.particle = new Particle();
+
+    this.PE.addBody(this.particle);
+    this.PE.attach([this.wall, this.spring], this.particle);
+}
+
+WallTransition.SUPPORTS_MULTIPLE = 3;
+
+/**
+ * @property WallTransition.DEFAULT_OPTIONS
+ * @type Object
+ * @protected
+ * @static
+ */
+WallTransition.DEFAULT_OPTIONS = {
+
+    /**
+     * The amount of time in milliseconds taken for one complete oscillation
+     * when there is no damping
+     *    Range : [0, Infinity]
+     *
+     * @attribute period
+     * @type Number
+     * @default 300
+     */
+    period : 300,
+
+    /**
+     * The damping of the snap.
+     *    Range : [0, 1]
+     *    0 = no damping, and the spring will oscillate forever
+     *    1 = critically damped (the spring will never oscillate)
+     *
+     * @attribute dampingRatio
+     * @type Number
+     * @default 0.5
+     */
+    dampingRatio : 0.5,
+
+    /**
+     * The initial velocity of the transition.
+     *
+     * @attribute velocity
+     * @type Number|Array
+     * @default 0
+     */
+    velocity : 0,
+
+    /**
+     * The percentage of momentum transferred to the wall
+     *
+     * @attribute restitution
+     * @type Number
+     * @default 0.5
+     */
+    restitution : 0.5
+};
+
+function _getEnergy() {
+    return this.particle.getEnergy() + this.spring.getEnergy(this.particle);
+}
+
+function _setAbsoluteRestTolerance() {
+    var distance = this.endState.sub(this.initState).normSquared();
+    this._absRestTolerance = (distance === 0)
+        ? this._restTolerance
+        : this._restTolerance * distance;
+}
+
+function _wake() {
+    this.PE.wake();
+}
+
+function _sleep() {
+    this.PE.sleep();
+}
+
+function _setTarget(target) {
+    this.endState.set(target);
+
+    var dist = this.endState.sub(this.initState).norm();
+
+    this.wall.setOptions({
+        distance : this.endState.norm(),
+        normal : (dist === 0)
+            ? this.particle.velocity.normalize(-1)
+            : this.endState.sub(this.initState).normalize(-1)
+    });
+
+    _setAbsoluteRestTolerance.call(this);
+}
+
+function _setParticlePosition(p) {
+    this.particle.position.set(p);
+}
+
+function _setParticleVelocity(v) {
+    this.particle.velocity.set(v);
+}
+
+function _getParticlePosition() {
+    return (this._dimensions === 0)
+        ? this.particle.getPosition1D()
+        : this.particle.getPosition();
+}
+
+function _getParticleVelocity() {
+    return (this._dimensions === 0)
+        ? this.particle.getVelocity1D()
+        : this.particle.getVelocity();
+}
+
+function _setCallback(callback) {
+    this._callback = callback;
+}
+
+function _update() {
+    if (this.PE.isSleeping()) {
+        if (this._callback) {
+            var cb = this._callback;
+            this._callback = undefined;
+            cb();
+        }
+        return;
+    }
+    var energy = _getEnergy.call(this);
+    if (energy < this._absRestTolerance) {
+        _sleep.call(this);
+        _setParticlePosition.call(this, this.endState);
+        _setParticleVelocity.call(this, [0,0,0]);
+    }
+}
+
+function _setupDefinition(def) {
+    var defaults = WallTransition.DEFAULT_OPTIONS;
+    if (def.period === undefined) def.period = defaults.period;
+    if (def.dampingRatio === undefined) def.dampingRatio = defaults.dampingRatio;
+    if (def.velocity === undefined) def.velocity = defaults.velocity;
+    if (def.restitution === undefined) def.restitution = defaults.restitution;
+
+    //setup spring
+    this.spring.setOptions({
+        period : def.period,
+        dampingRatio : def.dampingRatio
+    });
+
+    //setup wall
+    this.wall.setOptions({
+        restitution : def.restitution
+    });
+
+    //setup particle
+    _setParticleVelocity.call(this, def.velocity);
+}
+
+/**
+ * Resets the state and velocity
+ *
+ * @method reset
+ *
+ * @param {Number|Array}  state     State
+ * @param  {Number|Array} [velocity] Velocity
+ */
+WallTransition.prototype.reset = function reset(state, velocity) {
+    this._dimensions = (state instanceof Array)
+        ? state.length
+        : 0;
+
+    this.initState.set(state);
+    _setParticlePosition.call(this, state);
+    if (velocity) _setParticleVelocity.call(this, velocity);
+    _setTarget.call(this, state);
+    _setCallback.call(this, undefined);
+};
+
+/**
+ * Getter for velocity
+ *
+ * @method getVelocity
+ *
+ * @return velocity {Number|Array}
+ */
+WallTransition.prototype.getVelocity = function getVelocity() {
+    return _getParticleVelocity.call(this);
+};
+
+/**
+ * Setter for velocity
+ *
+ * @method setVelocity
+ *
+ * @return velocity {Number|Array}
+ */
+WallTransition.prototype.setVelocity = function setVelocity(velocity) {
+    this.call(this, _setParticleVelocity(velocity));
+};
+
+/**
+ * Detects whether a transition is in progress
+ *
+ * @method isActive
+ *
+ * @return {Boolean}
+ */
+WallTransition.prototype.isActive = function isActive() {
+    return !this.PE.isSleeping();
+};
+
+/**
+ * Halt the transition
+ *
+ * @method halt
+ */
+WallTransition.prototype.halt = function halt() {
+    this.set(this.get());
+};
+
+/**
+ * Getter
+ *
+ * @method get
+ *
+ * @return state {Number|Array}
+ */
+WallTransition.prototype.get = function get() {
+    _update.call(this);
+    return _getParticlePosition.call(this);
+};
+
+/**
+ * Set the end position and transition, with optional callback on completion.
+ *
+ * @method set
+ *
+ * @param state {Number|Array}      Final state
+ * @param [definition] {Object}     Transition definition
+ * @param [callback] {Function}     Callback
+ */
+WallTransition.prototype.set = function set(state, definition, callback) {
+    if (!definition) {
+        this.reset(state);
+        if (callback) callback();
+        return;
+    }
+
+    this._dimensions = (state instanceof Array)
+        ? state.length
+        : 0;
+
+    _wake.call(this);
+    _setupDefinition.call(this, definition);
+    _setTarget.call(this, state);
+    _setCallback.call(this, callback);
+};
+
+module.exports = WallTransition;
+},{"../math/Vector":"/Users/contra/Projects/famous/famous-react/node_modules/famous/math/Vector.js","../physics/PhysicsEngine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/PhysicsEngine.js","../physics/bodies/Particle":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/bodies/Particle.js","../physics/constraints/Wall":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/constraints/Wall.js","../physics/forces/Spring":"/Users/contra/Projects/famous/famous-react/node_modules/famous/physics/forces/Spring.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Timer.js":[function(require,module,exports){
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
