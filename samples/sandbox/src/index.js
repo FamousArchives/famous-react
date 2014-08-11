@@ -2,6 +2,7 @@
 
 'use strict';
 
+var dat = require('dat-gui');
 var Timer = require('famous/utilities/Timer');
 var Transform = require('famous/core/Transform');
 var Spring = require('famous/transitions/SpringTransition');
@@ -17,51 +18,46 @@ var DOM = FamousReact.DOM;
 var App = React.createClass({
   displayName: 'demo',
 
-  getInitialState: function() {
+  getDefaultProps: function() {
     return {
-      famous: false,
+      dampngRatio: 0.5,
+      speed: 500,
       animation: Spring
     };
   },
+  getInitialState: function() {
+    return {
+      famous: false
+    };
+  },
   componentDidMount: function() {
-    this.interval = Timer.setInterval(this.toggle, 1000);
+    this.timeout = Timer.setTimeout(this.toggle, this.props.speed*2);
   },
   componentWillUnmount: function() {
-    Timer.clear(this.interval);
+    Timer.clear(this.timeout);
   },
   toggle: function() {
     this.setState({
       famous: !this.state.famous
     });
+    this.timeout = Timer.setTimeout(this.toggle, this.props.speed*2);
   },
 
   render: function() {
-    var swap1 = this.state.famous ? 0 : 600;
-    var swap2 = this.state.famous ? 0 : -600;
+    var swap = this.state.famous ? 0 : 600;
     var translate = this.state.famous ? 0 : 200;
     var scale = this.state.famous ? 2 : 1;
-    
-    var swap1Transform = Transitionable(Transform.translate(swap1, 0, 0), {
-      method: this.state.animation,
-      period: 500
-    });
-    var swap2Transform = Transitionable(Transform.translate(swap2, 0, 0), {
-      method: this.state.animation,
-      period: 500
-    });
+    var anim = {
+      method: this.props.animation,
+      period: this.props.speed,
+      dampingRatio: this.props.dampingRatio
+    };
 
-    var transformX = Transitionable(Transform.translate(0, translate, 0), {
-      method: this.state.animation,
-      period: 500
-    });
-    var transformY = Transitionable(Transform.translate(translate, 0, 0), {
-      method: this.state.animation,
-      period: 500
-    });
-    var transformScale = Transitionable(Transform.scale(scale), {
-      method: this.state.animation,
-      period: 500
-    });
+    var swap1Transform = Transitionable(Transform.translate(swap, 0, 0), anim);
+    var swap2Transform = Transitionable(Transform.translate(-swap, 0, 0), anim);
+    var transformX = Transitionable(Transform.translate(0, translate, 0), anim);
+    var transformY = Transitionable(Transform.translate(translate, 0, 0), anim);
+    var transformScale = Transitionable(Transform.scale(scale), anim);
 
     var centeredBlock = DOM.div({
       height: 50,
@@ -69,7 +65,7 @@ var App = React.createClass({
       center: true,
       transform: transformScale,
       style: {
-        backgroundColor: '#0074D9'
+        backgroundColor: '#FF851B'
       }
     });
 
@@ -78,7 +74,7 @@ var App = React.createClass({
       height: 200,
       width: 200,
       style: {
-        backgroundColor: '#111111',
+        backgroundColor: '#0074D9',
         display: 'inline-block'
       }
     }, centeredBlock);
@@ -125,4 +121,23 @@ var App = React.createClass({
     return container;
   }
 });
-React.renderComponent(App(), document.body);
+
+// demo code
+var state = {
+  dampingRatio: 0.5,
+  speed: 500
+};
+var app = App(state);
+var inst = React.renderComponent(app, document.body);
+
+var render = function(){
+  inst.setProps(state);
+};
+
+var gui = new dat.GUI();
+var anim = gui.addFolder('Animation Properties');
+var damping = anim.add(state, 'dampingRatio', 0.3, 1).step(0.1).listen();
+var speed = anim.add(state, 'speed', 150, 2000).step(10).listen();
+
+damping.onChange(render);
+speed.onChange(render);
