@@ -1,9 +1,12 @@
-/* global document */
+/* global document, window */
 
 'use strict';
 
 var Timer = require('famous/utilities/Timer');
 var Transform = require('famous/core/Transform');
+var Spring = require('famous/transitions/SpringTransition');
+var Wall = require('famous/transitions/WallTransition');
+
 var React = require('react');
 window.React = React; // for dev
 
@@ -16,7 +19,8 @@ var App = React.createClass({
 
   getInitialState: function() {
     return {
-      famous: false
+      famous: false,
+      animation: Spring
     };
   },
   componentDidMount: function() {
@@ -31,24 +35,33 @@ var App = React.createClass({
     });
   },
 
-  imageClick: function() {
-    this.drawImage(this.refs.img.getDOMNode());
-  },
-  videoClick: function() {
-    this.drawImage(this.refs.vid.getDOMNode());
-  },
-  drawImage: function(img) {
-    var ctx = this.refs.canvas.getDOMNode().getContext('2d');
-    ctx.drawImage(img, 0, 0, 200, 200);
-  },
-
   render: function() {
-    var imageUrl = this.state.famous ? 'famous_logo.png' : 'react_logo.png';
+    var swap1 = this.state.famous ? 0 : 600;
+    var swap2 = this.state.famous ? 0 : -600;
     var translate = this.state.famous ? 0 : 200;
     var scale = this.state.famous ? 2 : 1;
-    var transformX = Transitionable(Transform.translate(0, translate, 0), true);
-    var transformY = Transitionable(Transform.translate(translate, 0, 0), true);
-    var transformScale = Transitionable(Transform.scale(scale), true);
+    
+    var swap1Transform = Transitionable(Transform.translate(swap1, 0, 0), {
+      method: this.state.animation,
+      period: 500
+    });
+    var swap2Transform = Transitionable(Transform.translate(swap2, 0, 0), {
+      method: this.state.animation,
+      period: 500
+    });
+
+    var transformX = Transitionable(Transform.translate(0, translate, 0), {
+      method: this.state.animation,
+      period: 500
+    });
+    var transformY = Transitionable(Transform.translate(translate, 0, 0), {
+      method: this.state.animation,
+      period: 500
+    });
+    var transformScale = Transitionable(Transform.scale(scale), {
+      method: this.state.animation,
+      period: 500
+    });
 
     var centeredBlock = DOM.div({
       height: 50,
@@ -75,8 +88,17 @@ var App = React.createClass({
       key: 'img',
       height: 200,
       width: 200,
-      src: imageUrl,
-      onClick: this.imageClick
+      transform: swap1Transform,
+      src: 'famous_logo.png'
+    });
+
+    var img2 = DOM.img({
+      ref: 'img2',
+      key: 'img2',
+      height: 200,
+      width: 200,
+      transform: swap2Transform,
+      src: 'react_logo.png'
     });
 
     var vid = DOM.video({
@@ -91,25 +113,14 @@ var App = React.createClass({
         backgroundColor: '#111111'
       },
       transform: transformX,
-      src: './dizzy.mp4',
-      onClick: this.videoClick
-    });
-
-    var canvas = DOM.canvas({
-      ref: 'canvas',
-      key: 'canvas',
-      height: 200,
-      width: 200,
-      style: {
-        backgroundColor: '#0074D9'
-      }
+      src: './dizzy.mp4'
     });
 
     var container = DOM.div({
       height: 200,
       width: 800,
       transform: transformY,
-    }, [img, vid, canvas, centered]);
+    }, [img, vid, centered, img2]);
 
     return container;
   }
