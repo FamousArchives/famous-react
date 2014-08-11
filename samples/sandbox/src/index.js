@@ -6,7 +6,6 @@ var dat = require('dat-gui');
 var Timer = require('famous/utilities/Timer');
 var Transform = require('famous/core/Transform');
 var Spring = require('famous/transitions/SpringTransition');
-var Wall = require('famous/transitions/WallTransition');
 
 var React = require('react');
 window.React = React; // for dev
@@ -56,7 +55,6 @@ var App = React.createClass({
     var swap1Transform = Transitionable(Transform.translate(swap, 0, 0), anim);
     var swap2Transform = Transitionable(Transform.translate(-swap, 0, 0), anim);
     var transformX = Transitionable(Transform.translate(0, translate, 0), anim);
-    var transformY = Transitionable(Transform.translate(translate, 0, 0), anim);
     var transformScale = Transitionable(Transform.scale(scale), anim);
 
     var centeredBlock = DOM.div({
@@ -115,10 +113,13 @@ var App = React.createClass({
     var container = DOM.div({
       height: 200,
       width: 800,
-      transform: transformY,
+      center: true
     }, [img, vid, centered, img2]);
 
-    return container;
+    return DOM.div({
+      height: document.body.clientHeight,
+      width: document.body.clientWidth
+    }, container);
   }
 });
 
@@ -135,9 +136,8 @@ var render = function(){
 };
 
 var gui = new dat.GUI();
-var anim = gui.addFolder('Animation Properties');
-var damping = anim.add(state, 'dampingRatio', 0.3, 1).step(0.1).listen();
-var speed = anim.add(state, 'speed', 150, 2000).step(10).listen();
+var damping = gui.add(state, 'dampingRatio', 0.3, 1).step(0.1).listen();
+var speed = gui.add(state, 'speed', 150, 2000).step(10).listen();
 
 damping.onChange(render);
 speed.onChange(render);
