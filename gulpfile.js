@@ -8,6 +8,7 @@ var jshint = require('gulp-jshint');
 var sourcemaps = require('gulp-sourcemaps');
 var lr = require('gulp-livereload');
 var cached = require('gulp-cached');
+var deploy = require('gulp-gh-pages');
 
 var merge = require('merge-stream');
 var source = require('vinyl-source-stream');
@@ -90,6 +91,11 @@ gulp.task('sample-server', function(cb){
   var rootFolder = path.join(__dirname, './samples/sandbox/dist');
   var server = http.createServer(ecstatic({root: rootFolder}));
   server.listen(port, cb);
+});
+
+gulp.task('deploy', function(){
+  return gulp.src('./samples/sandbox/dist/**/*')
+    .pipe(deploy());
 });
 
 gulp.task('default', ['js', 'samples', 'sample-server', 'watch']);
