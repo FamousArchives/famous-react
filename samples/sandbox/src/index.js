@@ -83,7 +83,10 @@ var App = React.createClass({
       height: 200,
       width: 200,
       transform: swap1Transform,
-      src: 'famous_logo.png'
+      src: 'famous_logo.png',
+      style: {
+        backgroundColor: '#fff'
+      }
     });
 
     var img2 = DOM.img({
