@@ -22,7 +22,8 @@ var App = React.createClass({
     return {
       dampngRatio: 0.5,
       speed: 500,
-      animation: Spring
+      animation: Spring,
+      visible: true
     };
   },
   getInitialState: function() {
@@ -44,6 +45,9 @@ var App = React.createClass({
   },
 
   render: function() {
+    if (!this.props.visible) {
+      return null;
+    }
     var swap = this.state.famous ? 0 : 600;
     var translate = this.state.famous ? 0 : 200;
     var scale = this.state.famous ? 2 : 1;
@@ -121,8 +125,8 @@ var App = React.createClass({
     }, [img, vid, centered, img2]);
 
     return DOM.div({
-      height: document.body.clientHeight,
-      width: document.body.clientWidth
+      height: this.props.height,
+      width: this.props.width
     }, container);
   }
 });
@@ -130,7 +134,10 @@ var App = React.createClass({
 // demo code
 var state = {
   dampingRatio: 0.5,
-  speed: 500
+  speed: 500,
+  visible: true,
+  height: document.body.clientHeight,
+  width: document.body.clientWidth
 };
 var app = App(state);
 var inst = React.renderComponent(app, document.body);
@@ -145,6 +152,17 @@ var speed = gui.add(state, 'speed', 150, 2000).step(10).listen();
 
 damping.onChange(render);
 speed.onChange(render);
+
+window.addEventListener('resize', function(){
+  state.height = document.body.clientHeight;
+  state.width = document.body.clientWidth;
+  render();
+}, false);
+
+document.addEventListener('visibilitychange', function(){
+  state.visible = !document.hidden;
+  render();
+}, false);
 },{"../../../src":"/Users/contra/Projects/famous/famous-react/src/index.js","dat-gui":"/Users/contra/Projects/famous/famous-react/node_modules/dat-gui/index.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/transitions/SpringTransition":"/Users/contra/Projects/famous/famous-react/node_modules/famous/transitions/SpringTransition.js","famous/utilities/Timer":"/Users/contra/Projects/famous/famous-react/node_modules/famous/utilities/Timer.js","react":"/Users/contra/Projects/famous/famous-react/node_modules/react/react.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
 
