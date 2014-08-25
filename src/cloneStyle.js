@@ -4,13 +4,21 @@
 function cloneStyle(style) {
   var out = {
     zIndex: style.zIndex,
-    transform: style.transform,
-    webkitTransform: style.webkitTransform,
     height: style.height,
     width: style.width,
     opacity: style.opacity,
+
+    transform: style.transform,
+    webkitTransform: style.webkitTransform,
+    mozTransform: style.mozTransform,
+
     transformOrigin: style.transformOrigin,
-    webkitTransformOrigin: style.webkitTransformOrigin
+    webkitTransformOrigin: style.webkitTransformOrigin,
+    mozTransformOrigin: style.mozTransformOrigin,
+
+    perspective: style.perspective,
+    webkitPerspective: style.webkitPerspective,
+    mozPerspective: style.mozPerspective
   };
   return out;
 }

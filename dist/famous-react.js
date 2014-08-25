@@ -18364,13 +18364,14 @@ module.exports = warning;
 var createClass = require('react/lib/ReactCompositeComponent').createClass;
 var DOM = require('react/lib/ReactDOM');
 var Renderable = require('./Renderable');
+
 var output = {};
 Object.keys(DOM).forEach(function(type){
   output[type] = createWrapper(type);
 });
 
 function createWrapper(type){
-  var ctor = createClass({
+  return createClass({
     displayName: 'famous-'+type,
     mixins: [Renderable],
     getDefaultProps: function(){
@@ -18379,10 +18380,9 @@ function createWrapper(type){
       };
     }
   });
-  return ctor;
 }
 
-// to override react dom with our better dom
+// to override react dom with our dom
 // uncomment this and export DOM
 // DOM.injection.injectComponentClasses(output);
 
@@ -18442,7 +18442,7 @@ var RenderableMixin = {
     ]),
   },
 
-  getDefaultProps: function(){
+  getDefaultProps: function() {
     return {
       style: {
         backfaceVisibility: 'hidden',
@@ -18451,35 +18451,46 @@ var RenderableMixin = {
     };
   },
 
-  componentWillMount: function(){
+  componentWillMount: function() {
     this.createFamous();
     this.componentWillReceiveProps(this.props);
     this.tick();
   },
 
-  componentDidMount: function(){
+  componentDidMount: function() {
     this.tick();
     // add our tick to the event loop
     Engine.on('prerender', this.tick);
   },
 
-  componentWillLeave: function(cb){
+  componentWillEnter: function(cb) {
     cb();
   },
 
-  componentWillUnmount: function(){
+  componentDidEnter: function() {
+
+  },
+
+  componentWillLeave: function(cb) {
+    cb();
+  },
+
+  componentDidLeave: function() {
+
+  },
+
+  componentWillUnmount: function() {
     // remove our tick from the event loop
     Engine.removeListener('prerender', this.tick);
   },
 
-  componentWillReceiveProps: function(nextProps){
+  componentWillReceiveProps: function(nextProps) {
     // some props sugar
     nextProps = propSugar(nextProps);
 
     // apply our props to the modifier
     applyPropsToModifer(nextProps, this.famous.modifier);
   },
-
 
   createFamous: function() {
     // TODO: break this out
@@ -18509,7 +18520,7 @@ var RenderableMixin = {
     }
   },
 
-  tick: function(){
+  tick: function() {
     // updates the spec of this node
     // and all child nodes
     if (this.famous.isRoot) {
@@ -18534,7 +18545,6 @@ var RenderableMixin = {
 };
 
 module.exports = RenderableMixin;
-
 },{"./TransitionParent":"/Users/contra/Projects/famous/famous-react/src/TransitionParent.js","./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","./propSugar":"/Users/contra/Projects/famous/famous-react/src/propSugar.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/TransitionParent.js":[function(require,module,exports){
 'use strict';
 
@@ -18589,7 +18599,7 @@ var TransitionParentMixin = {
     for (key in nextChildMapping) {
       var hasPrev = prevChildMapping && prevChildMapping.hasOwnProperty(key);
       if (nextChildMapping[key] && !hasPrev &&
-          !this.currentlyTransitioningKeys[key]) {
+        !this.currentlyTransitioningKeys[key]) {
         this.keysToEnter.push(key);
       }
     }
@@ -18597,7 +18607,7 @@ var TransitionParentMixin = {
     for (key in prevChildMapping) {
       var hasNext = nextChildMapping && nextChildMapping.hasOwnProperty(key);
       if (prevChildMapping[key] && !hasNext &&
-          !this.currentlyTransitioningKeys[key]) {
+        !this.currentlyTransitioningKeys[key]) {
         this.keysToLeave.push(key);
       }
     }
@@ -18686,7 +18696,9 @@ var TransitionParentMixin = {
     } else {
       var newChildren = merge(this.state.children);
       delete newChildren[key];
-      this.setState({children: newChildren});
+      this.setState({
+        children: newChildren
+      });
     }
   },
 
@@ -18758,13 +18770,21 @@ module.exports = applyPropsToModifer;
 function cloneStyle(style) {
   var out = {
     zIndex: style.zIndex,
-    transform: style.transform,
-    webkitTransform: style.webkitTransform,
     height: style.height,
     width: style.width,
     opacity: style.opacity,
+
+    transform: style.transform,
+    webkitTransform: style.webkitTransform,
+    mozTransform: style.mozTransform,
+
     transformOrigin: style.transformOrigin,
-    webkitTransformOrigin: style.webkitTransformOrigin
+    webkitTransformOrigin: style.webkitTransformOrigin,
+    mozTransformOrigin: style.mozTransformOrigin,
+
+    perspective: style.perspective,
+    webkitPerspective: style.webkitPerspective,
+    mozPerspective: style.mozPerspective
   };
   return out;
 }
@@ -18776,11 +18796,11 @@ module.exports = cloneStyle;
 var styleFields = require('./styleFields');
 
 // TODO: cleverly inline styleFields to reduce a loop here
-function getStyleUpdates(lastStyle, nextStyle){
+function getStyleUpdates(lastStyle, nextStyle) {
   var styleUpdates = {};
   var styleUpdated = false;
 
-  styleFields.forEach(function(styleName){
+  styleFields.forEach(function(styleName) {
     var lastVal = lastStyle[styleName];
     var nextVal = nextStyle[styleName];
     if (!lastVal && !nextVal) {
@@ -18802,7 +18822,7 @@ module.exports = getStyleUpdates;
 },{"./styleFields":"/Users/contra/Projects/famous/famous-react/src/styleFields.js"}],"/Users/contra/Projects/famous/famous-react/src/propSugar.js":[function(require,module,exports){
 'use strict';
 
-function propSugar(nextProps){
+function propSugar(nextProps) {
   if (nextProps.center) {
     if (nextProps.center === 'vertical') {
       nextProps.align = [0, 0.5];

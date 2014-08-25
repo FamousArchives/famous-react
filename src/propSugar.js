@@ -1,6 +1,6 @@
 'use strict';
 
-function propSugar(nextProps){
+function propSugar(nextProps) {
   if (nextProps.center) {
     if (nextProps.center === 'vertical') {
       nextProps.align = [0, 0.5];

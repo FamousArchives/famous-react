@@ -51,7 +51,7 @@ var RenderableMixin = {
     ]),
   },
 
-  getDefaultProps: function(){
+  getDefaultProps: function() {
     return {
       style: {
         backfaceVisibility: 'hidden',
@@ -60,35 +60,46 @@ var RenderableMixin = {
     };
   },
 
-  componentWillMount: function(){
+  componentWillMount: function() {
     this.createFamous();
     this.componentWillReceiveProps(this.props);
     this.tick();
   },
 
-  componentDidMount: function(){
+  componentDidMount: function() {
     this.tick();
     // add our tick to the event loop
     Engine.on('prerender', this.tick);
   },
 
-  componentWillLeave: function(cb){
+  componentWillEnter: function(cb) {
     cb();
   },
 
-  componentWillUnmount: function(){
+  componentDidEnter: function() {
+
+  },
+
+  componentWillLeave: function(cb) {
+    cb();
+  },
+
+  componentDidLeave: function() {
+
+  },
+
+  componentWillUnmount: function() {
     // remove our tick from the event loop
     Engine.removeListener('prerender', this.tick);
   },
 
-  componentWillReceiveProps: function(nextProps){
+  componentWillReceiveProps: function(nextProps) {
     // some props sugar
     nextProps = propSugar(nextProps);
 
     // apply our props to the modifier
     applyPropsToModifer(nextProps, this.famous.modifier);
   },
-
 
   createFamous: function() {
     // TODO: break this out
@@ -118,7 +129,7 @@ var RenderableMixin = {
     }
   },
 
-  tick: function(){
+  tick: function() {
     // updates the spec of this node
     // and all child nodes
     if (this.famous.isRoot) {

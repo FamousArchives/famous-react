@@ -51,7 +51,7 @@ var TransitionParentMixin = {
     for (key in nextChildMapping) {
       var hasPrev = prevChildMapping && prevChildMapping.hasOwnProperty(key);
       if (nextChildMapping[key] && !hasPrev &&
-          !this.currentlyTransitioningKeys[key]) {
+        !this.currentlyTransitioningKeys[key]) {
         this.keysToEnter.push(key);
       }
     }
@@ -59,7 +59,7 @@ var TransitionParentMixin = {
     for (key in prevChildMapping) {
       var hasNext = nextChildMapping && nextChildMapping.hasOwnProperty(key);
       if (prevChildMapping[key] && !hasNext &&
-          !this.currentlyTransitioningKeys[key]) {
+        !this.currentlyTransitioningKeys[key]) {
         this.keysToLeave.push(key);
       }
     }
@@ -148,7 +148,9 @@ var TransitionParentMixin = {
     } else {
       var newChildren = merge(this.state.children);
       delete newChildren[key];
-      this.setState({children: newChildren});
+      this.setState({
+        children: newChildren
+      });
     }
   },
 
