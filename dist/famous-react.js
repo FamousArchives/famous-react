@@ -9961,7 +9961,164 @@ var ReactBrowserEventEmitter = merge(ReactEventEmitterMixin, {
 
 module.exports = ReactBrowserEventEmitter;
 
-},{"./EventConstants":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/EventConstants.js","./EventPluginHub":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/EventPluginHub.js","./EventPluginRegistry":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/EventPluginRegistry.js","./ReactEventEmitterMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitterMixin.js","./ViewportMetrics":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ViewportMetrics.js","./isEventSupported":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/isEventSupported.js","./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js":[function(require,module,exports){
+},{"./EventConstants":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/EventConstants.js","./EventPluginHub":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/EventPluginHub.js","./EventPluginRegistry":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/EventPluginRegistry.js","./ReactEventEmitterMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactEventEmitterMixin.js","./ViewportMetrics":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ViewportMetrics.js","./isEventSupported":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/isEventSupported.js","./merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactChildren.js":[function(require,module,exports){
+(function (process){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @providesModule ReactChildren
+ */
+
+"use strict";
+
+var PooledClass = require("./PooledClass");
+
+var traverseAllChildren = require("./traverseAllChildren");
+var warning = require("./warning");
+
+var twoArgumentPooler = PooledClass.twoArgumentPooler;
+var threeArgumentPooler = PooledClass.threeArgumentPooler;
+
+/**
+ * PooledClass representing the bookkeeping associated with performing a child
+ * traversal. Allows avoiding binding callbacks.
+ *
+ * @constructor ForEachBookKeeping
+ * @param {!function} forEachFunction Function to perform traversal with.
+ * @param {?*} forEachContext Context to perform context with.
+ */
+function ForEachBookKeeping(forEachFunction, forEachContext) {
+  this.forEachFunction = forEachFunction;
+  this.forEachContext = forEachContext;
+}
+PooledClass.addPoolingTo(ForEachBookKeeping, twoArgumentPooler);
+
+function forEachSingleChild(traverseContext, child, name, i) {
+  var forEachBookKeeping = traverseContext;
+  forEachBookKeeping.forEachFunction.call(
+    forEachBookKeeping.forEachContext, child, i);
+}
+
+/**
+ * Iterates through children that are typically specified as `props.children`.
+ *
+ * The provided forEachFunc(child, index) will be called for each
+ * leaf child.
+ *
+ * @param {?*} children Children tree container.
+ * @param {function(*, int)} forEachFunc.
+ * @param {*} forEachContext Context for forEachContext.
+ */
+function forEachChildren(children, forEachFunc, forEachContext) {
+  if (children == null) {
+    return children;
+  }
+
+  var traverseContext =
+    ForEachBookKeeping.getPooled(forEachFunc, forEachContext);
+  traverseAllChildren(children, forEachSingleChild, traverseContext);
+  ForEachBookKeeping.release(traverseContext);
+}
+
+/**
+ * PooledClass representing the bookkeeping associated with performing a child
+ * mapping. Allows avoiding binding callbacks.
+ *
+ * @constructor MapBookKeeping
+ * @param {!*} mapResult Object containing the ordered map of results.
+ * @param {!function} mapFunction Function to perform mapping with.
+ * @param {?*} mapContext Context to perform mapping with.
+ */
+function MapBookKeeping(mapResult, mapFunction, mapContext) {
+  this.mapResult = mapResult;
+  this.mapFunction = mapFunction;
+  this.mapContext = mapContext;
+}
+PooledClass.addPoolingTo(MapBookKeeping, threeArgumentPooler);
+
+function mapSingleChildIntoContext(traverseContext, child, name, i) {
+  var mapBookKeeping = traverseContext;
+  var mapResult = mapBookKeeping.mapResult;
+
+  var keyUnique = !mapResult.hasOwnProperty(name);
+  ("production" !== process.env.NODE_ENV ? warning(
+    keyUnique,
+    'ReactChildren.map(...): Encountered two children with the same key, ' +
+    '`%s`. Child keys must be unique; when two children share a key, only ' +
+    'the first child will be used.',
+    name
+  ) : null);
+
+  if (keyUnique) {
+    var mappedChild =
+      mapBookKeeping.mapFunction.call(mapBookKeeping.mapContext, child, i);
+    mapResult[name] = mappedChild;
+  }
+}
+
+/**
+ * Maps children that are typically specified as `props.children`.
+ *
+ * The provided mapFunction(child, key, index) will be called for each
+ * leaf child.
+ *
+ * TODO: This may likely break any calls to `ReactChildren.map` that were
+ * previously relying on the fact that we guarded against null children.
+ *
+ * @param {?*} children Children tree container.
+ * @param {function(*, int)} mapFunction.
+ * @param {*} mapContext Context for mapFunction.
+ * @return {object} Object containing the ordered map of results.
+ */
+function mapChildren(children, func, context) {
+  if (children == null) {
+    return children;
+  }
+
+  var mapResult = {};
+  var traverseContext = MapBookKeeping.getPooled(mapResult, func, context);
+  traverseAllChildren(children, mapSingleChildIntoContext, traverseContext);
+  MapBookKeeping.release(traverseContext);
+  return mapResult;
+}
+
+function forEachSingleChildDummy(traverseContext, child, name, i) {
+  return null;
+}
+
+/**
+ * Count the number of children that are typically specified as
+ * `props.children`.
+ *
+ * @param {?*} children Children tree container.
+ * @return {number} The number of children.
+ */
+function countChildren(children, context) {
+  return traverseAllChildren(children, forEachSingleChildDummy, null);
+}
+
+var ReactChildren = {
+  forEach: forEachChildren,
+  map: mapChildren,
+  count: countChildren
+};
+
+module.exports = ReactChildren;
+
+}).call(this,require('_process'))
+},{"./PooledClass":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/PooledClass.js","./traverseAllChildren":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/traverseAllChildren.js","./warning":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/warning.js","_process":"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js":[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -15778,7 +15935,115 @@ mixInto(ReactTextComponent, {
 
 module.exports = ReactDescriptor.createFactory(ReactTextComponent);
 
-},{"./DOMPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMPropertyOperations.js","./ReactBrowserComponentMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js","./ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","./ReactDescriptor":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDescriptor.js","./escapeTextForBrowser":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/escapeTextForBrowser.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactUpdates.js":[function(require,module,exports){
+},{"./DOMPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/DOMPropertyOperations.js","./ReactBrowserComponentMixin":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactBrowserComponentMixin.js","./ReactComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactComponent.js","./ReactDescriptor":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDescriptor.js","./escapeTextForBrowser":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/escapeTextForBrowser.js","./mixInto":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/mixInto.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactTransitionChildMapping.js":[function(require,module,exports){
+/**
+ * Copyright 2013-2014 Facebook, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @typechecks static-only
+ * @providesModule ReactTransitionChildMapping
+ */
+
+"use strict";
+
+var ReactChildren = require("./ReactChildren");
+
+var ReactTransitionChildMapping = {
+  /**
+   * Given `this.props.children`, return an object mapping key to child. Just
+   * simple syntactic sugar around ReactChildren.map().
+   *
+   * @param {*} children `this.props.children`
+   * @return {object} Mapping of key to child
+   */
+  getChildMapping: function(children) {
+    return ReactChildren.map(children, function(child) {
+      return child;
+    });
+  },
+
+  /**
+   * When you're adding or removing children some may be added or removed in the
+   * same render pass. We want ot show *both* since we want to simultaneously
+   * animate elements in and out. This function takes a previous set of keys
+   * and a new set of keys and merges them with its best guess of the correct
+   * ordering. In the future we may expose some of the utilities in
+   * ReactMultiChild to make this easy, but for now React itself does not
+   * directly have this concept of the union of prevChildren and nextChildren
+   * so we implement it here.
+   *
+   * @param {object} prev prev children as returned from
+   * `ReactTransitionChildMapping.getChildMapping()`.
+   * @param {object} next next children as returned from
+   * `ReactTransitionChildMapping.getChildMapping()`.
+   * @return {object} a key set that contains all keys in `prev` and all keys
+   * in `next` in a reasonable order.
+   */
+  mergeChildMappings: function(prev, next) {
+    prev = prev || {};
+    next = next || {};
+
+    function getValueForKey(key) {
+      if (next.hasOwnProperty(key)) {
+        return next[key];
+      } else {
+        return prev[key];
+      }
+    }
+
+    // For each key of `next`, the list of keys to insert before that key in
+    // the combined list
+    var nextKeysPending = {};
+
+    var pendingKeys = [];
+    for (var prevKey in prev) {
+      if (next.hasOwnProperty(prevKey)) {
+        if (pendingKeys.length) {
+          nextKeysPending[prevKey] = pendingKeys;
+          pendingKeys = [];
+        }
+      } else {
+        pendingKeys.push(prevKey);
+      }
+    }
+
+    var i;
+    var childMapping = {};
+    for (var nextKey in next) {
+      if (nextKeysPending.hasOwnProperty(nextKey)) {
+        for (i = 0; i < nextKeysPending[nextKey].length; i++) {
+          var pendingNextKey = nextKeysPending[nextKey][i];
+          childMapping[nextKeysPending[nextKey][i]] = getValueForKey(
+            pendingNextKey
+          );
+        }
+      }
+      childMapping[nextKey] = getValueForKey(nextKey);
+    }
+
+    // Finally, add the keys which didn't appear before any key in `next`
+    for (i = 0; i < pendingKeys.length; i++) {
+      childMapping[pendingKeys[i]] = getValueForKey(pendingKeys[i]);
+    }
+
+    return childMapping;
+  }
+};
+
+module.exports = ReactTransitionChildMapping;
+
+},{"./ReactChildren":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactChildren.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactUpdates.js":[function(require,module,exports){
 (function (process){
 /**
  * Copyright 2013-2014 Facebook, Inc.
@@ -18098,41 +18363,23 @@ module.exports = warning;
 
 var createClass = require('react/lib/ReactCompositeComponent').createClass;
 var DOM = require('react/lib/ReactDOM');
-var omit = require('lodash.omit');
 var Renderable = require('./Renderable');
-
-var famousProps = [
-  'opacity',
-  'transform',
-  'origin',
-  'align',
-  'ref',
-  'key'
-];
-
 var output = {};
 Object.keys(DOM).forEach(function(type){
   output[type] = createWrapper(type);
 });
 
 function createWrapper(type){
-  var domFn = DOM[type];
-
   var ctor = createClass({
     displayName: 'famous-'+type,
     mixins: [Renderable],
-
-    render: function(){
-      var filteredProps = filter(this.props);
-      var el = domFn(filteredProps, this.props.children);
-      return el;
+    getDefaultProps: function(){
+      return {
+        component: DOM[type]
+      };
     }
   });
   return ctor;
-}
-
-function filter(props) {
-  return omit(props, famousProps);
 }
 
 // to override react dom with our better dom
@@ -18141,7 +18388,7 @@ function filter(props) {
 
 module.exports = output;
 
-},{"./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","lodash.omit":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/Renderable.js":[function(require,module,exports){
+},{"./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/Renderable.js":[function(require,module,exports){
 'use strict';
 
 var Engine = require('famous/core/Engine');
@@ -18155,6 +18402,8 @@ var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
 var getStyleUpdates = require('./getStyleUpdates');
 var cloneStyle = require('./cloneStyle');
 var applyPropsToModifer = require('./applyPropsToModifer');
+var propSugar = require('./propSugar');
+var TransitionParent = require('./TransitionParent');
 
 var defaultState = {
   transform: Transform.identity,
@@ -18165,6 +18414,8 @@ var defaultState = {
 };
 
 var RenderableMixin = {
+  mixins: [TransitionParent],
+
   propTypes: {
     _owner: PropTypes.object,
     center: PropTypes.bool,
@@ -18195,7 +18446,7 @@ var RenderableMixin = {
     return {
       style: {
         backfaceVisibility: 'hidden',
-        transformStyle: 'preserve-3d'
+        transformStyle: 'flat'
       }
     };
   },
@@ -18212,48 +18463,26 @@ var RenderableMixin = {
     Engine.on('prerender', this.tick);
   },
 
+  componentWillLeave: function(cb){
+    cb();
+  },
+
   componentWillUnmount: function(){
     // remove our tick from the event loop
     Engine.removeListener('prerender', this.tick);
   },
 
-  componentWillReceiveProps: function(newProps){
+  componentWillReceiveProps: function(nextProps){
     // some props sugar
-    if (newProps.center) {
-      if (newProps.center === 'vertical') {
-        newProps.align = [0, 0.5];
-        newProps.origin = [0, 0.5];
-      } else if (newProps.center === 'horizontal') {
-        newProps.align = [0.5, 0];
-        newProps.origin = [0.5, 0];
-      } else if (newProps.center === true) {
-        newProps.origin = [0.5, 0.5];
-        newProps.align = [0.5, 0.5];
-      }
-    }
-
-    // modify children if we have them
-    if (newProps.children) {
-      newProps.children = this.attachToChildren(newProps.children);
-    }
+    nextProps = propSugar(nextProps);
 
     // apply our props to the modifier
-    applyPropsToModifer(newProps, this.famous.modifier);
+    applyPropsToModifer(nextProps, this.famous.modifier);
   },
 
-  attachToChildren: function(children) {
-    if (Array.isArray(children)) {
-      // multi child
-      return children.map(this.attachToChildren);
-    }
-    // single child
-    if (children.props) {
-      children.props._owner = this;
-    }
-    return children;
-  },
 
   createFamous: function() {
+    // TODO: break this out
     this.famous = {};
 
     // create a fake element that props will go on
@@ -18298,9 +18527,6 @@ var RenderableMixin = {
 
     var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
     if (styleUpdates) {
-      if (!this.getDOMNode) {
-        console.log(this);
-      }
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this.famous.element.lastStyle = cloneStyle(nextStyle);
     }
@@ -18309,7 +18535,175 @@ var RenderableMixin = {
 
 module.exports = RenderableMixin;
 
-},{"./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
+},{"./TransitionParent":"/Users/contra/Projects/famous/famous-react/src/TransitionParent.js","./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","./propSugar":"/Users/contra/Projects/famous/famous-react/src/propSugar.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/TransitionParent.js":[function(require,module,exports){
+'use strict';
+
+var PropTypes = require('react/lib/ReactPropTypes');
+var ReactTransitionChildMapping = require('react/lib/ReactTransitionChildMapping');
+var merge = require('react/lib/merge');
+var omit = require('lodash.omit');
+
+var famousProps = [
+  '_owner',
+  'opacity',
+  'transform',
+  'origin',
+  'align'
+];
+
+function filter(props) {
+  return props ? omit(props, famousProps) : null;
+}
+
+var TransitionParentMixin = {
+  propTypes: {
+    component: PropTypes.func.isRequired
+  },
+
+  _wrapChild: function(child) {
+    child.props._owner = this;
+    return child;
+  },
+
+  getInitialState: function() {
+    return {
+      children: ReactTransitionChildMapping.getChildMapping(this.props.children)
+    };
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    var nextChildMapping = ReactTransitionChildMapping.getChildMapping(
+      nextProps.children
+    );
+    var prevChildMapping = this.state.children;
+
+    this.setState({
+      children: ReactTransitionChildMapping.mergeChildMappings(
+        prevChildMapping,
+        nextChildMapping
+      )
+    });
+
+    var key;
+
+    for (key in nextChildMapping) {
+      var hasPrev = prevChildMapping && prevChildMapping.hasOwnProperty(key);
+      if (nextChildMapping[key] && !hasPrev &&
+          !this.currentlyTransitioningKeys[key]) {
+        this.keysToEnter.push(key);
+      }
+    }
+
+    for (key in prevChildMapping) {
+      var hasNext = nextChildMapping && nextChildMapping.hasOwnProperty(key);
+      if (prevChildMapping[key] && !hasNext &&
+          !this.currentlyTransitioningKeys[key]) {
+        this.keysToLeave.push(key);
+      }
+    }
+
+    // If we want to someday check for reordering, we could do it here.
+  },
+
+  componentWillMount: function() {
+    this.currentlyTransitioningKeys = {};
+    this.keysToEnter = [];
+    this.keysToLeave = [];
+  },
+
+  componentDidUpdate: function() {
+    var keysToEnter = this.keysToEnter;
+    this.keysToEnter = [];
+    keysToEnter.forEach(this.performEnter);
+
+    var keysToLeave = this.keysToLeave;
+    this.keysToLeave = [];
+    keysToLeave.forEach(this.performLeave);
+  },
+
+  performEnter: function(key) {
+    this.currentlyTransitioningKeys[key] = true;
+
+    var component = this.refs[key];
+
+    if (component.componentWillEnter) {
+      component.componentWillEnter(
+        this._handleDoneEntering.bind(this, key)
+      );
+    } else {
+      this._handleDoneEntering(key);
+    }
+  },
+
+  _handleDoneEntering: function(key) {
+    var component = this.refs[key];
+    if (component.componentDidEnter) {
+      component.componentDidEnter();
+    }
+
+    delete this.currentlyTransitioningKeys[key];
+
+    var currentChildMapping = ReactTransitionChildMapping.getChildMapping(
+      this.props.children
+    );
+
+    if (!currentChildMapping || !currentChildMapping.hasOwnProperty(key)) {
+      // This was removed before it had fully entered. Remove it.
+      this.performLeave(key);
+    }
+  },
+
+  performLeave: function(key) {
+    this.currentlyTransitioningKeys[key] = true;
+
+    var component = this.refs[key];
+    if (component.componentWillLeave) {
+      component.componentWillLeave(this._handleDoneLeaving.bind(this, key));
+    } else {
+      // Note that this is somewhat dangerous b/c it calls setState()
+      // again, effectively mutating the component before all the work
+      // is done.
+      this._handleDoneLeaving(key);
+    }
+  },
+
+  _handleDoneLeaving: function(key) {
+    var component = this.refs[key];
+
+    if (component.componentDidLeave) {
+      component.componentDidLeave();
+    }
+
+    delete this.currentlyTransitioningKeys[key];
+
+    var currentChildMapping = ReactTransitionChildMapping.getChildMapping(
+      this.props.children
+    );
+
+    if (currentChildMapping && currentChildMapping.hasOwnProperty(key)) {
+      // This entered again before it fully left. Add it again.
+      this.performEnter(key);
+    } else {
+      var newChildren = merge(this.state.children);
+      delete newChildren[key];
+      this.setState({children: newChildren});
+    }
+  },
+
+  render: function() {
+    var childrenToRender = {};
+    for (var key in this.state.children) {
+      var child = this.state.children[key];
+      if (child) {
+        childrenToRender[key] = this._wrapChild(child);
+      }
+    }
+    return this.props.component(filter(this.props), childrenToRender);
+  }
+};
+
+module.exports = TransitionParentMixin;
+},{"lodash.omit":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/ReactTransitionChildMapping":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactTransitionChildMapping.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
 'use strict';
 
 module.exports = function(value, transition) {
@@ -18405,7 +18799,27 @@ function getStyleUpdates(lastStyle, nextStyle){
 }
 
 module.exports = getStyleUpdates;
-},{"./styleFields":"/Users/contra/Projects/famous/famous-react/src/styleFields.js"}],"/Users/contra/Projects/famous/famous-react/src/styleFields.js":[function(require,module,exports){
+},{"./styleFields":"/Users/contra/Projects/famous/famous-react/src/styleFields.js"}],"/Users/contra/Projects/famous/famous-react/src/propSugar.js":[function(require,module,exports){
+'use strict';
+
+function propSugar(nextProps){
+  if (nextProps.center) {
+    if (nextProps.center === 'vertical') {
+      nextProps.align = [0, 0.5];
+      nextProps.origin = [0, 0.5];
+    } else if (nextProps.center === 'horizontal') {
+      nextProps.align = [0.5, 0];
+      nextProps.origin = [0.5, 0];
+    } else if (nextProps.center === true) {
+      nextProps.origin = [0.5, 0.5];
+      nextProps.align = [0.5, 0.5];
+    }
+  }
+  return nextProps;
+}
+
+module.exports = propSugar;
+},{}],"/Users/contra/Projects/famous/famous-react/src/styleFields.js":[function(require,module,exports){
 'use strict';
 
 module.exports = [

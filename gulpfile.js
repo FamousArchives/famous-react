@@ -87,7 +87,7 @@ gulp.task('samples', function(){
 });
 
 gulp.task('sample-server', function(cb){
-  var port = process.env.PORT || 9090;
+  var port = parseInt(process.env.PORT) || 9090;
   var rootFolder = path.join(__dirname, './samples/sandbox/dist');
   var server = http.createServer(ecstatic({root: rootFolder}));
   server.listen(port, cb);

@@ -11,6 +11,8 @@ var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
 var getStyleUpdates = require('./getStyleUpdates');
 var cloneStyle = require('./cloneStyle');
 var applyPropsToModifer = require('./applyPropsToModifer');
+var propSugar = require('./propSugar');
+var TransitionParent = require('./TransitionParent');
 
 var defaultState = {
   transform: Transform.identity,
@@ -21,6 +23,8 @@ var defaultState = {
 };
 
 var RenderableMixin = {
+  mixins: [TransitionParent],
+
   propTypes: {
     _owner: PropTypes.object,
     center: PropTypes.bool,
@@ -51,7 +55,7 @@ var RenderableMixin = {
     return {
       style: {
         backfaceVisibility: 'hidden',
-        transformStyle: 'preserve-3d'
+        transformStyle: 'flat'
       }
     };
   },
@@ -68,48 +72,26 @@ var RenderableMixin = {
     Engine.on('prerender', this.tick);
   },
 
+  componentWillLeave: function(cb){
+    cb();
+  },
+
   componentWillUnmount: function(){
     // remove our tick from the event loop
     Engine.removeListener('prerender', this.tick);
   },
 
-  componentWillReceiveProps: function(newProps){
+  componentWillReceiveProps: function(nextProps){
     // some props sugar
-    if (newProps.center) {
-      if (newProps.center === 'vertical') {
-        newProps.align = [0, 0.5];
-        newProps.origin = [0, 0.5];
-      } else if (newProps.center === 'horizontal') {
-        newProps.align = [0.5, 0];
-        newProps.origin = [0.5, 0];
-      } else if (newProps.center === true) {
-        newProps.origin = [0.5, 0.5];
-        newProps.align = [0.5, 0.5];
-      }
-    }
-
-    // modify children if we have them
-    if (newProps.children) {
-      newProps.children = this.attachToChildren(newProps.children);
-    }
+    nextProps = propSugar(nextProps);
 
     // apply our props to the modifier
-    applyPropsToModifer(newProps, this.famous.modifier);
+    applyPropsToModifer(nextProps, this.famous.modifier);
   },
 
-  attachToChildren: function(children) {
-    if (Array.isArray(children)) {
-      // multi child
-      return children.map(this.attachToChildren);
-    }
-    // single child
-    if (children.props) {
-      children.props._owner = this;
-    }
-    return children;
-  },
 
   createFamous: function() {
+    // TODO: break this out
     this.famous = {};
 
     // create a fake element that props will go on
@@ -154,9 +136,6 @@ var RenderableMixin = {
 
     var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
     if (styleUpdates) {
-      if (!this.getDOMNode) {
-        console.log(this);
-      }
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this.famous.element.lastStyle = cloneStyle(nextStyle);
     }
