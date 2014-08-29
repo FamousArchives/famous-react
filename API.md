@@ -115,7 +115,7 @@ If you want to plug in custom sequences (documented below) or transitions, you c
 
 ```js
 // in this case we just invert the animation
-var bounceUp = bounceDown.reverse();
+var bounceUp = bounceDown.inverse();
 
 var txt = DOM.div({
   activate: bounceDown,
@@ -137,8 +137,9 @@ var ease = require('animation-ease');
 var bounceUp = {
   y: {
     value: 0,
-    animation: spring,
-    duration: 750
+    animation: spring({
+      duration: 750
+    })
   }
 };
 
@@ -146,45 +147,37 @@ var bounceUp = {
 var bounceDown = {
   y: {
     value: 200,
-    animation: spring,
-    duration: 750
+    animation: spring({
+      duration: 750
+    })
   }
 };
 
 // add 500 to current x
+// stateful animations are specified
+// as functions
 var slideOver = function(curr){
   return {
     x: {
       value: curr.x + 500,
-      animation: ease,
-      duration: 100
+      animation: ease({
+        duration: 100
+      })
     }
   };
 };
 
 // specify one portion of our animation
 // as its own piece
-var bounceUpAndDown = animation()
+var bounceUpAndDown = sequence()
   .step(bounceUp)
   .step(bounceDown);
 
-var animIn = animation()
+var animIn = sequence()
   .step(bounceDown)
   .step(slideOver)
   .step(bounceUpAndDown)
   .step(slideOver);
 
-var animOut = animIn.reverse();
+var animOut = animIn.inverse();
 ```
-
-##### TODO: This is a work in progress
-
-Notes:
-
-- Need to be able to nest sequences recursively
-- Need to specify sequence steps
-- Need to specify N animations per sequence step
-- Need to specify duration of each animation
-  - step duration will be the total of all sub-animations durations
-- Step animations can be either plain objects or functions that return objects
-- Current animation state will be passed into step animation functions

@@ -4,13 +4,15 @@
 var DOM = require('./DOM');
 var Renderable = require('./mixins/Renderable');
 var Transitionable = require('./Transitionable');
+var sequence = require('./sequence');
 
 module.exports = {
   Mixin: Renderable,
   DOM: DOM,
-  Transitionable: Transitionable
+  Transitionable: Transitionable,
+  sequence: sequence
 };
-},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js","./mixins/Renderable":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
+},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js","./mixins/Renderable":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/index.js","./sequence":"/Users/contra/Projects/famous/famous-react/src/sequence/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -18391,6 +18393,9 @@ module.exports = output;
 },{"./mixins/Renderable":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
 'use strict';
 
+// this was an experiment
+// this is going away soon
+
 module.exports = function(value, transition) {
   if (typeof value === 'object' && !Array.isArray(value)) {
     return value;
@@ -18691,6 +18696,7 @@ var RenderableMixin = {
     nextProps = propSugar(nextProps);
 
     // apply our props to the modifier
+    // TODO: switch this out with a sequence
     applyPropsToModifer(nextProps, this.famous.modifier);
   },
 
@@ -18786,11 +18792,65 @@ function propSugar(nextProps) {
 }
 
 module.exports = propSugar;
-},{}],"/Users/contra/Projects/famous/famous-react/src/util/applyPropsToModifer.js":[function(require,module,exports){
+},{}],"/Users/contra/Projects/famous/famous-react/src/sequence/ensureStep.js":[function(require,module,exports){
+'use strict';
+
+function ensureStep(o) {
+  // already a func
+  if (typeof o === 'function') {
+    return o;
+  }
+
+  // wrap obj
+  if (typeof o === 'object') {
+    return function() {
+      return o;
+    };
+  }
+
+  throw new Error('Invalid Step');
+}
+
+module.exports = ensureStep;
+},{}],"/Users/contra/Projects/famous/famous-react/src/sequence/index.js":[function(require,module,exports){
+'use strict';
+
+var ensureStep = require('./ensureStep');
+
+function Sequence(steps) {
+  if (!(this instanceof Sequence)) {
+    return new Sequence(steps);
+  }
+
+  this._steps = steps || [];
+}
+
+Sequence.prototype.step = function(step) {
+  var newSteps = (step instanceof Sequence) ?
+    step.steps : [ensureStep(step)];
+
+  return new Sequence(this._steps.concat(newSteps));
+};
+
+Sequence.prototype.inverse = function() {
+  return new Sequence(this.getSteps().reverse());
+};
+
+Sequence.prototype.clone = function() {
+  return new Sequence(this.getSteps());
+};
+
+Sequence.prototype.getSteps = function() {
+  return this._steps.slice();
+};
+
+module.exports = Sequence;
+},{"./ensureStep":"/Users/contra/Projects/famous/famous-react/src/sequence/ensureStep.js"}],"/Users/contra/Projects/famous/famous-react/src/util/applyPropsToModifer.js":[function(require,module,exports){
 'use strict';
 
 var Transitionable = require('../Transitionable');
 
+// this is going away soon
 function applyPropsToModifer(props, mod) {
   // TODO: dirty checking here
   // TODO: animation callbacks

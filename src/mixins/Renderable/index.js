@@ -94,6 +94,7 @@ var RenderableMixin = {
     nextProps = propSugar(nextProps);
 
     // apply our props to the modifier
+    // TODO: switch this out with a sequence
     applyPropsToModifer(nextProps, this.famous.modifier);
   },
 
