@@ -32,7 +32,7 @@ var springAnim = spring({
 });
 ```
 
-## Simple Properties
+## No Animation
 
 If you don't want to animate something, but still want to take advantage of alignment/transforms/etc. you can simply pass a value in and it will be applied immediately.
 
@@ -44,7 +44,7 @@ var txt = DOM.div({
 });
 ```
 
-## Enter/Exit States
+## Enter/Exit Animation
 
 - Animation states are
   - inactive (not rendered)
@@ -54,7 +54,7 @@ var txt = DOM.div({
 - Animations can be specified for activating and deactivating states
 - Start and finish values are specified with `active` and `inactive`
 
-### Automatic animation
+### Automatic
 
 Animates opacity `0 -> 1 -> 0`
 
@@ -69,7 +69,7 @@ var txt = DOM.div({
 });
 ```
 
-### Custom Animation
+### Custom
 
 Animates a Y transform `0 -> 500 -> 0`
 
@@ -87,7 +87,7 @@ var txt = DOM.div({
 });
 ```
 
-### Custom Animation (granular)
+### Custom (per-state)
 
 Animates a Y transform `0 -> 500 -> 0`
 
@@ -111,7 +111,7 @@ var txt = DOM.div({
 
 ### Animation Functions
 
-If you want to plug in custom sequences (documented below) or transitions, you can simply specify a function to transition the value.
+If you want to plug in custom sequences (documented below) or transitions, you can simply specify one.
 
 ```j
 var txt = DOM.div({
@@ -124,39 +124,38 @@ var txt = DOM.div({
 
 ### Creating Sequences
 
-In this example the element will bounce down 200px, ease over 500px, bounce up 200px, bounce down 200px, then ease over 200px.
+In this example the element will bounce down 200px, ease over 500px, bounce up to 0px, bounce down 200px, then ease over 500px.
 
 ```js
 var spring = require('animation-spring');
 var ease = require('animation-ease');
 
-var bounceUp = function(){
-  return {
-    y: {
-      value: 0,
-      animation: spring,
-      duration: 750
-    }
-  };
+// spring y to 0
+var bounceUp = {
+  y: {
+    value: 0,
+    animation: spring,
+    duration: 750
+  }
 };
 
-var bounceDown = function(){
-  return {
-    y: {
-      value: 200,
-      animation: spring,
-      duration: 750
-    }
-  };
+// spring y to 200
+var bounceDown = {
+  y: {
+    value: 200,
+    animation: spring,
+    duration: 750
+  }
 };
 
-var slideOver = function(){
+// add 500 to current x
+var slideOver = function(curr){
   return {
     x: {
-        value: 500,
-        animation: ease,
-        duration: 100
-      }
+      value: curr.x + 500,
+      animation: ease,
+      duration: 100
+    }
   };
 };
 
@@ -181,3 +180,4 @@ Notes:
 - Need to specify duration of each animation
   - step duration will be the total of all sub-animations durations
 - Step animations can be either plain objects or functions that return objects
+- Current animation state will be passed into step animation functions
