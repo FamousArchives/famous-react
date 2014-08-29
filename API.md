@@ -5,6 +5,7 @@ These are just some thoughts I'm collecting on the API
 - x
 - y
 - z
+- rotate
 - scale
 - skew
 - perspective
@@ -82,7 +83,7 @@ var txt = DOM.div({
   y: {
     inactive: 0,
     active: 500,
-    animation: spring()
+    transition: spring
   }
 });
 ```
@@ -101,7 +102,7 @@ var txt = DOM.div({
   y: {
     inactive: 0,
     active: 500,
-    animation: {
+    transition: {
       activate: spring,
       deactivate: ease
     }
@@ -147,7 +148,7 @@ var ease = require('animation-ease');
 var bounceUp = {
   y: {
     value: 0,
-    animation: spring({
+    transition: spring({
       duration: 750
     })
   }
@@ -157,7 +158,7 @@ var bounceUp = {
 var bounceDown = {
   y: {
     value: 200,
-    animation: spring({
+    transition: spring({
       duration: 750
     })
   }
@@ -170,7 +171,7 @@ var slideOver = function(curr){
   return {
     x: {
       value: curr.x + 500,
-      animation: ease({
+      transition: ease({
         duration: 100
       })
     }

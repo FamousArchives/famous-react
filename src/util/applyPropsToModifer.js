@@ -2,7 +2,8 @@
 
 var Transitionable = require('../Transitionable');
 
-// this is going away soon
+// DEPRECATED
+
 function applyPropsToModifer(props, mod) {
   // TODO: dirty checking here
   // TODO: animation callbacks

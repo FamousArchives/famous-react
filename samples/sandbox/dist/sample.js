@@ -33165,8 +33165,7 @@ module.exports = output;
 },{"./mixins/Renderable":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
 'use strict';
 
-// this was an experiment
-// this is going away soon
+// DEPRECATED
 
 module.exports = function(value, transition) {
   if (typeof value === 'object' && !Array.isArray(value)) {
@@ -33389,14 +33388,12 @@ module.exports = {
 'use strict';
 
 var Engine = require('famous/core/Engine');
-var RenderNode = require('famous/core/RenderNode');
-var ElementOutput = require('famous/core/ElementOutput');
-var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
 
 var getStyleUpdates = require('../../util/getStyleUpdates');
 var cloneStyle = require('../../util/cloneStyle');
+var createFamous = require('../../util/createFamous');
 var applyPropsToModifer = require('../../util/applyPropsToModifer');
 var propSugar = require('./propSugar');
 var defaultState = require('./defaultState');
@@ -33422,11 +33419,6 @@ var RenderableMixin = {
     ]),
     origin: PropTypes.oneOfType([
       PropTypes.arrayOf(PropTypes.number),
-      PropTypes.object
-    ]),
-    size: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.number),
-      PropTypes.arrayOf(PropTypes.bool),
       PropTypes.object
     ]),
     align: PropTypes.oneOfType([
@@ -33457,6 +33449,7 @@ var RenderableMixin = {
   },
 
   componentWillEnter: function(cb) {
+    // TODO: run inactive -> active sequence
     cb();
   },
 
@@ -33465,6 +33458,7 @@ var RenderableMixin = {
   },
 
   componentWillLeave: function(cb) {
+    // TODO: run active -> inactive sequence
     cb();
   },
 
@@ -33478,38 +33472,21 @@ var RenderableMixin = {
   },
 
   componentWillReceiveProps: function(nextProps) {
+    // TODO: switch this all out with a sequence
+
     // some props sugar
     nextProps = propSugar(nextProps);
 
     // apply our props to the modifier
-    // TODO: switch this out with a sequence
     applyPropsToModifer(nextProps, this.famous.modifier);
   },
 
   createFamous: function() {
-    // TODO: break this out
-    this.famous = {};
-
-    // create a fake element that props will go on
-    this.famous.element = {
-      style: {},
-      lastStyle: null
-    };
-
-    // create a modifier
-    this.famous.modifier = new StateModifier();
-
-    // attach famous to this fake element
-    this.famous.elementOutput = new ElementOutput(this.famous.element);
-
-    // create our nodes
+    this.famous = createFamous();
     this.famous.isRoot = !this.props._owner;
-    this.famous.node = new RenderNode(this.famous.modifier);
-    this.famous.node.add(this.famous.elementOutput);
 
     // register with parent famous RenderNode for spec
     if (!this.famous.isRoot) {
-      //console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
       this.props._owner.famous.node.add(this.famous.node);
     }
   },
@@ -33539,8 +33516,10 @@ var RenderableMixin = {
 };
 
 module.exports = RenderableMixin;
-},{"../../util/applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/util/applyPropsToModifer.js","../../util/cloneStyle":"/Users/contra/Projects/famous/famous-react/src/util/cloneStyle.js","../../util/getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/util/getStyleUpdates.js","../AsyncParent":"/Users/contra/Projects/famous/famous-react/src/mixins/AsyncParent.js","./defaultState":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/defaultState.js","./propSugar":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/propSugar.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/propSugar.js":[function(require,module,exports){
+},{"../../util/applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/util/applyPropsToModifer.js","../../util/cloneStyle":"/Users/contra/Projects/famous/famous-react/src/util/cloneStyle.js","../../util/createFamous":"/Users/contra/Projects/famous/famous-react/src/util/createFamous.js","../../util/getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/util/getStyleUpdates.js","../AsyncParent":"/Users/contra/Projects/famous/famous-react/src/mixins/AsyncParent.js","./defaultState":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/defaultState.js","./propSugar":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/propSugar.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/propSugar.js":[function(require,module,exports){
 'use strict';
+
+// DEPRECATED
 
 function propSugar(nextProps) {
   if (nextProps.center) {
@@ -33554,25 +33533,6 @@ function propSugar(nextProps) {
       nextProps.origin = [0.5, 0.5];
       nextProps.align = [0.5, 0.5];
     }
-  }
-
-  // TODO: use Transform.build here
-  var xyz = [0, 0, 0];
-  var xyzUsed = false;
-  if (typeof nextProps.x === 'number') {
-    xyz[0] = nextProps.x;
-    xyzUsed = true;
-  }
-  if (typeof nextProps.y === 'number') {
-    xyz[1] = nextProps.y;
-    xyzUsed = true;
-  }
-  if (typeof nextProps.z === 'number') {
-    xyz[2] = nextProps.z;
-    xyzUsed = true;
-  }
-  if (!nextProps.transform && xyzUsed) {
-    nextProps.transform = xyz;
   }
   return nextProps;
 }
@@ -33636,7 +33596,8 @@ module.exports = Sequence;
 
 var Transitionable = require('../Transitionable');
 
-// this is going away soon
+// DEPRECATED
+
 function applyPropsToModifer(props, mod) {
   // TODO: dirty checking here
   // TODO: animation callbacks
@@ -33688,7 +33649,32 @@ function cloneStyle(style) {
 }
 
 module.exports = cloneStyle;
-},{}],"/Users/contra/Projects/famous/famous-react/src/util/getStyleUpdates.js":[function(require,module,exports){
+},{}],"/Users/contra/Projects/famous/famous-react/src/util/createFamous.js":[function(require,module,exports){
+'use strict';
+
+var RenderNode = require('famous/core/RenderNode');
+var ElementOutput = require('famous/core/ElementOutput');
+var StateModifier = require('famous/modifiers/StateModifier');
+
+function createFamous(){
+  var el = {
+    style: {},
+    lastStyle: null
+  };
+  var mod = new StateModifier();
+  var elementOutput = new ElementOutput(el);
+  var node = new RenderNode(mod);
+  node.add(elementOutput);
+
+  return {
+    element: el,
+    modifier: mod,
+    node: node
+  };
+}
+
+module.exports = createFamous;
+},{"famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js"}],"/Users/contra/Projects/famous/famous-react/src/util/getStyleUpdates.js":[function(require,module,exports){
 'use strict';
 
 var styleFields = require('./styleFields');

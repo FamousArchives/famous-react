@@ -1,7 +1,6 @@
 'use strict';
 
-// this was an experiment
-// this is going away soon
+// DEPRECATED
 
 module.exports = function(value, transition) {
   if (typeof value === 'object' && !Array.isArray(value)) {

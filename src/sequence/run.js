@@ -1,20 +1,13 @@
 'use strict';
 
 var async = require('async');
+var applyState = require('./applyStateToModifier');
+var getState = require('./getStateFromModifier');
 
 function applyStep(fn, mod, cb) {
   var currState = getState(mod);
   var nextState = fn(currState);
   applyState(nextState, mod, cb);
-}
-
-function getState(mod) {
-  return {}; // TODO: impl
-}
-
-function applyState(nextState, mod, cb) {
-  // TODO: apply nextState to modifier
-  // and wait for animation to end
 }
 
 function runSequence(sequence, mod, cb) {
@@ -24,3 +17,5 @@ function runSequence(sequence, mod, cb) {
   });
   async.series(tasks, cb);
 }
+
+module.exports = runSequence;

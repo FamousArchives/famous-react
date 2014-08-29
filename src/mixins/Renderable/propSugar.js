@@ -1,5 +1,7 @@
 'use strict';
 
+// DEPRECATED
+
 function propSugar(nextProps) {
   if (nextProps.center) {
     if (nextProps.center === 'vertical') {
@@ -12,25 +14,6 @@ function propSugar(nextProps) {
       nextProps.origin = [0.5, 0.5];
       nextProps.align = [0.5, 0.5];
     }
-  }
-
-  // TODO: use Transform.build here
-  var xyz = [0, 0, 0];
-  var xyzUsed = false;
-  if (typeof nextProps.x === 'number') {
-    xyz[0] = nextProps.x;
-    xyzUsed = true;
-  }
-  if (typeof nextProps.y === 'number') {
-    xyz[1] = nextProps.y;
-    xyzUsed = true;
-  }
-  if (typeof nextProps.z === 'number') {
-    xyz[2] = nextProps.z;
-    xyzUsed = true;
-  }
-  if (!nextProps.transform && xyzUsed) {
-    nextProps.transform = xyz;
   }
   return nextProps;
 }

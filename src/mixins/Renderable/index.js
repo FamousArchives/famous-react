@@ -1,14 +1,12 @@
 'use strict';
 
 var Engine = require('famous/core/Engine');
-var RenderNode = require('famous/core/RenderNode');
-var ElementOutput = require('famous/core/ElementOutput');
-var StateModifier = require('famous/modifiers/StateModifier');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
 
 var getStyleUpdates = require('../../util/getStyleUpdates');
 var cloneStyle = require('../../util/cloneStyle');
+var createFamous = require('../../util/createFamous');
 var applyPropsToModifer = require('../../util/applyPropsToModifer');
 var propSugar = require('./propSugar');
 var defaultState = require('./defaultState');
@@ -34,11 +32,6 @@ var RenderableMixin = {
     ]),
     origin: PropTypes.oneOfType([
       PropTypes.arrayOf(PropTypes.number),
-      PropTypes.object
-    ]),
-    size: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.number),
-      PropTypes.arrayOf(PropTypes.bool),
       PropTypes.object
     ]),
     align: PropTypes.oneOfType([
@@ -69,6 +62,7 @@ var RenderableMixin = {
   },
 
   componentWillEnter: function(cb) {
+    // TODO: run inactive -> active sequence
     cb();
   },
 
@@ -77,6 +71,7 @@ var RenderableMixin = {
   },
 
   componentWillLeave: function(cb) {
+    // TODO: run active -> inactive sequence
     cb();
   },
 
@@ -90,38 +85,21 @@ var RenderableMixin = {
   },
 
   componentWillReceiveProps: function(nextProps) {
+    // TODO: switch this all out with a sequence
+
     // some props sugar
     nextProps = propSugar(nextProps);
 
     // apply our props to the modifier
-    // TODO: switch this out with a sequence
     applyPropsToModifer(nextProps, this.famous.modifier);
   },
 
   createFamous: function() {
-    // TODO: break this out
-    this.famous = {};
-
-    // create a fake element that props will go on
-    this.famous.element = {
-      style: {},
-      lastStyle: null
-    };
-
-    // create a modifier
-    this.famous.modifier = new StateModifier();
-
-    // attach famous to this fake element
-    this.famous.elementOutput = new ElementOutput(this.famous.element);
-
-    // create our nodes
+    this.famous = createFamous();
     this.famous.isRoot = !this.props._owner;
-    this.famous.node = new RenderNode(this.famous.modifier);
-    this.famous.node.add(this.famous.elementOutput);
 
     // register with parent famous RenderNode for spec
     if (!this.famous.isRoot) {
-      //console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
       this.props._owner.famous.node.add(this.famous.node);
     }
   },
