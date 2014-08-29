@@ -18611,7 +18611,13 @@ var RenderableMixin = {
 
   propTypes: {
     _owner: PropTypes.object,
+
+    // some sugar
     center: PropTypes.bool,
+    x: PropTypes.number,
+    y: PropTypes.number,
+    z: PropTypes.number,
+
     opacity: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.object
@@ -18753,6 +18759,24 @@ function propSugar(nextProps) {
       nextProps.origin = [0.5, 0.5];
       nextProps.align = [0.5, 0.5];
     }
+  }
+
+  var xyz = [0, 0, 0];
+  var xyzUsed = false;
+  if (typeof nextProps.x === 'number') {
+    xyz[0] = nextProps.x;
+    xyzUsed = true;
+  }
+  if (typeof nextProps.y === 'number') {
+    xyz[1] = nextProps.y;
+    xyzUsed = true;
+  }
+  if (typeof nextProps.z === 'number') {
+    xyz[2] = nextProps.z;
+    xyzUsed = true;
+  }
+  if (!nextProps.transform && xyzUsed) {
+    nextProps.transform = xyz;
   }
   return nextProps;
 }

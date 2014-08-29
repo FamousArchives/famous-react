@@ -19,7 +19,13 @@ var RenderableMixin = {
 
   propTypes: {
     _owner: PropTypes.object,
+
+    // some sugar
     center: PropTypes.bool,
+    x: PropTypes.number,
+    y: PropTypes.number,
+    z: PropTypes.number,
+
     opacity: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.object
