@@ -4,26 +4,18 @@ var Engine = require('famous/core/Engine');
 var RenderNode = require('famous/core/RenderNode');
 var ElementOutput = require('famous/core/ElementOutput');
 var StateModifier = require('famous/modifiers/StateModifier');
-var Transform = require('famous/core/Transform');
 var PropTypes = require('react/lib/ReactPropTypes');
 var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
 
-var getStyleUpdates = require('./getStyleUpdates');
-var cloneStyle = require('./cloneStyle');
-var applyPropsToModifer = require('./applyPropsToModifer');
+var getStyleUpdates = require('../../util/getStyleUpdates');
+var cloneStyle = require('../../util/cloneStyle');
+var applyPropsToModifer = require('../../util/applyPropsToModifer');
 var propSugar = require('./propSugar');
-var TransitionParent = require('./TransitionParent');
-
-var defaultState = {
-  transform: Transform.identity,
-  opacity: 1,
-  origin: [0, 0],
-  size: [0, 0],
-  align: null
-};
+var defaultState = require('./defaultState');
+var AsyncParent = require('../AsyncParent');
 
 var RenderableMixin = {
-  mixins: [TransitionParent],
+  mixins: [AsyncParent],
 
   propTypes: {
     _owner: PropTypes.object,

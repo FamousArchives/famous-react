@@ -2,7 +2,7 @@
 
 var createClass = require('react/lib/ReactCompositeComponent').createClass;
 var DOM = require('react/lib/ReactDOM');
-var Renderable = require('./Renderable');
+var Renderable = require('./mixins/Renderable');
 
 var output = {};
 Object.keys(DOM).forEach(function(type){

@@ -2,7 +2,7 @@
 'use strict';
 
 var DOM = require('./DOM');
-var Renderable = require('./Renderable');
+var Renderable = require('./mixins/Renderable');
 var Transitionable = require('./Transitionable');
 
 module.exports = {
@@ -10,7 +10,7 @@ module.exports = {
   DOM: DOM,
   Transitionable: Transitionable
 };
-},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
+},{"./DOM":"/Users/contra/Projects/famous/famous-react/src/DOM.js","./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js","./mixins/Renderable":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/index.js"}],"/Users/contra/Projects/famous/famous-react/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -18363,7 +18363,7 @@ module.exports = warning;
 
 var createClass = require('react/lib/ReactCompositeComponent').createClass;
 var DOM = require('react/lib/ReactDOM');
-var Renderable = require('./Renderable');
+var Renderable = require('./mixins/Renderable');
 
 var output = {};
 Object.keys(DOM).forEach(function(type){
@@ -18388,164 +18388,26 @@ function createWrapper(type){
 
 module.exports = output;
 
-},{"./Renderable":"/Users/contra/Projects/famous/famous-react/src/Renderable.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/Renderable.js":[function(require,module,exports){
+},{"./mixins/Renderable":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/index.js","react/lib/ReactCompositeComponent":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactCompositeComponent.js","react/lib/ReactDOM":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactDOM.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
 'use strict';
 
-var Engine = require('famous/core/Engine');
-var RenderNode = require('famous/core/RenderNode');
-var ElementOutput = require('famous/core/ElementOutput');
-var StateModifier = require('famous/modifiers/StateModifier');
-var Transform = require('famous/core/Transform');
-var PropTypes = require('react/lib/ReactPropTypes');
-var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
-
-var getStyleUpdates = require('./getStyleUpdates');
-var cloneStyle = require('./cloneStyle');
-var applyPropsToModifer = require('./applyPropsToModifer');
-var propSugar = require('./propSugar');
-var TransitionParent = require('./TransitionParent');
-
-var defaultState = {
-  transform: Transform.identity,
-  opacity: 1,
-  origin: [0, 0],
-  size: [0, 0],
-  align: null
-};
-
-var RenderableMixin = {
-  mixins: [TransitionParent],
-
-  propTypes: {
-    _owner: PropTypes.object,
-    center: PropTypes.bool,
-    opacity: PropTypes.oneOfType([
-      PropTypes.number,
-      PropTypes.object
-    ]),
-    transform: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.number),
-      PropTypes.object
-    ]),
-    origin: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.number),
-      PropTypes.object
-    ]),
-    size: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.number),
-      PropTypes.arrayOf(PropTypes.bool),
-      PropTypes.object
-    ]),
-    align: PropTypes.oneOfType([
-      PropTypes.arrayOf(PropTypes.number),
-      PropTypes.object
-    ]),
-  },
-
-  getDefaultProps: function() {
-    return {
-      style: {
-        backfaceVisibility: 'hidden',
-        transformStyle: 'flat'
-      }
-    };
-  },
-
-  componentWillMount: function() {
-    this.createFamous();
-    this.componentWillReceiveProps(this.props);
-    this.tick();
-  },
-
-  componentDidMount: function() {
-    this.tick();
-    // add our tick to the event loop
-    Engine.on('prerender', this.tick);
-  },
-
-  componentWillEnter: function(cb) {
-    cb();
-  },
-
-  componentDidEnter: function() {
-
-  },
-
-  componentWillLeave: function(cb) {
-    cb();
-  },
-
-  componentDidLeave: function() {
-
-  },
-
-  componentWillUnmount: function() {
-    // remove our tick from the event loop
-    Engine.removeListener('prerender', this.tick);
-  },
-
-  componentWillReceiveProps: function(nextProps) {
-    // some props sugar
-    nextProps = propSugar(nextProps);
-
-    // apply our props to the modifier
-    applyPropsToModifer(nextProps, this.famous.modifier);
-  },
-
-  createFamous: function() {
-    // TODO: break this out
-    this.famous = {};
-
-    // create a fake element that props will go on
-    this.famous.element = {
-      style: {},
-      lastStyle: null
-    };
-
-    // create a modifier
-    this.famous.modifier = new StateModifier();
-
-    // attach famous to this fake element
-    this.famous.elementOutput = new ElementOutput(this.famous.element);
-
-    // create our nodes
-    this.famous.isRoot = !this.props._owner;
-    this.famous.node = new RenderNode(this.famous.modifier);
-    this.famous.node.add(this.famous.elementOutput);
-
-    // register with parent famous RenderNode for spec
-    if (!this.famous.isRoot) {
-      //console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
-      this.props._owner.famous.node.add(this.famous.node);
-    }
-  },
-
-  tick: function() {
-    // updates the spec of this node
-    // and all child nodes
-    if (this.famous.isRoot) {
-      this.famous.node.commit(defaultState);
-    }
-
-    if (!this.isMounted()) {
-      return;
-    }
-
-    // diff our faked element with the last run
-    // so we only update when stuff changes
-    var lastStyle = this.famous.element.lastStyle;
-    var nextStyle = this.famous.element.style;
-
-    var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
-    if (styleUpdates) {
-      CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
-      this.famous.element.lastStyle = cloneStyle(nextStyle);
-    }
+module.exports = function(value, transition) {
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return value;
   }
-};
 
-module.exports = RenderableMixin;
-},{"./TransitionParent":"/Users/contra/Projects/famous/famous-react/src/TransitionParent.js","./applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js","./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js","./getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js","./propSugar":"/Users/contra/Projects/famous/famous-react/src/propSugar.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/TransitionParent.js":[function(require,module,exports){
+  if (typeof transition === 'string') {
+    transition = {
+      method: transition
+    };
+  }
+
+  return {
+    value: value,
+    transition: transition
+  };
+};
+},{}],"/Users/contra/Projects/famous/famous-react/src/mixins/AsyncParent.js":[function(require,module,exports){
 'use strict';
 
 var PropTypes = require('react/lib/ReactPropTypes');
@@ -18565,7 +18427,7 @@ function filter(props) {
   return props ? omit(props, famousProps) : null;
 }
 
-var TransitionParentMixin = {
+var AsyncParentMixin = {
   propTypes: {
     component: PropTypes.func.isRequired
   },
@@ -18714,30 +18576,192 @@ var TransitionParentMixin = {
   }
 };
 
-module.exports = TransitionParentMixin;
-},{"lodash.omit":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/ReactTransitionChildMapping":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactTransitionChildMapping.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/Transitionable.js":[function(require,module,exports){
+module.exports = AsyncParentMixin;
+},{"lodash.omit":"/Users/contra/Projects/famous/famous-react/node_modules/lodash.omit/index.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js","react/lib/ReactTransitionChildMapping":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactTransitionChildMapping.js","react/lib/merge":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/merge.js"}],"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/defaultState.js":[function(require,module,exports){
 'use strict';
 
-module.exports = function(value, transition) {
-  if (typeof value === 'object' && !Array.isArray(value)) {
-    return value;
-  }
+var Transform = require('famous/core/Transform');
 
-  if (typeof transition === 'string') {
-    transition = {
-      method: transition
-    };
-  }
-
-  return {
-    value: value,
-    transition: transition
-  };
+module.exports = {
+  transform: Transform.identity,
+  opacity: 1,
+  origin: [0, 0],
+  size: [0, 0],
+  align: null
 };
-},{}],"/Users/contra/Projects/famous/famous-react/src/applyPropsToModifer.js":[function(require,module,exports){
+},{"famous/core/Transform":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Transform.js"}],"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/index.js":[function(require,module,exports){
 'use strict';
 
-var Transitionable = require('./Transitionable');
+var Engine = require('famous/core/Engine');
+var RenderNode = require('famous/core/RenderNode');
+var ElementOutput = require('famous/core/ElementOutput');
+var StateModifier = require('famous/modifiers/StateModifier');
+var PropTypes = require('react/lib/ReactPropTypes');
+var CSSPropertyOperations = require('react/lib/CSSPropertyOperations');
+
+var getStyleUpdates = require('../../util/getStyleUpdates');
+var cloneStyle = require('../../util/cloneStyle');
+var applyPropsToModifer = require('../../util/applyPropsToModifer');
+var propSugar = require('./propSugar');
+var defaultState = require('./defaultState');
+var AsyncParent = require('../AsyncParent');
+
+var RenderableMixin = {
+  mixins: [AsyncParent],
+
+  propTypes: {
+    _owner: PropTypes.object,
+    center: PropTypes.bool,
+    opacity: PropTypes.oneOfType([
+      PropTypes.number,
+      PropTypes.object
+    ]),
+    transform: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.object
+    ]),
+    origin: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.object
+    ]),
+    size: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.arrayOf(PropTypes.bool),
+      PropTypes.object
+    ]),
+    align: PropTypes.oneOfType([
+      PropTypes.arrayOf(PropTypes.number),
+      PropTypes.object
+    ]),
+  },
+
+  getDefaultProps: function() {
+    return {
+      style: {
+        backfaceVisibility: 'hidden',
+        transformStyle: 'flat'
+      }
+    };
+  },
+
+  componentWillMount: function() {
+    this.createFamous();
+    this.componentWillReceiveProps(this.props);
+    this.tick();
+  },
+
+  componentDidMount: function() {
+    this.tick();
+    // add our tick to the event loop
+    Engine.on('prerender', this.tick);
+  },
+
+  componentWillEnter: function(cb) {
+    cb();
+  },
+
+  componentDidEnter: function() {
+
+  },
+
+  componentWillLeave: function(cb) {
+    cb();
+  },
+
+  componentDidLeave: function() {
+
+  },
+
+  componentWillUnmount: function() {
+    // remove our tick from the event loop
+    Engine.removeListener('prerender', this.tick);
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    // some props sugar
+    nextProps = propSugar(nextProps);
+
+    // apply our props to the modifier
+    applyPropsToModifer(nextProps, this.famous.modifier);
+  },
+
+  createFamous: function() {
+    // TODO: break this out
+    this.famous = {};
+
+    // create a fake element that props will go on
+    this.famous.element = {
+      style: {},
+      lastStyle: null
+    };
+
+    // create a modifier
+    this.famous.modifier = new StateModifier();
+
+    // attach famous to this fake element
+    this.famous.elementOutput = new ElementOutput(this.famous.element);
+
+    // create our nodes
+    this.famous.isRoot = !this.props._owner;
+    this.famous.node = new RenderNode(this.famous.modifier);
+    this.famous.node.add(this.famous.elementOutput);
+
+    // register with parent famous RenderNode for spec
+    if (!this.famous.isRoot) {
+      //console.log(this.props._owner.constructor.displayName, '->', this.constructor.displayName);
+      this.props._owner.famous.node.add(this.famous.node);
+    }
+  },
+
+  tick: function() {
+    // updates the spec of this node
+    // and all child nodes
+    if (this.famous.isRoot) {
+      this.famous.node.commit(defaultState);
+    }
+
+    if (!this.isMounted()) {
+      return;
+    }
+
+    // diff our faked element with the last run
+    // so we only update when stuff changes
+    var lastStyle = this.famous.element.lastStyle;
+    var nextStyle = this.famous.element.style;
+
+    var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
+    if (styleUpdates) {
+      CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
+      this.famous.element.lastStyle = cloneStyle(nextStyle);
+    }
+  }
+};
+
+module.exports = RenderableMixin;
+},{"../../util/applyPropsToModifer":"/Users/contra/Projects/famous/famous-react/src/util/applyPropsToModifer.js","../../util/cloneStyle":"/Users/contra/Projects/famous/famous-react/src/util/cloneStyle.js","../../util/getStyleUpdates":"/Users/contra/Projects/famous/famous-react/src/util/getStyleUpdates.js","../AsyncParent":"/Users/contra/Projects/famous/famous-react/src/mixins/AsyncParent.js","./defaultState":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/defaultState.js","./propSugar":"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/propSugar.js","famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/Engine":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/Engine.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js","react/lib/CSSPropertyOperations":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/CSSPropertyOperations.js","react/lib/ReactPropTypes":"/Users/contra/Projects/famous/famous-react/node_modules/react/lib/ReactPropTypes.js"}],"/Users/contra/Projects/famous/famous-react/src/mixins/Renderable/propSugar.js":[function(require,module,exports){
+'use strict';
+
+function propSugar(nextProps) {
+  if (nextProps.center) {
+    if (nextProps.center === 'vertical') {
+      nextProps.align = [0, 0.5];
+      nextProps.origin = [0, 0.5];
+    } else if (nextProps.center === 'horizontal') {
+      nextProps.align = [0.5, 0];
+      nextProps.origin = [0.5, 0];
+    } else if (nextProps.center === true) {
+      nextProps.origin = [0.5, 0.5];
+      nextProps.align = [0.5, 0.5];
+    }
+  }
+  return nextProps;
+}
+
+module.exports = propSugar;
+},{}],"/Users/contra/Projects/famous/famous-react/src/util/applyPropsToModifer.js":[function(require,module,exports){
+'use strict';
+
+var Transitionable = require('../Transitionable');
 
 function applyPropsToModifer(props, mod) {
   // TODO: dirty checking here
@@ -18763,7 +18787,7 @@ function applyPropsToModifer(props, mod) {
 }
 
 module.exports = applyPropsToModifer;
-},{"./Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js"}],"/Users/contra/Projects/famous/famous-react/src/cloneStyle.js":[function(require,module,exports){
+},{"../Transitionable":"/Users/contra/Projects/famous/famous-react/src/Transitionable.js"}],"/Users/contra/Projects/famous/famous-react/src/util/cloneStyle.js":[function(require,module,exports){
 'use strict';
 
 // this is all inlined for performance reasons
@@ -18790,7 +18814,7 @@ function cloneStyle(style) {
 }
 
 module.exports = cloneStyle;
-},{}],"/Users/contra/Projects/famous/famous-react/src/getStyleUpdates.js":[function(require,module,exports){
+},{}],"/Users/contra/Projects/famous/famous-react/src/util/getStyleUpdates.js":[function(require,module,exports){
 'use strict';
 
 var styleFields = require('./styleFields');
@@ -18819,27 +18843,7 @@ function getStyleUpdates(lastStyle, nextStyle) {
 }
 
 module.exports = getStyleUpdates;
-},{"./styleFields":"/Users/contra/Projects/famous/famous-react/src/styleFields.js"}],"/Users/contra/Projects/famous/famous-react/src/propSugar.js":[function(require,module,exports){
-'use strict';
-
-function propSugar(nextProps) {
-  if (nextProps.center) {
-    if (nextProps.center === 'vertical') {
-      nextProps.align = [0, 0.5];
-      nextProps.origin = [0, 0.5];
-    } else if (nextProps.center === 'horizontal') {
-      nextProps.align = [0.5, 0];
-      nextProps.origin = [0.5, 0];
-    } else if (nextProps.center === true) {
-      nextProps.origin = [0.5, 0.5];
-      nextProps.align = [0.5, 0.5];
-    }
-  }
-  return nextProps;
-}
-
-module.exports = propSugar;
-},{}],"/Users/contra/Projects/famous/famous-react/src/styleFields.js":[function(require,module,exports){
+},{"./styleFields":"/Users/contra/Projects/famous/famous-react/src/util/styleFields.js"}],"/Users/contra/Projects/famous/famous-react/src/util/styleFields.js":[function(require,module,exports){
 'use strict';
 
 module.exports = [

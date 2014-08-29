@@ -17,7 +17,7 @@ function filter(props) {
   return props ? omit(props, famousProps) : null;
 }
 
-var TransitionParentMixin = {
+var AsyncParentMixin = {
   propTypes: {
     component: PropTypes.func.isRequired
   },
@@ -166,4 +166,4 @@ var TransitionParentMixin = {
   }
 };
 
-module.exports = TransitionParentMixin;
+module.exports = AsyncParentMixin;

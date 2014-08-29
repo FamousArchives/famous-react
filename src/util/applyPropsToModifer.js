@@ -1,6 +1,6 @@
 'use strict';
 
-var Transitionable = require('./Transitionable');
+var Transitionable = require('../Transitionable');
 
 function applyPropsToModifer(props, mod) {
   // TODO: dirty checking here
