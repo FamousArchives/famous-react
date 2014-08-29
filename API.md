@@ -113,10 +113,13 @@ var txt = DOM.div({
 
 If you want to plug in custom sequences (documented below) or transitions, you can simply specify one.
 
-```j
+```js
+// in this case we just invert the animation
+var bounceUp = bounceDown.reverse();
+
 var txt = DOM.div({
   activate: bounceDown,
-  deactivate: bounceOut
+  deactivate: bounceUp
 });
 ```
 
@@ -159,15 +162,19 @@ var slideOver = function(curr){
   };
 };
 
+// specify one portion of our animation
+// as its own piece
 var bounceUpAndDown = animation()
   .step(bounceUp)
   .step(bounceDown);
 
-var anim = animation()
+var animIn = animation()
   .step(bounceDown)
   .step(slideOver)
   .step(bounceUpAndDown)
   .step(slideOver);
+
+var animOut = animIn.reverse();
 ```
 
 ##### TODO: This is a work in progress
