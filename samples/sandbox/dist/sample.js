@@ -33205,6 +33205,7 @@ var ReactTransitionChildMapping = require('react/lib/ReactTransitionChildMapping
 var merge = require('react/lib/merge');
 var omit = require('lodash.omit');
 
+// TODO: update these
 var famousProps = [
   '_owner',
   'center',
@@ -33403,7 +33404,6 @@ var RenderableMixin = {
   mixins: [AsyncParent],
 
   propTypes: {
-    // some sugar
     center: PropTypes.bool,
     x: PropTypes.number,
     y: PropTypes.number,
@@ -33520,7 +33520,7 @@ module.exports = RenderableMixin;
 'use strict';
 
 // DEPRECATED
-
+// TODO: move this logic
 function propSugar(nextProps) {
   if (nextProps.center) {
     if (nextProps.center === 'vertical') {

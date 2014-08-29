@@ -5,6 +5,7 @@ These are just some thoughts I'm collecting on the API
 - x
 - y
 - z
+- translate
 - rotate
 - scale
 - skew

@@ -16,7 +16,6 @@ var RenderableMixin = {
   mixins: [AsyncParent],
 
   propTypes: {
-    // some sugar
     center: PropTypes.bool,
     x: PropTypes.number,
     y: PropTypes.number,

@@ -1,55 +1,46 @@
 'use strict';
 
 var async = require('async');
+var sugar = require('./sugar');
 
 function applyState(nextState, mod, cb) {
-  // TODO: move sugar state change logic here
-  // map over sugar transform
-  var tasks = Object.keys(nextState).map(function(type){
-    var def = nextState[type];
-    return async.apply(applyStateChange, {
-      type: type,
-      value: def.value,
-      transition: def.transition
-    }, mod);
-  });
+  var tasks = Object.keys(sugar(nextState))
+    .map(function(type){
+      var def = nextState[type];
+      return {
+        type: type,
+        value: def.value,
+        transition: def.transition
+      };
+    })
+    .map(function(def){
+      return async.apply(applyStateChange, def, mod);
+    });
 
   async.parallel(tasks, cb);
 }
 
 function applyStateChange(stateChange, mod, cb) {
-  if (stateChange.type === 'opacity') {
-    return mod.setOpacity(stateChange.value, stateChange.transition, cb);
-  }
-  if (stateChange.type === 'origin') {
-    return mod.setOrigin(stateChange.value, stateChange.transition, cb);
-  }
-  if (stateChange.type === 'align') {
-    return mod.setAlign(stateChange.value, stateChange.transition, cb);
-  }
-
   var transform = mod._transformState;
+  var setters = {
+    perspective: null,
+    size: mod.setSize,
+    opacity: mod.setOpacity,
+    origin: mod.setOrigin,
+    align: mod.setAlign,
+    translate: transform.setTranslate,
+    scale: transform.setScale,
+    rotate: transform.setRotate,
+    skew: transform.setSkew,
+    transform: transform.setTransform
+  };
+  var setter = setters[stateChange.type];
 
-  if (stateChange.type === 'scale') {
-    return transform.setScale(stateChange.value, stateChange.transition, cb);
-  }
-  if (stateChange.type === 'rotate') {
-    return transform.setRotate(stateChange.value, stateChange.transition, cb);
-  }
-  if (stateChange.type === 'skew') {
-    return transform.setSkew(stateChange.value, stateChange.transition, cb);
-  }
-  if (stateChange.type === 'transform') {
-    return transform.setTransform(stateChange.value, stateChange.transition, cb);
+  if (!setter) {
+    throw new Error('Unsupported transition: ' + stateChange.type);
   }
 
-  // TODO: use TransitionableTransform translate for x, y, z
-
-  // TODO: use set for
-  // perspective, height, width,
-
-  // pass through unsupported for now
-  cb();
+  setter(stateChange.value, stateChange.transition, cb);
 }
 
 module.exports = applyState;

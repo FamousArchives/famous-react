@@ -1,5 +1,19 @@
 'use strict';
 
+function getCenter(origin, align) {
+  // TODO: check origin combos too
+  if (align[0] === 0.5 && align[1] === 0) {
+    return 'horizontal';
+  }
+  if (align[0] === 0 && align[1] === 0.5) {
+    return 'vertical';
+  }
+  if (align[0] === 0.5 && align[1] === 0.5) {
+    return true;
+  }
+  return false;
+}
+
 function getState(mod) {
   var transformState = mod._transformState;
 
@@ -13,27 +27,17 @@ function getState(mod) {
   var translate = transformState.translate.get();
   var rotate = transformState.rotate.get();
   var scale = transformState.scale.get();
-
-  var center = false;
-  // TODO: check origin combos too
-  if (align[0] === 0.5 && align[1] === 0) {
-    center = 'horizontal';
-  }
-  if (align[0] === 0 && align[1] === 0.5) {
-    center = 'vertical';
-  }
-  if (align[0] === 0.5 && align[1] === 0.5) {
-    center = true;
-  }
+  var center = getCenter(origin, align);
 
   return {
     x: translate[0],
     y: translate[1],
     z: translate[2],
+    translate: translate,
     rotate: rotate,
     scale: scale,
     skew: skew,
-    perspective: null, // TODO
+    perspective: null,
     height: size[1],
     width: size[0],
     opacity: opacity,

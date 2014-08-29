@@ -5,6 +5,7 @@ var ReactTransitionChildMapping = require('react/lib/ReactTransitionChildMapping
 var merge = require('react/lib/merge');
 var omit = require('lodash.omit');
 
+// TODO: update these
 var famousProps = [
   '_owner',
   'center',

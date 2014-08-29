@@ -1,7 +1,7 @@
 'use strict';
 
 // DEPRECATED
-
+// TODO: move this logic
 function propSugar(nextProps) {
   if (nextProps.center) {
     if (nextProps.center === 'vertical') {
