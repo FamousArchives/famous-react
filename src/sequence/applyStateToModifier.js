@@ -14,13 +14,13 @@ function applyState(nextState, mod, cb) {
       };
     })
     .map(function(def){
-      return async.apply(applyStateChange, def, mod);
+      return async.apply(applySingleState, def, mod);
     });
 
   async.parallel(tasks, cb);
 }
 
-function applyStateChange(stateChange, mod, cb) {
+function applySingleState(stateChange, mod, cb) {
   var transform = mod._transformState;
   var setters = {
     perspective: null,
