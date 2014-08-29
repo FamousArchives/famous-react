@@ -14,6 +14,7 @@ function propSugar(nextProps) {
     }
   }
 
+  // TODO: use Transform.build here
   var xyz = [0, 0, 0];
   var xyzUsed = false;
   if (typeof nextProps.x === 'number') {

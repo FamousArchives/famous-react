@@ -18,8 +18,6 @@ var RenderableMixin = {
   mixins: [AsyncParent],
 
   propTypes: {
-    _owner: PropTypes.object,
-
     // some sugar
     center: PropTypes.bool,
     x: PropTypes.number,

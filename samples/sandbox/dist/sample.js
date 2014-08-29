@@ -20,7 +20,7 @@ var App = React.createClass({
 
   getDefaultProps: function() {
     return {
-      dampngRatio: 0.5,
+      dampingRatio: 0.5,
       speed: 500,
       animation: Spring,
       visible: true
@@ -33203,6 +33203,10 @@ var omit = require('lodash.omit');
 
 var famousProps = [
   '_owner',
+  'center',
+  'x',
+  'y',
+  'z',
   'opacity',
   'transform',
   'origin',
@@ -33215,6 +33219,7 @@ function filter(props) {
 
 var AsyncParentMixin = {
   propTypes: {
+    _owner: PropTypes.object,
     component: PropTypes.func.isRequired
   },
 
@@ -33396,8 +33401,6 @@ var RenderableMixin = {
   mixins: [AsyncParent],
 
   propTypes: {
-    _owner: PropTypes.object,
-
     // some sugar
     center: PropTypes.bool,
     x: PropTypes.number,
@@ -33547,6 +33550,7 @@ function propSugar(nextProps) {
     }
   }
 
+  // TODO: use Transform.build here
   var xyz = [0, 0, 0];
   var xyzUsed = false;
   if (typeof nextProps.x === 'number') {

@@ -7,6 +7,10 @@ var omit = require('lodash.omit');
 
 var famousProps = [
   '_owner',
+  'center',
+  'x',
+  'y',
+  'z',
   'opacity',
   'transform',
   'origin',
@@ -19,6 +23,7 @@ function filter(props) {
 
 var AsyncParentMixin = {
   propTypes: {
+    _owner: PropTypes.object,
     component: PropTypes.func.isRequired
   },
 

@@ -19,7 +19,7 @@ var App = React.createClass({
 
   getDefaultProps: function() {
     return {
-      dampngRatio: 0.5,
+      dampingRatio: 0.5,
       speed: 500,
       animation: Spring,
       visible: true
