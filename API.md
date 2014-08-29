@@ -21,7 +21,7 @@ These are just some thoughts I'm collecting on the API
 
 ## Animation functions
 
-Animations modules will be functions that take arguments to produce famous Transitionables. Renderable animations will support animation functions or Transitionables. When given an animation function, default options will be used.
+Animation modules will be functions that take arguments to produce famous Transitionables. Renderable animations will support animation functions or Transitionables. When given an animation function, default options will be used.
 
 ```js
 var spring = require('animation-spring');
@@ -109,24 +109,14 @@ var txt = DOM.div({
 });
 ```
 
-### Transform
+### Animation Functions
 
-In this case, the element will bounce in and out.
+If you want to plug in custom sequences (documented below) or transitions, you can simply specify a function to transition the value.
 
-```js
-var spring = require('animation-spring');
-
+```j
 var txt = DOM.div({
-  x: {
-    inactive: 0,
-    active: 500,
-    animation: spring
-  },
-  y: {
-    inactive: 0,
-    active: 500,
-    animation: spring
-  }
+  activate: bounceDown,
+  deactivate: bounceOut
 });
 ```
 
