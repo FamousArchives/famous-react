@@ -145,13 +145,16 @@ In this example the element will bounce down 200px, ease over 500px, bounce up t
 var spring = require('animation-spring');
 var ease = require('animation-ease');
 
+var springInst = spring({
+  duration: 750,
+  dampingRatio: 500
+});
+
 // spring y to 0
 var bounceUp = {
   y: {
     value: 0,
-    transition: spring({
-      duration: 750
-    })
+    transition: springInst
   }
 };
 
@@ -159,9 +162,7 @@ var bounceUp = {
 var bounceDown = {
   y: {
     value: 200,
-    transition: spring({
-      duration: 750
-    })
+    transition: springInst
   }
 };
 
