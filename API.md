@@ -125,6 +125,16 @@ var txt = DOM.div({
 
 ## Chaining Animations
 
+### Sequences
+
+In all aspects of famous-react, animations are "sequences".
+
+- Inactive -> Active
+- Active -> Inactive
+- Component property changes
+
+Sequences are simply a set of updates to be performed on a modifier, including all transition information.
+
 ### Creating Sequences
 
 In this example the element will bounce down 200px, ease over 500px, bounce up to 0px, bounce down 200px, then ease over 500px.
