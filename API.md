@@ -54,7 +54,7 @@ var txt = DOM.div({
   - mounted (rendered and animation complete)
   - unmounting (rendered, but being removed)
 - Animations can be specified for mounting and unmounting states
-- Start and finish values are specified with `mounted` and `unmounted`
+- Start and finish values are specified with `unmounted` and `mounted`
 
 ### Automatic
 
