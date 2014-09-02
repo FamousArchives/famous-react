@@ -46,15 +46,15 @@ var txt = DOM.div({
 });
 ```
 
-## Enter/Exit Animation
+## Mounted/Unmounted Animation
 
 - Animation states are
-  - inactive (not rendered)
-  - activating (rendered)
-  - active (rendered and animation complete)
-  - deactivating (rendered, but being removed)
-- Animations can be specified for activating and deactivating states
-- Start and finish values are specified with `active` and `inactive`
+  - unmounted (not rendered)
+  - mounting (rendered)
+  - mounted (rendered and animation complete)
+  - unmounting (rendered, but being removed)
+- Animations can be specified for mounting and unmounting states
+- Start and finish values are specified with `mounted` and `unmounted`
 
 ### Automatic
 
@@ -65,8 +65,8 @@ In this case, the default famous animation will be used to transition.
 ```js
 var txt = DOM.div({
   opacity: {
-    inactive: 0,
-    active: 1
+    unmounted: 0,
+    mounted: 1
   }
 });
 ```
@@ -82,8 +82,8 @@ var spring = require('animation-spring');
 
 var txt = DOM.div({
   y: {
-    inactive: 0,
-    active: 500,
+    unmounted: 0,
+    mounted: 500,
     transition: spring
   }
 });
@@ -101,11 +101,11 @@ var ease = require('animation-ease');
 
 var txt = DOM.div({
   y: {
-    inactive: 0,
-    active: 500,
+    unmounted: 0,
+    mounted: 500,
     transition: {
-      activate: spring,
-      deactivate: ease
+      mount: spring,
+      unmount: ease
     }
   }
 });
@@ -120,8 +120,8 @@ If you want to plug in custom sequences (documented below) or transitions, you c
 var bounceUp = bounceDown.inverse();
 
 var txt = DOM.div({
-  activate: bounceDown,
-  deactivate: bounceUp
+  mount: bounceDown,
+  unmount: bounceUp
 });
 ```
 
@@ -131,8 +131,8 @@ var txt = DOM.div({
 
 In all aspects of famous-react, animations are "sequences".
 
-- Inactive -> Active
-- Active -> Inactive
+- unmounted -> mounted
+- mounted -> Uumounted
 - Component property changes
 
 Sequences are simply a set of updates to be performed on a modifier, including all transition information.
