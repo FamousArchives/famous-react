@@ -104,8 +104,8 @@ var txt = DOM.div({
     unmounted: 0,
     mounted: 500,
     transition: {
-      mount: spring,
-      unmount: ease
+      mounting: spring,
+      unmounting: ease
     }
   }
 });
