@@ -18614,6 +18614,13 @@ var propSugar = require('./propSugar');
 var defaultState = require('./defaultState');
 var AsyncParent = require('../AsyncParent');
 
+// TODO: vendor prefixing
+// TODO: only apply if there is children?
+var initialStyle = {
+  backfaceVisibility: 'hidden',
+  transformStyle: 'flat'
+};
+
 var RenderableMixin = {
   mixins: [AsyncParent],
 
@@ -18643,10 +18650,7 @@ var RenderableMixin = {
 
   getDefaultProps: function() {
     return {
-      style: {
-        backfaceVisibility: 'hidden',
-        transformStyle: 'flat'
-      }
+      style: initialStyle
     };
   },
 
@@ -18663,7 +18667,7 @@ var RenderableMixin = {
   },
 
   componentWillEnter: function(cb) {
-    // TODO: run inactive -> active sequence
+    // TODO: run unmounted -> mounted sequence
     cb();
   },
 
@@ -18672,7 +18676,7 @@ var RenderableMixin = {
   },
 
   componentWillLeave: function(cb) {
-    // TODO: run active -> inactive sequence
+    // TODO: run mounted -> unmounted sequence
     cb();
   },
 
@@ -18721,7 +18725,7 @@ var RenderableMixin = {
     var lastStyle = this.famous.element.lastStyle;
     var nextStyle = this.famous.element.style;
 
-    var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
+    var styleUpdates = getStyleUpdates(lastStyle, nextStyle);
     if (styleUpdates) {
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this.famous.element.lastStyle = cloneStyle(nextStyle);
@@ -18841,7 +18845,7 @@ module.exports = applyPropsToModifer;
 
 // this is all inlined for performance reasons
 function cloneStyle(style) {
-  var out = {
+  return {
     zIndex: style.zIndex,
     height: style.height,
     width: style.width,
@@ -18859,7 +18863,6 @@ function cloneStyle(style) {
     webkitPerspective: style.webkitPerspective,
     mozPerspective: style.mozPerspective
   };
-  return out;
 }
 
 module.exports = cloneStyle;
@@ -18891,10 +18894,15 @@ module.exports = createFamous;
 },{"famous/core/ElementOutput":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/ElementOutput.js","famous/core/RenderNode":"/Users/contra/Projects/famous/famous-react/node_modules/famous/core/RenderNode.js","famous/modifiers/StateModifier":"/Users/contra/Projects/famous/famous-react/node_modules/famous/modifiers/StateModifier.js"}],"/Users/contra/Projects/famous/famous-react/src/util/getStyleUpdates.js":[function(require,module,exports){
 'use strict';
 
-var styleFields = require('./styleFields');
+var cloneStyle = require('./cloneStyle');
+var styleFields = Object.keys(cloneStyle({}));
 
 // TODO: cleverly inline styleFields to reduce a loop here
 function getStyleUpdates(lastStyle, nextStyle) {
+  if (lastStyle == null) {
+    return nextStyle;
+  }
+
   var styleUpdates = {};
   var styleUpdated = false;
 
@@ -18917,17 +18925,7 @@ function getStyleUpdates(lastStyle, nextStyle) {
 }
 
 module.exports = getStyleUpdates;
-},{"./styleFields":"/Users/contra/Projects/famous/famous-react/src/util/styleFields.js"}],"/Users/contra/Projects/famous/famous-react/src/util/styleFields.js":[function(require,module,exports){
-'use strict';
-
-module.exports = [
-  'zIndex',
-  'transform', 'webkitTransform',
-  'height', 'width',
-  'opacity',
-  'transformOrigin', 'webkitTransformOrigin'
-];
-},{}]},{},["./src/index.js"])("./src/index.js")
+},{"./cloneStyle":"/Users/contra/Projects/famous/famous-react/src/util/cloneStyle.js"}]},{},["./src/index.js"])("./src/index.js")
 });
 
 

@@ -17,7 +17,9 @@
   },
   "devDependencies": {
     "browserify": "^5.8.0",
+    "chai": "^1.9.1",
     "dat-gui": "^0.5.0",
+    "deamdify": "^0.1.1",
     "ecstatic": "^0.5.4",
     "gulp": "^3.8.6",
     "gulp-autowatch": "0.0.1",
@@ -28,17 +30,18 @@
     "gulp-sourcemaps": "^1.1.0",
     "jshint": "^2.4.1",
     "jshint-stylish": "^0.4.0",
+    "lodash.clone": "^2.4.1",
     "merge-stream": "^0.1.5",
-    "mocha": "^1.20.1",
+    "mocha": "^1.21.4",
+    "mochify": "^1.0.4",
     "reactify": "^0.14.0",
-    "should": "^4.0.4",
     "vinyl-buffer": "0.0.0",
     "vinyl-source-stream": "^0.1.1",
     "watchify": "^1.0.0"
   },
   "scripts": {
     "lint": "jshint ./src --reporter node_modules/jshint-stylish/stylish.js --exclude node_modules",
-    "test": "npm run-script lint"
+    "test": "npm run lint && mochify --reporter spec ./test/**/*.js"
   },
   "engines": {
     "node": ">= 0.10"

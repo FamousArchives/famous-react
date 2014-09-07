@@ -2,9 +2,6 @@ These are just some thoughts I'm collecting on the API
 
 ## Transitionable Attributes
 
-- x
-- y
-- z
 - translate
 - rotate
 - scale
@@ -17,9 +14,12 @@ These are just some thoughts I'm collecting on the API
 - align
 - transform
 
-### Sugar attributes
+### Sugar attributes (also transitionable)
 
 - center
+- x
+- y
+- z
 
 ## Animation functions
 
@@ -132,7 +132,7 @@ var txt = DOM.div({
 In all aspects of famous-react, animations are "sequences".
 
 - unmounted -> mounted
-- mounted -> Uumounted
+- mounted -> unmounted
 - Component property changes
 
 Sequences are simply a set of updates to be performed on a modifier, including all transition information.

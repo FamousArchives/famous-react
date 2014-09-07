@@ -1,9 +1,14 @@
 'use strict';
 
-var styleFields = require('./styleFields');
+var cloneStyle = require('./cloneStyle');
+var styleFields = Object.keys(cloneStyle({}));
 
 // TODO: cleverly inline styleFields to reduce a loop here
 function getStyleUpdates(lastStyle, nextStyle) {
+  if (lastStyle == null) {
+    return nextStyle;
+  }
+
   var styleUpdates = {};
   var styleUpdated = false;
 

@@ -12,6 +12,13 @@ var propSugar = require('./propSugar');
 var defaultState = require('./defaultState');
 var AsyncParent = require('../AsyncParent');
 
+// TODO: vendor prefixing
+// TODO: only apply if there is children?
+var initialStyle = {
+  backfaceVisibility: 'hidden',
+  transformStyle: 'flat'
+};
+
 var RenderableMixin = {
   mixins: [AsyncParent],
 
@@ -41,10 +48,7 @@ var RenderableMixin = {
 
   getDefaultProps: function() {
     return {
-      style: {
-        backfaceVisibility: 'hidden',
-        transformStyle: 'flat'
-      }
+      style: initialStyle
     };
   },
 
@@ -61,7 +65,7 @@ var RenderableMixin = {
   },
 
   componentWillEnter: function(cb) {
-    // TODO: run inactive -> active sequence
+    // TODO: run unmounted -> mounted sequence
     cb();
   },
 
@@ -70,7 +74,7 @@ var RenderableMixin = {
   },
 
   componentWillLeave: function(cb) {
-    // TODO: run active -> inactive sequence
+    // TODO: run mounted -> unmounted sequence
     cb();
   },
 
@@ -119,7 +123,7 @@ var RenderableMixin = {
     var lastStyle = this.famous.element.lastStyle;
     var nextStyle = this.famous.element.style;
 
-    var styleUpdates = lastStyle ? getStyleUpdates(lastStyle, nextStyle) : nextStyle;
+    var styleUpdates = getStyleUpdates(lastStyle, nextStyle);
     if (styleUpdates) {
       CSSPropertyOperations.setValueForStyles(this.getDOMNode(), styleUpdates);
       this.famous.element.lastStyle = cloneStyle(nextStyle);

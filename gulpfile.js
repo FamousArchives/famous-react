@@ -17,6 +17,7 @@ var watchify = require('watchify');
 var browserify = require('browserify');
 var ecstatic = require('ecstatic');
 var reactify = require('reactify');
+var deamdify = require('deamdify');
 
 var paths = {
   js: 'src/**/*.js'
@@ -32,6 +33,8 @@ var bundler = watchify(browserify('./src/index.js', {
   standalone: 'famous-react',
   debug: true
 }));
+bundler.transform(reactify);
+bundler.transform(deamdify);
 
 var sampleBundler = watchify(browserify('./samples/sandbox/src/index.js', {
   cache: bundleCache,
@@ -41,6 +44,7 @@ var sampleBundler = watchify(browserify('./samples/sandbox/src/index.js', {
   debug: true
 }));
 sampleBundler.transform(reactify);
+sampleBundler.transform(deamdify);
 
 gulp.task('watch', function(){
   bundler.on('update', function(){

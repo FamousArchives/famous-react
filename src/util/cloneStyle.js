@@ -2,7 +2,7 @@
 
 // this is all inlined for performance reasons
 function cloneStyle(style) {
-  var out = {
+  return {
     zIndex: style.zIndex,
     height: style.height,
     width: style.width,
@@ -20,7 +20,6 @@ function cloneStyle(style) {
     webkitPerspective: style.webkitPerspective,
     mozPerspective: style.mozPerspective
   };
-  return out;
 }
 
 module.exports = cloneStyle;
