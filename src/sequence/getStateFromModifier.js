@@ -34,7 +34,12 @@ function getState(mod) {
     y: translate[1],
     z: translate[2],
     translate: translate,
+  
     rotate: rotate,
+    rotateX: rotate[0],
+    rotateY: rotate[1],
+    rotateZ: rotate[2],
+
     scale: scale,
     skew: skew,
     perspective: null,

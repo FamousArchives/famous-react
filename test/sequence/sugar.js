@@ -96,4 +96,40 @@ describe('sequence/sugar', function(){
     });
     done();
   });
+
+  // rotate
+  it('should work with rotateX', function(done){
+    sugar({
+      rotateX: 100
+    }).should.eql({
+      rotate: [100, undefined, undefined]
+    });
+    done();
+  });
+  it('should work with rotateY', function(done){
+    sugar({
+      rotateY: 100
+    }).should.eql({
+      rotate: [undefined, 100, undefined]
+    });
+    done();
+  });
+  it('should work with rotateZ', function(done){
+    sugar({
+      rotateZ: 100
+    }).should.eql({
+      rotate: [undefined, undefined, 100]
+    });
+    done();
+  });
+  it('should work with rotateX, Y, and Z', function(done){
+    sugar({
+      rotateX: 100,
+      rotateY: 200,
+      rotateZ: 300
+    }).should.eql({
+      rotate: [100, 200, 300]
+    });
+    done();
+  });
 });

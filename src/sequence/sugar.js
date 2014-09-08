@@ -1,34 +1,59 @@
 'use strict';
 var clone = require('lodash.clone');
 
-function sugar(inState) {
-  var nextState = clone(inState);
+function someExists() {
+  var args = Array.prototype.slice.apply(arguments);
+  return args.some(function(v){
+    return v != null;
+  });
+}
 
-  if (nextState.center) {
-    if (nextState.center === 'vertical') {
-      nextState.align = [0, 0.5];
-      nextState.origin = [0, 0.5];
-    } else if (nextState.center === 'horizontal') {
-      nextState.align = [0.5, 0];
-      nextState.origin = [0.5, 0];
-    } else if (nextState.center === true) {
-      nextState.origin = [0.5, 0.5];
-      nextState.align = [0.5, 0.5];
+function sugar(nextState) {
+  var state = clone(nextState);
+
+  if (state.center) {
+    if (state.center === 'vertical') {
+      state.align = [0, 0.5];
+      state.origin = [0, 0.5];
+    } else if (state.center === 'horizontal') {
+      state.align = [0.5, 0];
+      state.origin = [0.5, 0];
+    } else if (state.center === true) {
+      state.origin = [0.5, 0.5];
+      state.align = [0.5, 0.5];
     }
-    delete nextState.center;
+    delete state.center;
   }
-  if (nextState.width != null || nextState.height != null) {
-    nextState.size = [nextState.width, nextState.height];
-    delete nextState.width;
-    delete nextState.height;
+  if (someExists(state.width, state.height)) {
+    state.size = [
+      state.width,
+      state.height
+    ];
+    delete state.width;
+    delete state.height;
   }
-  if (nextState.x != null || nextState.y != null || nextState.z != null) {
-    nextState.translate = [nextState.x, nextState.y, nextState.z];
-    delete nextState.x;
-    delete nextState.y;
-    delete nextState.z;
+
+  if (someExists(state.x, state.y, state.z)) {
+    state.translate = [
+      state.x,
+      state.y,
+      state.z
+    ];
+    delete state.x;
+    delete state.y;
+    delete state.z;
   }
-  return nextState;
+  if (someExists(state.rotateX, state.rotateY, state.rotateZ)) {
+    state.rotate = [
+      state.rotateX,
+      state.rotateY,
+      state.rotateZ
+    ];
+    delete state.rotateX;
+    delete state.rotateY;
+    delete state.rotateZ;
+  }
+  return state;
 }
 
 module.exports = sugar;
