@@ -33588,14 +33588,14 @@ Sequence.prototype.step = function(step) {
 };
 
 Sequence.prototype.inverse = function() {
-  return new Sequence(this.getSteps().reverse());
+  return new Sequence(this.steps().reverse());
 };
 
 Sequence.prototype.clone = function() {
-  return new Sequence(this.getSteps());
+  return new Sequence(this.steps());
 };
 
-Sequence.prototype.getSteps = function() {
+Sequence.prototype.steps = function() {
   return this._steps.slice();
 };
 

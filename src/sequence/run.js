@@ -11,7 +11,7 @@ function applyStep(fn, mod, cb) {
 }
 
 function runSequence(sequence, mod, cb) {
-  var steps = sequence.getSteps();
+  var steps = sequence.steps();
   var tasks = steps.map(function(fn) {
     return async.apply(applyStep, fn, mod);
   });

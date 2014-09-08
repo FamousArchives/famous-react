@@ -11,6 +11,7 @@ function someExists() {
 function sugar(nextState) {
   var state = clone(nextState);
 
+  // center
   if (state.center) {
     if (state.center === 'vertical') {
       state.align = [0, 0.5];
@@ -24,6 +25,8 @@ function sugar(nextState) {
     }
     delete state.center;
   }
+
+  // sizing
   if (someExists(state.width, state.height)) {
     state.size = [
       state.width,
@@ -33,6 +36,7 @@ function sugar(nextState) {
     delete state.height;
   }
 
+  // translation
   if (someExists(state.x, state.y, state.z)) {
     state.translate = [
       state.x,
@@ -43,6 +47,8 @@ function sugar(nextState) {
     delete state.y;
     delete state.z;
   }
+
+  // rotation
   if (someExists(state.rotateX, state.rotateY, state.rotateZ)) {
     state.rotate = [
       state.rotateX,
