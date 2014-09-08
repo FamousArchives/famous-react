@@ -1,6 +1,9 @@
 'use strict';
+var clone = require('lodash.clone');
 
-function sugar(nextState) {
+function sugar(inState) {
+  var nextState = clone(inState);
+
   // TODO: clone needed?
   // TODO: change x/y/z to translate
   if (nextState.center) {
@@ -14,8 +17,13 @@ function sugar(nextState) {
       nextState.origin = [0.5, 0.5];
       nextState.align = [0.5, 0.5];
     }
+    delete nextState.center;
   }
-  nextState.size = [nextState.width, nextState.height];
+  if (nextState.width != null || nextState.height != null) {
+    nextState.size = [nextState.width, nextState.height];
+    delete nextState.width;
+    delete nextState.height;
+  }
   return nextState;
 }
 

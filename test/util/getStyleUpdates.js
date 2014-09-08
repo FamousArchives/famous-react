@@ -21,7 +21,7 @@ var style = {
   mozPerspective: 1
 };
 
-describe('getStyleUpdates', function(){
+describe('util/getStyleUpdates', function(){
   // no changes
   it('should return undefined on no changes', function(done){
     var oldStyle = clone(style);

@@ -21,7 +21,7 @@ var style = {
   mozPerspective: 1
 };
 
-describe('cloneStyle', function(){
+describe('util/cloneStyle', function(){
   it('should clone all values', function(done){
     var oldStyle = clone(style);
     var newStyle = cloneStyle(oldStyle);

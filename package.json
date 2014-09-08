@@ -12,6 +12,7 @@
   "dependencies": {
     "async": "^0.9.0",
     "famous": "contra/famous",
+    "lodash.clone": "^2.4.1",
     "lodash.omit": "^2.4.1",
     "react": "^0.11.0"
   },

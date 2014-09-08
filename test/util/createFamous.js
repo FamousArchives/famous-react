@@ -4,7 +4,7 @@
 var should = require('chai').should();
 var createFamous = require('../../src/util/createFamous');
 
-describe('createFamous', function(){
+describe('util/createFamous', function(){
   it('should output an object with the required values', function(done){
     var fam = createFamous();
     should.exist(fam.node);
