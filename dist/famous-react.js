@@ -18897,7 +18897,6 @@ module.exports = createFamous;
 var cloneStyle = require('./cloneStyle');
 var styleFields = Object.keys(cloneStyle({}));
 
-// TODO: cleverly inline styleFields to reduce a loop here
 function getStyleUpdates(lastStyle, nextStyle) {
   if (lastStyle == null) {
     return nextStyle;
@@ -18909,10 +18908,13 @@ function getStyleUpdates(lastStyle, nextStyle) {
   styleFields.forEach(function(styleName) {
     var lastVal = lastStyle[styleName];
     var nextVal = nextStyle[styleName];
+
+    // doesnt exist in either one
     if (!lastVal && !nextVal) {
       return;
     }
 
+    // value changed
     if (lastVal !== nextVal) {
       styleUpdated = true;
       styleUpdates[styleName] = (nextVal || '');

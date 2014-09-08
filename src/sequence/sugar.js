@@ -15,7 +15,7 @@ function sugar(nextState) {
       nextState.align = [0.5, 0.5];
     }
   }
-  nextState.size = [nextState.width, nextState.size];
+  nextState.size = [nextState.width, nextState.height];
   return nextState;
 }
 
