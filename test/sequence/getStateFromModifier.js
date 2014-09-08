@@ -74,6 +74,54 @@ describe('sequence/getStateFromModifier', function(){
     done();
   });
 
+  it('should return patented tru-center state', function(done){
+    var mod = new StateModifier();
+    mod.setAlign([0.5, 0.5]);
+    mod.setOrigin([0.5, 0.5]);
+
+    var state = getStateFromModifier(mod);
+    state.align.should.eql([0.5, 0.5]);
+    state.origin.should.eql([0.5, 0.5]);
+    state.center.should.equal(true);
+    done();
+  });
+
+  it('should return horizontal center state', function(done){
+    var mod = new StateModifier();
+    mod.setAlign([0.5, 0]);
+    mod.setOrigin([0.5, 0]);
+
+    var state = getStateFromModifier(mod);
+    state.align.should.eql([0.5, 0]);
+    state.origin.should.eql([0.5, 0]);
+    state.center.should.equal('horizontal');
+    done();
+  });
+
+  it('should return vertical center state', function(done){
+    var mod = new StateModifier();
+    mod.setAlign([0, 0.5]);
+    mod.setOrigin([0, 0.5]);
+
+    var state = getStateFromModifier(mod);
+    state.align.should.eql([0, 0.5]);
+    state.origin.should.eql([0, 0.5]);
+    state.center.should.equal('vertical');
+    done();
+  });
+
+  it('should return false center state', function(done){
+    var mod = new StateModifier();
+    mod.setAlign([0, 0.2]);
+    mod.setOrigin([0, 0.2]);
+
+    var state = getStateFromModifier(mod);
+    state.align.should.eql([0, 0.2]);
+    state.origin.should.eql([0, 0.2]);
+    state.center.should.equal(false);
+    done();
+  });
+
   it('should return scale state', function(done){
     var mod = new StateModifier();
     mod._transformState.setScale(0.5);
