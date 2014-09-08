@@ -19,7 +19,6 @@ These are just some thoughts I'm collecting on the API
 - center
 - x
 - y
-- z
 
 ## Animation functions
 

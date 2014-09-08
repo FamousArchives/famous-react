@@ -26,7 +26,6 @@ var RenderableMixin = {
     center: PropTypes.bool,
     x: PropTypes.number,
     y: PropTypes.number,
-    z: PropTypes.number,
 
     opacity: PropTypes.oneOfType([
       PropTypes.number,

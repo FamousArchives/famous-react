@@ -11,7 +11,6 @@ var famousProps = [
   'center',
   'x',
   'y',
-  'z',
   'opacity',
   'transform',
   'origin',

@@ -39,7 +39,7 @@ describe('sequence/sugar', function(){
     sugar({
       height: 100
     }).should.eql({
-     size: [undefined, 100]
+      size: [undefined, 100]
     });
     done();
   });
@@ -47,7 +47,7 @@ describe('sequence/sugar', function(){
     sugar({
       width: 100
     }).should.eql({
-     size: [100, undefined]
+      size: [100, undefined]
     });
     done();
   });
@@ -56,7 +56,43 @@ describe('sequence/sugar', function(){
       height: 100,
       width: 200
     }).should.eql({
-     size: [200, 100]
+      size: [200, 100]
+    });
+    done();
+  });
+
+  // translate
+  it('should work with x', function(done){
+    sugar({
+      x: 100
+    }).should.eql({
+      translate: [100, undefined, undefined]
+    });
+    done();
+  });
+  it('should work with y', function(done){
+    sugar({
+      y: 100
+    }).should.eql({
+      translate: [undefined, 100, undefined]
+    });
+    done();
+  });
+  it('should work with z', function(done){
+    sugar({
+      z: 100
+    }).should.eql({
+      translate: [undefined, undefined, 100]
+    });
+    done();
+  });
+  it('should work with x, y, and z', function(done){
+    sugar({
+      x: 100,
+      y: 200,
+      z: 300
+    }).should.eql({
+      translate: [100, 200, 300]
     });
     done();
   });
