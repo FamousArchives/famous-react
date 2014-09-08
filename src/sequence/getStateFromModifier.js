@@ -26,7 +26,7 @@ function getState(mod) {
   var origin = mod.getOrigin();
   var opacity = mod.getOpacity();
 
-  var transform = transformState.get();
+  var transform = mod.getTransform();
   var skew = transformState.skew.get();
   var translate = transformState.translate.get();
   var rotate = transformState.rotate.get();

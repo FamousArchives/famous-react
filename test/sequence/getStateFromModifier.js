@@ -74,6 +74,35 @@ describe('sequence/getStateFromModifier', function(){
     done();
   });
 
+  it('should return scale state', function(done){
+    var mod = new StateModifier();
+    mod._transformState.setScale(0.5);
+
+    var state = getStateFromModifier(mod);
+    state.scale.should.equal(0.5);
+    done();
+  });
+
+  it('should return skew state', function(done){
+    var mod = new StateModifier();
+    mod._transformState.setSkew(0.5);
+
+    var state = getStateFromModifier(mod);
+    state.skew.should.equal(0.5);
+    done();
+  });
+
+  it('should return transform state', function(done){
+    var mod = new StateModifier();
+    var trans = clone(Transform.identity);
+    trans[0] = 200;
+    mod.setTransform(trans);
+
+    var state = getStateFromModifier(mod);
+    state.transform.should.eql(trans);
+    done();
+  });
+
   it('should return x y and z from translate', function(done){
     var mod = new StateModifier();
     mod._transformState.setTranslate([100, 200, 300]);
