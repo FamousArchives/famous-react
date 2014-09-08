@@ -1,6 +1,10 @@
 'use strict';
 
 function getCenter(origin, align) {
+  if (!align) {
+    return false;
+  }
+
   // TODO: check origin combos too
   if (align[0] === 0.5 && align[1] === 0) {
     return 'horizontal';
@@ -30,10 +34,10 @@ function getState(mod) {
   var center = getCenter(origin, align);
 
   return {
+    translate: translate,
     x: translate[0],
     y: translate[1],
     z: translate[2],
-    translate: translate,
   
     rotate: rotate,
     rotateX: rotate[0],
@@ -43,8 +47,8 @@ function getState(mod) {
     scale: scale,
     skew: skew,
     perspective: null,
-    width: size[0],
-    height: size[1],
+    width: (size ? size[0] : null),
+    height: (size ? size[1] : null),
     opacity: opacity,
     origin: origin,
     align: align,
