@@ -45,14 +45,23 @@ function getState(mod) {
     rotateZ: rotate[2],
 
     scale: scale,
+    scaleX: scale[0],
+    scaleY: scale[1],
+    scaleZ: scale[2],
+
     skew: skew,
+    skewX: skew[0],
+    skewY: skew[1],
+    skewZ: skew[2],
+
     perspective: null,
     width: (size ? size[0] : null),
     height: (size ? size[1] : null),
     opacity: opacity,
+    transform: transform,
+
     origin: origin,
     align: align,
-    transform: transform,
     center: center
   };
 }

@@ -7,27 +7,6 @@ var Transform = require('famous/core/Transform');
 var clone = require('lodash.clone');
 var getStateFromModifier = require('../../src/sequence/getStateFromModifier');
 
-var defaultState = {
-  x: 0,
-  y: 0,
-  z: 0,
-  translate: [0, 0, 0],
-  rotate: [0, 0, 0],
-  rotateX: 0,
-  rotateY: 0,
-  rotateZ: 0,
-  scale: [1, 1, 1],
-  skew: [0, 0, 0],
-  perspective: null,
-  width: null,
-  height: null,
-  opacity: 1,
-  origin: null,
-  align: null,
-  transform: Transform.identity,
-  center: false
-};
-
 describe('sequence/getStateFromModifier', function(){
   it('should return height state', function(done){
     var mod = new StateModifier();
@@ -172,6 +151,30 @@ describe('sequence/getStateFromModifier', function(){
     state.rotateX.should.equal(100);
     state.rotateY.should.equal(200);
     state.rotateZ.should.equal(300);
+    done();
+  });
+
+  it('should return scaleX scaleY and scaleZ from scale', function(done){
+    var mod = new StateModifier();
+    mod._transformState.setScale([100, 200, 300]);
+
+    var state = getStateFromModifier(mod);
+    state.scale.should.eql([100, 200, 300]);
+    state.scaleX.should.equal(100);
+    state.scaleY.should.equal(200);
+    state.scaleZ.should.equal(300);
+    done();
+  });
+
+  it('should return skewX skewY and skewZ from skew', function(done){
+    var mod = new StateModifier();
+    mod._transformState.setSkew([100, 200, 300]);
+
+    var state = getStateFromModifier(mod);
+    state.skew.should.eql([100, 200, 300]);
+    state.skewX.should.equal(100);
+    state.skewY.should.equal(200);
+    state.skewZ.should.equal(300);
     done();
   });
 });

@@ -1,64 +1,73 @@
 'use strict';
+
 var clone = require('lodash.clone');
 
-function someExists() {
-  var args = Array.prototype.slice.apply(arguments);
-  return args.some(function(v){
-    return v != null;
-  });
-}
+// TODO: allow overrides by specifying whole value
 
 function sugar(nextState) {
   var state = clone(nextState);
 
   // center
-  if (state.center) {
-    if (state.center === 'vertical') {
-      state.align = [0, 0.5];
-      state.origin = [0, 0.5];
-    } else if (state.center === 'horizontal') {
-      state.align = [0.5, 0];
-      state.origin = [0.5, 0];
-    } else if (state.center === true) {
-      state.origin = [0.5, 0.5];
-      state.align = [0.5, 0.5];
-    }
-    delete state.center;
+  if (state.center === 'vertical') {
+    state.align = [0, 0.5];
+    state.origin = [0, 0.5];
+  } else if (state.center === 'horizontal') {
+    state.align = [0.5, 0];
+    state.origin = [0.5, 0];
+  } else if (state.center === true) {
+    state.origin = [0.5, 0.5];
+    state.align = [0.5, 0.5];
   }
+  delete state.center;
 
   // sizing
-  if (someExists(state.width, state.height)) {
-    state.size = [
-      state.width,
-      state.height
-    ];
-    delete state.width;
-    delete state.height;
-  }
+  state.size = [
+    state.width,
+    state.height
+  ];
+  delete state.width;
+  delete state.height;
 
   // translation
-  if (someExists(state.x, state.y, state.z)) {
-    state.translate = [
-      state.x,
-      state.y,
-      state.z
-    ];
-    delete state.x;
-    delete state.y;
-    delete state.z;
-  }
+  state.translate = [
+    state.x,
+    state.y,
+    state.z
+  ];
+  delete state.x;
+  delete state.y;
+  delete state.z;
 
   // rotation
-  if (someExists(state.rotateX, state.rotateY, state.rotateZ)) {
-    state.rotate = [
-      state.rotateX,
-      state.rotateY,
-      state.rotateZ
-    ];
-    delete state.rotateX;
-    delete state.rotateY;
-    delete state.rotateZ;
-  }
+  state.rotate = [
+    state.rotateX,
+    state.rotateY,
+    state.rotateZ
+  ];
+  delete state.rotateX;
+  delete state.rotateY;
+  delete state.rotateZ;
+
+  // scale
+  state.scale = [
+    state.scaleX,
+    state.scaleY,
+    state.scaleZ
+  ];
+  delete state.scaleX;
+  delete state.scaleY;
+  delete state.scaleZ;
+
+  // skew
+  state.skew = [
+    state.skewX,
+    state.skewY,
+    state.skewZ
+  ];
+  delete state.skewX;
+  delete state.skewY;
+  delete state.skewZ;
+
   return state;
 }
 

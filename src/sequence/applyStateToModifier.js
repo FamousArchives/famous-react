@@ -3,6 +3,7 @@
 var async = require('async');
 var sugar = require('./sugar');
 
+// TODO: reconcile changes of nested values
 function applyState(nextState, mod, cb) {
   var tasks = Object.keys(sugar(nextState))
     .map(function(type){
