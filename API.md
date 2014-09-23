@@ -2,35 +2,27 @@ These are just some thoughts I'm collecting on the API
 
 ## Transitionable Attributes
 
-- height
-- width
 - opacity
 - origin
 - align
 - perspective
 - perspectiveOrigin
 - transform
-- translate
-- rotate
-- scale
-- skew
-
-### Sugar attributes (also transitionable)
-
 - center (overrides align and origin)
-- x (overrides translate)
-- y (overrides translate)
-- z (overrides translate)
-- rotateX (overrides rotate)
-- rotateY (overrides rotate)
-- rotateZ (overrides rotate)
-- scaleX (overrides scale)
-- scaleY (overrides scale)
-- scaleZ (overrides scale)
-- skewX (overrides skew)
-- skewY (overrides skew)
-- skewZ (overrides skew)
-
+- x
+- y
+- z
+- rotateX
+- rotateY
+- rotateZ
+- scaleX
+- scaleY
+- scaleZ
+- skewX
+- skewY
+- skewZ
+- height
+- width
 
 ## Animation functions
 

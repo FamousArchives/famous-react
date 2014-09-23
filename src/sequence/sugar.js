@@ -4,6 +4,13 @@ var clone = require('lodash.clone');
 
 // TODO: allow overrides by specifying whole value
 
+function isArrayEmpty(arr) {
+  return !arr.some(function(v){
+    return !!v;
+  });
+}
+
+// TODO: align/origin x and y
 function sugar(nextState) {
   var state = clone(nextState);
 
@@ -68,6 +75,23 @@ function sugar(nextState) {
   delete state.skewY;
   delete state.skewZ;
 
+
+  // fix undefined states to null
+  if (isArrayEmpty(state.size)) {
+    state.size = null;
+  }
+  if (isArrayEmpty(state.translate)) {
+    state.translate = null;
+  }
+  if (isArrayEmpty(state.rotate)) {
+    state.rotate = null;
+  }
+  if (isArrayEmpty(state.scale)) {
+    state.scale = null;
+  }
+  if (isArrayEmpty(state.skew)) {
+    state.skew = null;
+  }
   return state;
 }
 

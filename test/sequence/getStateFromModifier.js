@@ -103,19 +103,19 @@ describe('sequence/getStateFromModifier', function(){
 
   it('should return scale state', function(done){
     var mod = new StateModifier();
-    mod._transformState.setScale(0.5);
+    mod._transformState.setScale([0.5, 0.6, 0.7]);
 
     var state = getStateFromModifier(mod);
-    state.scale.should.equal(0.5);
+    state.scale.should.eql([0.5, 0.6, 0.7]);
     done();
   });
 
   it('should return skew state', function(done){
     var mod = new StateModifier();
-    mod._transformState.setSkew(0.5);
+    mod._transformState.setSkew([0.5, 0.6, 0.7]);
 
     var state = getStateFromModifier(mod);
-    state.skew.should.equal(0.5);
+    state.skew.should.eql([0.5, 0.6, 0.7]);
     done();
   });
 

@@ -2,17 +2,33 @@
 
 var async = require('async');
 var sugar = require('./sugar');
+var Transform = require('famous/core/Transform');
 
-// TODO: reconcile changes of nested values
+var defaults = {
+  translate: [0, 0, 0],
+  scale: [1, 1, 1],
+  rotate: [0, 0, 0],
+  skew: [0, 0, 0],
+  transform: Transform.identity
+};
+
+function toStruct(k, v) {
+  var isObject = v != null;
+  var val = (isObject && v.value != null) ? v.value : null;
+  var trans = (isObject && v.transition != null) ? v.transition : null;
+
+  return {
+    type: k,
+    value: val,
+    transition: trans
+  };
+}
+
 function applyState(nextState, mod, cb) {
-  var tasks = Object.keys(sugar(nextState))
+  var sugarState = sugar(nextState);
+  var tasks = Object.keys(sugarState)
     .map(function(type){
-      var def = nextState[type];
-      return {
-        type: type,
-        value: def.value,
-        transition: def.transition
-      };
+      return toStruct(type, sugarState[type]);
     })
     .map(function(def){
       return async.apply(applySingleState, def, mod);
@@ -25,15 +41,16 @@ function applySingleState(stateChange, mod, cb) {
   var transform = mod._transformState;
   var setters = {
     perspective: null,
-    size: mod.setSize,
-    opacity: mod.setOpacity,
-    origin: mod.setOrigin,
-    align: mod.setAlign,
-    translate: transform.setTranslate,
-    scale: transform.setScale,
-    rotate: transform.setRotate,
-    skew: transform.setSkew,
-    transform: transform.setTransform
+    size: mod.setSize.bind(mod),
+    opacity: mod.setOpacity.bind(mod),
+    origin: mod.setOrigin.bind(mod),
+    align: mod.setAlign.bind(mod),
+
+    translate: transform.setTranslate.bind(transform),
+    scale: transform.setScale.bind(transform),
+    rotate: transform.setRotate.bind(transform),
+    skew: transform.setSkew.bind(transform),
+    transform: mod.setTransform.bind(mod)
   };
   var setter = setters[stateChange.type];
 
@@ -41,7 +58,13 @@ function applySingleState(stateChange, mod, cb) {
     throw new Error('Unsupported transition: ' + stateChange.type);
   }
 
-  setter(stateChange.value, stateChange.transition, cb);
+  var val = (stateChange.value != null) ? stateChange.value : defaults[stateChange.type];
+
+  if (val != null) {
+    // TODO: only apply if changed
+    console.log(stateChange.type, val, stateChange.transition);
+    setter(val, stateChange.transition, cb);
+  }
 }
 
 module.exports = applyState;
